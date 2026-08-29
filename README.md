@@ -10,7 +10,7 @@ eventually, machine-level representations. Full product vision, scope, and
 This README covers only what exists right now: a working PyTorch → MLIR →
 LLVM → machine-code pipeline, and a reusable script (`backend/compiler/runner.py`)
 that produces IR dumps at every stage of that pipeline for a given PyTorch
-operator.
+module.
 
 ## What's been done so far
 
@@ -18,14 +18,25 @@ operator.
    `nn.Module`, export it through `iree-turbine`, and compile it all the way
    through MLIR's `torch` → `linalg` → `flow` → `stream` → `hal` → `vm`
    dialects, down to real LLVM IR, x86-64 assembly, and an ELF object file.
-2. **Two example workloads compiled and dumped:**
+2. **Three example workloads compiled and dumped:**
    - `matmul` — demonstrates lowering, tiling, and vectorization.
    - `linear_relu` (`relu(x @ w + b)`) — demonstrates **operator fusion**:
      the bias-add and ReLU get fused directly into the matmul's dispatch
      region as a single `linalg.generic`, rather than three separate ops.
+   - `mini_transformer` — a small hand-built transformer encoder block
+     (QKV projection, attention with softmax, residual + LayerNorm, MLP with
+     ReLU) exercising a much richer operator mix (6 matmuls, a dedicated
+     `linalg.softmax` op, reduction-based LayerNorm) than a single op alone.
+     Even with this many ops, IREE still fuses everything into a **single**
+     dispatch region — same as the two single-op examples.
 3. **A reusable runner** (`backend/compiler/runner.py`) that automates the
    whole dump-generation process — no more hand-typing `iree-compile`/`iree-opt`
-   commands per workload.
+   commands per workload — and produces a per-operator count breakdown in
+   `manifest.json`.
+
+The API/website integration layer (serving these dumps dynamically to a
+frontend) is being handled separately by Ananya and is not part of this
+backend script.
 
 ## Prerequisites
 
@@ -71,11 +82,12 @@ source .venv/bin/activate
 
 python -m backend.compiler.runner --example matmul --out experiments/runner_output/matmul
 python -m backend.compiler.runner --example linear_relu --out experiments/runner_output/linear_relu
+python -m backend.compiler.runner --example mini_transformer --out experiments/runner_output/mini_transformer
 ```
 
 **Inputs:**
-- `--example` — name of a registered example workload. Currently `matmul` or
-  `linear_relu` (registry: `EXAMPLES` dict in `backend/compiler/runner.py`).
+- `--example` — name of a registered example workload: `matmul`, `linear_relu`,
+  or `mini_transformer` (registry: `EXAMPLES` dict in `backend/compiler/runner.py`).
   Each example lives in `examples/<name>.py` and exposes `build_module()`
   (returns an `nn.Module`) and `example_inputs()` (returns the args tuple to
   trace it with).
@@ -105,7 +117,7 @@ For a run named `<name>` into `<out>/`:
 | `passes_stepA_torch_to_iree.txt` | Every single MLIR pass boundary during torch-dialect lowering (dozens of dumps) |
 | `ir_final_vm.mlir` | Final `vm`-dialect IR from the full instrumented pipeline |
 | `passes_stepB_full_pipeline.txt` | Every single MLIR pass boundary from `linalg` through to `vm` (hundreds to ~1000 dumps, can be tens of MB) |
-| `manifest.json` | Index of every file this run produced, plus the exact commands used to produce them |
+| `manifest.json` | Index of every file this run produced, the exact commands used, and an `"operators"` breakdown (counts of each `linalg.*`/`torch.*`/`arith.*`/`vector.*`/`scf.*` op found in `ir_08_executable-sources.mlir`) |
 
 All stages/dumps carry `loc(...)` debug-info annotations pointing back to the
 original source line, via `--mlir-print-debuginfo`.
@@ -137,7 +149,8 @@ CompilerLens/
 │       └── runner.py          # CompilerRunner: reusable dump-generation pipeline
 ├── examples/
 │   ├── matmul.py               # torch.matmul(a, b)
-│   └── linear_relu.py          # relu(x @ w + b)
+│   ├── linear_relu.py          # relu(x @ w + b)
+│   └── mini_transformer.py     # small transformer encoder block (attention + MLP)
 └── experiments/                # Hand-run exploration output (see below)
     ├── matmul_ir_dump/
     ├── matmul_llvm_dumps/
@@ -157,9 +170,15 @@ at any time by re-running the commands above.
 Per `DESIGN-DOC.md`'s Week 1 plan, the next steps are:
 - Draft the CompilerLens Artifact Schema (§6) — a JSON representation of
   stages/operations/transformations, informed by the real IR shapes seen in
-  `matmul` and `linear_relu`.
+  `matmul`, `linear_relu`, and `mini_transformer`. The `manifest.json`
+  operator-count breakdown is a first, deliberately-rough step toward this,
+  not the schema itself.
 - Implement basic transformation extraction — parse the stage dumps to
   automatically classify what happened to an operation (Lowered / Fused /
   Vectorized / Eliminated), rather than `grep`-ing dumps by hand.
 - Capture structured optimization remarks (e.g. LLVM's `-Rpass=` family) as a
   more direct source of "why" evidence than diffing IR text.
+- Revisit real HuggingFace model downloads once the multi-op pattern proven
+  by `mini_transformer` is solid — real models risk `torch.export` tracing
+  failures from dynamic control flow (attention masking, KV-cache branches),
+  which is why this round used a hand-built module instead.

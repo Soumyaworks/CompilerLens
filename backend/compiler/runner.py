@@ -7,6 +7,7 @@ experiments/matmul_debug_passes/ and experiments/linear_relu_dumps/.
 """
 
 import json
+import re
 import shutil
 import subprocess
 from dataclasses import dataclass, field
@@ -14,6 +15,8 @@ from pathlib import Path
 
 import iree.turbine.aot as aot
 import torch
+
+OPERATOR_PATTERN = re.compile(r"\b((?:linalg|torch|arith|vector|scf)\.[a-zA-Z_.]+)\b")
 
 DEFAULT_STAGES = (
     "input",
@@ -74,6 +77,7 @@ class CompilerRunner:
         self._dump_named_stages(torch_input_path, output_dir, manifest)
         self._dump_llvm_intermediates(torch_input_path, output_dir, dumps_dir, manifest)
         self._dump_full_pass_traces(torch_input_path, output_dir, manifest)
+        self._summarize_operators(output_dir, manifest)
 
         manifest_path = output_dir / "manifest.json"
         manifest_path.write_text(json.dumps(manifest, indent=2))
@@ -168,10 +172,21 @@ class CompilerRunner:
         manifest["files"][final_vm_output.name] = str(final_vm_output)
         manifest["files"][step_b_trace.name] = str(step_b_trace)
 
+    def _summarize_operators(self, output_dir: Path, manifest: dict) -> None:
+        source_path = output_dir / "ir_08_executable-sources.mlir"
+        if not source_path.exists():
+            return
+        text = source_path.read_text()
+        counts = {}
+        for match in OPERATOR_PATTERN.finditer(text):
+            counts[match.group(1)] = counts.get(match.group(1), 0) + 1
+        manifest["operators"] = dict(sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])))
+
 
 EXAMPLES = {
     "matmul": "examples.matmul",
     "linear_relu": "examples.linear_relu",
+    "mini_transformer": "examples.mini_transformer",
 }
 
 
