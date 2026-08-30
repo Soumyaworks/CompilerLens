@@ -13,9 +13,12 @@ staged implementation plan.
 
 **Stage 1 complete: static pipeline explorer, Compiler-Explorer-style.**
 
-- **Two workloads**, picked from a landing page rather than hardcoded: `matmul`
-  (`torch.matmul`, 55 stages) and `linear_relu` (`relu(x @ weight + bias)`, 59 stages) —
-  each with its own vendored dumps, stage list, and compiler evidence.
+- **Any model from the HuggingFace Hub, by id, with no code to write.** Two hand-written
+  workloads — `matmul` (`torch.matmul`, 55 stages) and `linear_relu` (`relu(x @ weight + bias)`,
+  59 stages) — plus however many downloaded models you compile, whose stage lists are
+  generated from their dumps rather than written by hand. Currently checked in:
+  `prajjwal1/bert-tiny`, `distilgpt2`, `sshleifer/tiny-gpt2`, and
+  `hf-internal-testing/tiny-random-BertModel`. See "Compiling any model from HuggingFace".
 - A **golden-layout workspace** per workload: a source pane plus independently addable,
   draggable, resizable, dockable panes, mirroring Compiler Explorer's own interaction model.
   Each stage pane carries its own searchable, phase-grouped stage picker (`tom-select`) and
@@ -24,8 +27,8 @@ staged implementation plan.
   loc() metadata visibility toggle
 - Track-aware stage-to-stage diff: only stages that are genuinely sequential get compared
 - Compiler evidence (11 items for matmul, 12 for linear_relu — including a fused-epilogue
-  item unique to linear_relu), each linked back to the stage it was read from; clicking a
-  link opens a new stage pane on that stage
+  item unique to linear_relu; 23 and 25 for the two downloaded models), each linked back to
+  the stage it was read from; clicking a link opens a new stage pane on that stage
 - `npm run verify` — 27 headless-browser assertions across the landing page and workspace,
   zero console errors
 
@@ -35,11 +38,21 @@ see "Known gaps" in `PLAN.md` for how.
 
 ## Quick start
 
-Requires Python 3.10+ and Node 20+. Both are already set up on this machine (Node 22 via
-per-user `nvm`, wired into `~/.bashrc` — see "Environment notes" below for why).
+Requires Python 3.10+ and Node 20+.
+
+**If `node`/`npm` are not found**, install Node without sudo via nvm:
 
 ```bash
-cd /local/mnt/workspace/CompilerLens/frontend
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh"
+nvm install 22
+```
+
+On a machine where nvm is already wired into `~/.bashrc`, opening a fresh terminal is enough;
+otherwise run the `export`/`.` line above in the current shell.
+
+```bash
+cd CompilerLens/frontend
 npm install                                       # first time only
 npm run artifact     # dumps -> frontend/public/artifacts/*.json  (pure Python, no deps)
 npm run dev           # starts Vite, prints a URL
@@ -50,14 +63,11 @@ or `http://<this-machine's-IP>:5173` from elsewhere (Vite is configured to liste
 interfaces). Leave `npm run dev` running in its terminal; it live-reloads on file changes.
 Ctrl-C stops it.
 
-**If `node`/`npm` aren't found:** open a fresh terminal (nvm loads from `~/.bashrc` on new
-shells), or run `export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh"` in the current one.
-
-`npm run artifact` regenerates every workload's normalized artifact (`matmul.json`,
-`linear_relu.json`) plus the landing page's `index.json` from the vendored dumps in
-`examples/`. Run it again whenever the ingest layer, `examples/`, or the pass logs change —
-the running dev server picks up the new artifacts on next browser refresh, no restart
-needed.
+`npm run artifact` regenerates every workload's normalized artifact plus the landing page's
+`index.json` from the dumps in `examples/` — both the vendored hand-written workloads and any
+model compiled by `scripts/compile_hf_model.py`. Run it again whenever the ingest layer,
+`examples/`, or the pass logs change; the running dev server picks up new artifacts on the
+next browser refresh, no restart needed.
 
 ### Verifying
 
@@ -218,10 +228,205 @@ module.
    whole dump-generation process — no more hand-typing `iree-compile`/`iree-opt`
    commands per workload — and produces a per-operator count breakdown in
    `manifest.json`.
+4. **Any model from the HuggingFace Hub**, by id, with no code to write —
+   see the next section.
 
-The API/website integration layer (serving these dumps dynamically to a
-frontend) is being handled separately by Ananya and is not part of this
-backend script.
+## Compiling any model from HuggingFace
+
+Nothing needs registering first. The model class, whether it is a causal decoder or a
+bidirectional encoder, its vocabulary size and a pinned revision are all worked out from the
+id (`models/detect.py`), so adding a model costs no code.
+
+### End to end, with a small model
+
+`hf-internal-testing/tiny-random-BertModel` is a good first try: real BERT architecture,
+88K parameters, vocabulary of 1124, so the whole run takes about 25 seconds and 22 MB.
+
+**Step 1 — check the model is understood** (~5s, no compiling):
+
+```bash
+cd CompilerLens
+source .venv/bin/activate
+python scripts/compile_hf_model.py hf-internal-testing/tiny-random-BertModel --dry-run
+```
+
+```
+hf-internal-testing/tiny-random-BertModel
+  revision    fc08ad9cc33be9aef4f55cc80e16ef5ae3d5981c
+  type        bert (bidirectional encoder)
+  vocab       1124
+  seq_len     32
+  output      .last_hidden_state
+  detected by autoconfig
+```
+
+Always worth doing on an unfamiliar model — it tells you what was detected before you spend
+minutes compiling, and it is where an unsupported architecture fails.
+
+**Step 2 — compile and dump** (~25s):
+
+```bash
+python scripts/compile_hf_model.py hf-internal-testing/tiny-random-BertModel --seq-len 16
+```
+
+This downloads the model, traces it, runs `iree-compile` once per pipeline stage, dumps the
+LLVM IR and assembly, captures per-pass snapshots, and writes `model_info.json` into
+`examples/hf-internal-testing_tiny-random-BertModel/`.
+
+**Step 3 — look at the operators.** Three greps show the same computation at three levels of
+abstraction, which is the whole point of the tool:
+
+```bash
+DIR=examples/hf-internal-testing_tiny-random-BertModel
+
+# what PyTorch actually executed (Torch dialect)
+grep -oE "torch\.aten\.[a-z_.0-9]+" $DIR/mlir/ir_00_torch_input.mlir | sort | uniq -c | sort -rn
+
+# after lowering to linalg
+grep -oE "linalg\.[a-z_]+" $DIR/mlir/ir_01_input.mlir | sort | uniq -c | sort -rn
+
+# the kernels IREE decided to generate -- named after what they contain
+grep -oE 'dispatch_[0-9]+_[a-z0-9_]+' $DIR/mlir/ir_08_executable-sources.mlir | sort -u
+```
+
+For bert-tiny that last one gives `batch_matmul_1x32x128x128` (attention),
+`batch_matmul_1x32x128x512` and `1x32x512x128` (the feed-forward 4x expansion),
+`reduction_32x128` (LayerNorm and softmax) — the architecture, in the compiler's own labels.
+
+**Step 4 — run the compiled binary.** Optional, but this is what proves the IR describes a
+real program rather than merely parsing:
+
+```bash
+cd $DIR
+iree-run-module --module="$(echo *.vmfb)" --device=local-task --function=main \
+  --input="1x16xi64=1" --input="1x1x16x16xf32=0"
+cd -
+```
+
+```
+EXEC @main
+result[0]: hal.buffer_view
+1x16x32xf32=[[-2.2963 -0.454847 2.55626 ...
+```
+
+Those are real hidden states out of the compiled model. Note the second input's shape:
+`1x1x16x16xf32` is the **4D float mask** — the same shape the wrapper builds, and the reason
+any of this compiles (see "Caveats" below).
+
+**Step 5 — view it in the browser:**
+
+```bash
+cd frontend
+npm run artifact      # regenerates every artifact, including the new model
+npm run dev           # prints a URL
+```
+
+The model appears on the landing page alongside `matmul` and `linear_relu`. Clicking it opens
+the workspace with its stages, diffs, and evidence. `npm run artifact` is pure Python and
+needs no network.
+
+### The two entry points
+
+`scripts/compile_hf_model.py` is the convenience wrapper: it writes the `model_info.json`
+that makes `ingest` treat the directory as a workload, and prints the `npm run artifact`
+reminder. Use it when you want the model on the website.
+
+`python -m backend.compiler.runner --hf-model <id>` is the lower-level tool, taking the same
+shape as `--example`. Use it when you just want dumps on disk:
+
+```bash
+python -m backend.compiler.runner --hf-model distilgpt2 --seq-len 16 \
+  --layout flat --out experiments/runner_output/distilgpt2
+```
+
+`--layout flat` gives one flat directory (like the older `--example` runs); `--layout ingest`
+gives the `mlir/ llvm/ passes/` split that `ingest` reads. It does *not* write
+`model_info.json`, so a run this way stays off the website until you add one.
+
+### Other useful flags
+
+```bash
+python scripts/compile_hf_model.py <id> --seq-len 16       # shorter sequence, smaller dumps
+python scripts/compile_hf_model.py <id> --dry-run          # detect only
+python scripts/compile_hf_model.py <id> --full             # no trimming (see below)
+python scripts/compile_hf_model.py <id> --out-dir /tmp/x   # somewhere other than examples/
+python scripts/compile_hf_model.py <id> --revision <sha>   # pin an exact commit
+python -m models.prefetch <id> <id> ...                    # pre-download, for offline demos
+```
+
+### Models known to work
+
+| Model | Params | Time | Notes |
+|---|---|---|---|
+| `hf-internal-testing/tiny-random-BertModel` | 88K | ~20s | smallest useful test; 30 MB of dumps, 28 MB artifact |
+| `hf-internal-testing/tiny-random-DistilBertModel` | ~0.5M | ~25s | same, DistilBERT |
+| `prajjwal1/bert-tiny` | 4.4M | ~15s | real pretrained weights; 10 kernels, 13 MB artifact |
+| `prajjwal1/bert-mini` | 11M | ~30s | exercises the config-keys fallback |
+| `sshleifer/tiny-gpt2` | 0.1M | ~10s | smallest decoder |
+| `distilgpt2` | 82M | ~40s | real decoder; 473 MB of dumps, mostly the `.vmfb` |
+
+Parameter count is a poor predictor of dump size: `tiny-random-BertModel` has 88K parameters
+but 11 layers, so it generates *more* stages and operations — and a bigger artifact — than
+`bert-tiny`'s 4.4M parameters in 2 layers. Layer count drives the IR; weights drive the
+`.vmfb`.
+
+## Caveats and limitations
+
+**Only encoder-only and decoder-only text models.** Detection needs a model that takes
+`input_ids` + `attention_mask` and returns `last_hidden_state` or `logits`. Everything else
+is rejected up front, with a message saying why, rather than producing a dump set that looks
+authoritative and describes the wrong computation:
+
+- *Vision / audio models* — no `vocab_size` in the config, so no input ids can be built.
+  `google/vit-base-patch16-224` fails at detection.
+- *Encoder-decoder (seq2seq)* — T5, BART, Marian and friends need `decoder_input_ids`
+  alongside `input_ids`, which the two-argument wrapper does not supply. `t5-small` is
+  rejected by name.
+- *Multimodal* — same reason, plus image inputs.
+
+Supporting these means teaching `models/detect.py` the new input signature and giving
+`models/hf_wrapper.py` a matching `forward`.
+
+**The attention mask must be 4D and float, and that is not cosmetic.** Given the usual 2D
+integer mask, transformers (>=5.x) builds the 4D one itself via `masking_utils.and_masks`,
+seeded with `q_idx.new_ones((), dtype=torch.bool)`. That traces to a zero-rank `i1`
+`torch.vtensor.literal`, which IREE's torch-to-iree legalization rejects outright — the
+compile dies before the input phase, for *every* model, encoder or decoder. Passing a 4D
+float mask makes transformers return it unchanged, skipping that machinery. Patching
+`and_masks` is not a fix: the failure just moves to `torch.aten.__and__.Tensor` on broadcast
+bool shapes, which is equally unsupported. If a future transformers release stops
+short-circuiting on 4D masks, that legalization error is the symptom to look for.
+
+**Shapes are static, and baked in at trace time.** `--seq-len 16` compiles a model that only
+accepts 16 tokens; batch size is always 1. This is a property of ahead-of-time compilation,
+not a bug — but it means the dumps describe one shape, and a different sequence length is a
+different compile.
+
+**We compile models; we do not benchmark them.** The pipeline produces IR, assembly, and a
+runnable `.vmfb`, and `iree-run-module` will execute it (step 4 above). Nothing measures
+performance or compares against eager PyTorch, so the evidence in the UI is about what the
+compiler *decided*, never about how fast the result is.
+
+**Real models produce large dumps, and the defaults trim them.** An exported model carries
+every weight inline: bert-tiny's Torch-dialect dump is 35 MB, essentially all weight payload,
+and an untrimmed pass trace reached **8.6 GB**. See "Trimmed by default" below for exactly
+what is reduced and how to opt out. Trimming never changes which stages or operations exist.
+
+**Weights are downloaded at a pinned revision, but the first run needs network.** Every run
+resolves the model id to a concrete commit sha, so results are reproducible; the download is
+cached afterwards. Run `python -m models.prefetch <ids>` ahead of a demo to be safe.
+
+**Generated stage lists are honest about what they do not know.** A hand-written workload
+(`ingest/workloads/matmul.py`) can describe its tile sizes because someone verified them. A
+generated one only states what was read from the dumps, so its stage descriptions are more
+generic. That is deliberate.
+
+### Adding a model that isn't a plain text encoder/decoder
+
+Detection covers models that take `input_ids` + `attention_mask` and expose either
+`last_hidden_state` or `logits`. Anything else fails with an explicit message naming what
+could not be determined. Extending it means teaching `models/detect.py` the new input
+signature.
 
 ## Prerequisites
 
@@ -249,6 +454,7 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
 python -m pip install iree-turbine
+python -m pip install transformers          # only needed for compile_hf_model.py
 ```
 
 Verify the install:
@@ -259,29 +465,55 @@ python -c "import torch, iree.turbine.aot as aot, iree.compiler as ic, iree.runt
 
 ## Running the compiler runner
 
-The runner takes a PyTorch module + example inputs (defined in `examples/`)
-and produces the full dump set into an output directory.
+The runner takes a PyTorch module + example inputs and produces the dump set into an output
+directory. The module comes either from `examples/` or from the HuggingFace Hub.
 
 ```bash
 source .venv/bin/activate
 
+# hand-written examples
 python -m backend.compiler.runner --example matmul --out experiments/runner_output/matmul
-python -m backend.compiler.runner --example linear_relu --out experiments/runner_output/linear_relu
 python -m backend.compiler.runner --example mini_transformer --out experiments/runner_output/mini_transformer
+
+# a downloaded model, same command shape
+python -m backend.compiler.runner --hf-model prajjwal1/bert-tiny --out experiments/runner_output/bert_tiny
+python -m backend.compiler.runner --hf-model sshleifer/tiny-gpt2 --seq-len 16 --out experiments/runner_output/tiny_gpt2
 ```
 
 **Inputs:**
-- `--example` — name of a registered example workload: `matmul`, `linear_relu`,
-  or `mini_transformer` (registry: `EXAMPLES` dict in `backend/compiler/runner.py`).
-  Each example lives in `examples/<name>.py` and exposes `build_module()`
-  (returns an `nn.Module`) and `example_inputs()` (returns the args tuple to
-  trace it with).
+- `--example` — a hand-written workload: `matmul`, `linear_relu`, or `mini_transformer`
+  (registry: `EXAMPLES` in `backend/compiler/runner.py`). Each lives in `examples/<name>.py`
+  and exposes `build_module()` and `example_inputs()`.
+- `--hf-model` — any HuggingFace model id. Not a registry, because these are not enumerable:
+  the model class, causal-vs-encoder, vocab size and revision are all detected from the id.
 - `--out` — output directory. Created if it doesn't exist.
+- `--seq-len` — sequence length to trace `--hf-model` with (default 32).
+- `--layout` — `flat` puts everything in one directory; `ingest` uses the `mlir/ llvm/ passes/`
+  subdirectories that `ingest/` reads. Defaults to `flat` for `--example`, `ingest` for
+  `--hf-model`.
+- `--full` — **no trimming.** See below.
 
-**To add a new workload:** create `examples/<new_name>.py` with the same
-`build_module()` / `example_inputs()` interface, then add it to the `EXAMPLES`
-dict in `backend/compiler/runner.py`. No changes to the runner logic itself
-are needed.
+### Trimmed by default, `--full` for everything
+
+A downloaded model's dumps are trimmed unless you pass `--full`, because untrimmed they are
+enormous: the same `sshleifer/tiny-gpt2` run is **12 MB trimmed and 283 MB full**, and
+bert-tiny's pass log alone reaches 8.6 GB. What trimming does, and what `--full` restores:
+
+| | trimmed (default) | `--full` |
+|---|---|---|
+| Weight payload in `ir_00_torch_input.mlir` | stripped, with a note saying how much | inline (35 MB for bert-tiny) |
+| Large constants in stage dumps | elided (`--mlir-elide-elementsattrs-if-larger=16`) | printed in full |
+| Per-pass snapshots in `passes_stepB` | after 8 named codegen passes (200 dumps) | after every pass (3,318 dumps) |
+
+Trimming never changes *which* stages exist or which operations are in them — the compiler
+always reads the full module, and only the displayed copy is trimmed. Use `--full` when you
+want the complete record; use the default when you want something you can open.
+
+The hand-written examples are never trimmed: they are small enough not to need it.
+
+**To add a new hand-written workload:** create `examples/<new_name>.py` exposing
+`build_module()` / `example_inputs()`, then add it to the `EXAMPLES` dict. Downloaded models
+need no such step.
 
 ## What gets generated
 
@@ -329,41 +561,49 @@ All dumps use this fixed flag set:
 ```
 CompilerLens/
 ├── DESIGN-DOC.md              # Full product design doc and 20-day plan
+├── scripts/
+│   └── compile_hf_model.py     # one command: HF model id -> workload on the website
+├── models/                     # acquiring a model from somewhere online
+│   ├── detect.py                # infer class / causal / vocab / revision from an id
+│   ├── hf_wrapper.py            # 4D-float-mask wrapper; explains why it must be 4D
+│   └── prefetch.py              # warm the HF cache so a demo can run offline
 ├── backend/
 │   └── compiler/
-│       └── runner.py          # CompilerRunner: reusable dump-generation pipeline
+│       └── runner.py           # CompilerRunner: reusable dump-generation pipeline
+├── ingest/                     # dumps -> artifact JSON (stdlib only; see Architecture)
+│   └── workloads/
+│       ├── matmul.py            # hand-written stage list
+│       ├── linear_relu.py       # hand-written stage list
+│       └── generated.py         # stage list derived from a downloaded model's dumps
 ├── examples/
-│   ├── matmul.py               # torch.matmul(a, b)
-│   ├── linear_relu.py          # relu(x @ w + b)
-│   └── mini_transformer.py     # small transformer encoder block (attention + MLP)
-└── experiments/                # Hand-run exploration output (see below)
-    ├── matmul_ir_dump/
-    ├── matmul_llvm_dumps/
-    ├── matmul_debug_passes/
-    ├── linear_relu_dumps/
-    └── runner_output/          # Output of backend/compiler/runner.py
+│   ├── matmul.py                # torch.matmul(a, b)
+│   ├── linear_relu.py           # relu(x @ w + b)
+│   ├── mini_transformer.py      # small hand-built transformer encoder block
+│   ├── matmul/, linear_relu/    # vendored dumps for the hand-written workloads
+│   └── prajjwal1_bert-tiny/, distilgpt2/   # dumps from compile_hf_model.py
+└── experiments/                # earlier hand-run exploration, kept as reference
 ```
 
-The `experiments/*_dumps/` and `matmul_ir_dump/`/`matmul_llvm_dumps/` folders
-are earlier, hand-run explorations kept as reference/ground-truth — they're
-what `backend/compiler/runner.py` was built to reproduce programmatically.
-`experiments/runner_output/` is the runner's own output and can be regenerated
-at any time by re-running the commands above.
+`ingest/workloads/generated.py` exists because a downloaded model cannot be described by a
+hand-written stage list. Measured on bert-tiny: it compiled to **10 dispatch kernels** with
+non-contiguous names (`dispatch_0,1,2,3,4,8,9,10,13,14` — IREE numbers them before
+deduplicating), and emitted **one** linked LLVM/asm module rather than one per kernel. The
+hand-written specs assume `llvm/dispatch_0.s` and a `dispatch_0_matmul` pass scope, neither
+of which exists for a real model, so the generated spec globs for what is actually on disk
+and names the largest kernel as the representative one.
+
+Offline demos: `python -m models.prefetch prajjwal1/bert-tiny distilgpt2` downloads
+everything at pinned revisions ahead of time, after which no network is needed.
 
 ## What's next
 
-Per `DESIGN-DOC.md`'s Week 1 plan, the next steps are:
-- Draft the CompilerLens Artifact Schema (§6) — a JSON representation of
-  stages/operations/transformations, informed by the real IR shapes seen in
-  `matmul`, `linear_relu`, and `mini_transformer`. The `manifest.json`
-  operator-count breakdown is a first, deliberately-rough step toward this,
-  not the schema itself.
-- Implement basic transformation extraction — parse the stage dumps to
-  automatically classify what happened to an operation (Lowered / Fused /
-  Vectorized / Eliminated), rather than `grep`-ing dumps by hand.
-- Capture structured optimization remarks (e.g. LLVM's `-Rpass=` family) as a
-  more direct source of "why" evidence than diffing IR text.
-- Revisit real HuggingFace model downloads once the multi-op pattern proven
-  by `mini_transformer` is solid — real models risk `torch.export` tracing
-  failures from dynamic control flow (attention masking, KV-cache branches),
-  which is why this round used a hand-built module instead.
+- Implement lineage and transformation extraction (Stage 2 in `PLAN.md`) — classify what
+  happened to an operation (Lowered / Fused / Vectorized / Eliminated) rather than reading
+  diffs by hand. The artifact schema already reserves `lineage_key` for this.
+- Capture structured optimization remarks (e.g. LLVM's `-Rpass=` family) as a more direct
+  source of "why" evidence than diffing IR text.
+- Broaden model detection beyond text encoders/decoders (vision, seq2seq), which currently
+  fail fast rather than guessing.
+- Decide what to commit from `examples/prajjwal1_bert-tiny/` and `examples/distilgpt2/`:
+  the artifacts are 13 MB and 20 MB, but the dump directories are 161 MB and 473 MB,
+  the latter dominated by a 457 MB `.vmfb`.

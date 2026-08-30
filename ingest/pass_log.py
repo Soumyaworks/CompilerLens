@@ -28,7 +28,12 @@ from dataclasses import dataclass, field
 from .mlir_loc import collect_aliases
 
 _HEADER = re.compile(
-    r'^// -----// IR Dump After (\S+?)(?: \(([^)]*)\))? //----- //$',
+    r'^// -----// IR Dump After (\S+?)(?: \(([^)]*)\))?'
+    # With --mlir-print-ir-after=<pass> (rather than -after-all), MLIR appends the operation
+    # it printed for, e.g. "('func.func' operation: @main$async_dispatch_2_matmul...)".
+    # Capturing it gives us the scope directly, which beats inferring one from the body.
+    r"(?: \('[^']*' operation: @(\S+?)\))?"
+    r' //----- //$',
     re.M,
 )
 
@@ -84,7 +89,9 @@ def parse_pass_log(log_text: str) -> list[PassDump]:
                 index=len(dumps),
                 pass_name=header.group(1),
                 pass_arg=header.group(2),
-                scope=_scope_of(body),
+                # Prefer the operation name the header declares; fall back to sniffing the
+                # body, which is all an -after-all log gives us.
+                scope=header.group(3) or _scope_of(body),
                 text=body,
                 aliases=collect_aliases(body),
             )

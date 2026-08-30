@@ -56,6 +56,11 @@ await page.waitForSelector('.workload-card', {timeout: 20_000});
 const cardTitles = await page.locator('.workload-card-head h3').allInnerTexts();
 check('landing page lists both workloads', cardTitles.includes('matmul') && cardTitles.includes('linear_relu'), JSON.stringify(cardTitles));
 
+// Counted, not hardcoded: downloaded HuggingFace models show up here too, so the number of
+// cards grows as models are compiled. What matters is that the landing page comes back with
+// the same set it started with.
+const landingCardCount = cardTitles.length;
+
 const cardStats = await page.locator('.workload-card', {hasText: 'matmul'}).locator('.workload-card-stats').innerText();
 check('workload card shows stage/op/evidence counts', /stages/.test(cardStats) && /ops/.test(cardStats), cardStats);
 
@@ -237,7 +242,7 @@ check('every pane tab has a close control', (await page.locator('.lm_tab .lm_clo
 
 await page.locator('.back-button').click();
 await page.waitForSelector('.workload-card', {timeout: 10_000});
-check('back button returns to the landing page', (await page.locator('.workload-card').count()) === 2);
+check('back button returns to the landing page', (await page.locator('.workload-card').count()) === landingCardCount);
 
 await page.locator('.workload-card', {hasText: 'linear_relu'}).locator('.workload-card-open').click();
 await page.waitForSelector('.monaco-editor .view-line', {timeout: 30_000});
