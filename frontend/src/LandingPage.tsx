@@ -14,6 +14,7 @@ import {ArtifactMissingError, fetchIndex} from './api/client';
 
 interface LandingPageProps {
   onSelect: (workloadId: string) => void;
+  onOpenSandbox?: () => void;
 }
 
 function Loading() {
@@ -76,7 +77,7 @@ function WorkloadCard({workload, onSelect}: {workload: WorkloadSummary; onSelect
   );
 }
 
-export function LandingPage({onSelect}: LandingPageProps) {
+export function LandingPage({onSelect, onOpenSandbox}: LandingPageProps) {
   const [index, setIndex] = useState<WorkloadIndex | null>(null);
   const [error, setError] = useState<{missing: boolean; message: string} | null>(null);
 
@@ -110,6 +111,12 @@ export function LandingPage({onSelect}: LandingPageProps) {
       <header className="landing-header">
         <h1>CompilerLens</h1>
         <p className="tagline">Understand what your compiler did.</p>
+        {onOpenSandbox && (
+          <button type="button" className="sandbox-entry" onClick={onOpenSandbox}>
+            Open the Compiler Sandbox →
+            <small>change a flag, recompile for real, measure the difference</small>
+          </button>
+        )}
       </header>
       <div className="workload-grid">
         {index.workloads.map(workload => (

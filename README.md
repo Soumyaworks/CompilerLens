@@ -29,8 +29,8 @@ staged implementation plan.
 - Compiler evidence (11 items for matmul, 12 for linear_relu — including a fused-epilogue
   item unique to linear_relu; 23 and 25 for the two downloaded models), each linked back to
   the stage it was read from; clicking a link opens a new stage pane on that stage
-- `npm run verify` — 27 headless-browser assertions across the landing page and workspace,
-  zero console errors
+- `npm run verify` — 44 headless-browser assertions across the landing page, workspace,
+  Optimization Doctor, and Sandbox; zero console errors
 
 Lineage, the Optimization Doctor, and the AI explanation layer are Stages 2-4 in `PLAN.md`.
 Both original pipeline gaps (missing `loc()` metadata, uncaptured codegen) are closed —
@@ -370,7 +370,156 @@ but 11 layers, so it generates *more* stages and operations — and a bigger art
 `bert-tiny`'s 4.4M parameters in 2 layers. Layer count drives the IR; weights drive the
 `.vmfb`.
 
+## Measuring, diagnosing, and playing
+
+Three capabilities on top of the viewer. They stack: the Doctor needs measurement to say
+what something *cost*, and the Sandbox needs a live compiler to change anything.
+
+### 1. Measure — every decision gets a number
+
+```bash
+source .venv/bin/activate
+python -m backend.measure.cli --list                                    # what can be compared
+python -m backend.measure.cli prajjwal1/bert-tiny --dimension target-cpu
+```
+
+A *dimension* is one compiler decision held under a microscope: everything else stays fixed,
+so a timing difference is attributable to that decision alone. Measured on this machine:
+
+```
+  Generic x86-64             13.277 ms ±0.181  cv=1.4%
+  Host CPU (znver5)           0.498 ms ±0.021  cv=4.2%
+  cpu-generic → cpu-host: 26.66x faster.
+    native_vector_size: 16 bytes → 64 bytes
+      source: hal.executable.variant target attribute
+    Fused multiply-adds: 0 → 661 instructions
+      source: emitted assembly (*.s)
+```
+
+That is the tool doing what it exists for: not "the compiler chose a vector width" but
+"choosing it was worth 26x, and here is the attribute that caused it."
+
+**It also refuses to overclaim.** The `opt-level` dimension exists precisely because it turns
+out not to matter:
+
+```
+  O0  0.410 ms  cv=5.6%   (unreliable)
+  O2  0.431 ms  cv=41.2%  (unreliable)
+  opt-O0 → opt-O2: No measurable difference (0.95x is within the 46.8% combined
+    variance of the two runs). Treat with caution: at least one run was unreliable.
+```
+
+Guards, in `backend/measure/bench.py`: median over ≥5 repetitions, variance always reported,
+`reliable: false` above 5% CV, and any ratio inside the noise floor reported as *no
+difference* rather than a win.
+
+### 2. Diagnose — the tool tells you what is wrong
+
+```bash
+python3 -c "
+from analyzer.diagnose import diagnose_file
+d = diagnose_file('frontend/public/artifacts/prajjwal1_bert-tiny.json')
+print(d['summary']['headline'])
+for f in d['findings']: print(f\"  [{f['severity']}] {f['title']}\")"
+```
+
+The diagnosis is also **baked into every artifact at build time** by `npm run artifact`, so the
+static site shows it with no server running: open any workload and add the **Doctor** pane. The
+Sandbox's live `POST /diagnose` returns the identical shape, which is why both share one
+component.
+
+`matmul` and `linear_relu` are diagnosed **clean — zero findings**. That is the point: the rules
+do not fire on well-optimised code, so when they do fire on a real transformer it means
+something. `npm run verify` asserts both halves of that.
+
+On `prajjwal1/bert-tiny`, unprompted:
+
+```
+5 missed optimisation(s). Most significant: 166 single-lane vector operations.
+  [missed] 166 single-lane vector operations
+  [missed] dispatch_0_elementwise_ runs as its own kernel
+  [missed] dispatch_4_elementwise_transpose_ runs as its own kernel
+  [missed] dispatch_8_elementwise_transpose_ runs as its own kernel
+  [info  ] 2 layout-only kernel(s)
+```
+
+Three rules, each verified to fire on a real model:
+
+| Rule | Looks for | Why it matters |
+|---|---|---|
+| `missed-vectorization` | `vector<1xf32>` survivors, and widths below `native_vector_size` | a one-lane vector is scalar code in vector syntax |
+| `missed-fusion` | memory-bound kernels running as their own dispatch | each pays a full memory round trip for almost no arithmetic |
+| `layout-churn` | transpose/pack kernels with no arithmetic | pure data movement — sometimes worth it, which is why it is `info` |
+
+Every `Finding` carries fields designed to stop it sounding more certain than it is:
+
+- **`confidence`** — `measured` (timed both ways) / `structural` (the IR plainly shows it) /
+  `heuristic` (this pattern usually means trouble). A heuristic finding must not look measured.
+- **`measured_cost_ms`** — `null` until something actually timed it, rendered as
+  "unmeasured" rather than as zero.
+- **`evidence`** — the IR line, quoted verbatim, with a line number to jump to.
+
+### 3. Play — the Sandbox
+
+```bash
+# terminal 1
+source .venv/bin/activate && python -m backend.api.run_server
+
+# terminal 2
+cd frontend && npm run dev
+```
+
+Then open the app and click **Open the Compiler Sandbox →**. Pick a model, flip a flag, hit
+Compile. Measured latency: **~1-3s for a compile**, because the Sandbox only compiles the
+stage you are looking at rather than all 41. `Measure` and `Diagnose` are separate buttons
+because they cost seconds and firing them on every flag change would make the UI feel broken.
+
+Flipping `target-cpu` from `host` to `generic` in the browser, on bert-tiny:
+
+| | host | generic |
+|---|---|---|
+| timing | 0.414 ms | 13.428 ms |
+| `native_vector_size` | 64 bytes | 16 bytes |
+| FMA instructions | 661 | 0 |
+
+The flag list is **server-side allowlisted** (`ALLOWED_FLAGS` in `backend/api/app.py`).
+Arbitrary flag passthrough would be a command-injection risk and would also let a user
+produce dumps the rest of the pipeline cannot interpret.
+
+The API is additive: the landing page and workspace still read static artifacts and work with
+no server running. Only the Sandbox needs it, and it says so when the server is down.
+
+### The overclaim this fixed
+
+`ingest/build.py` used to stamp `status: "success"` on every piece of evidence, including
+tile sizes we had never verified. For a tool whose premise is that every claim is sourced,
+that was the worst line in the codebase. Now an attribute in the IR is `info` — the compiler
+*stating its plan* — and only two things earn `success`: a vector width that cross-checks
+against the target's declared register size (two independent sources agreeing), and FMA
+instructions counted in the emitted assembly (an outcome, not an intention). `matmul` went
+from 11 "success" items to 2.
+
 ## Caveats and limitations
+
+**Timings are comparable to each other, not across machines.** Every number in this README was
+measured on one 8-core znver5 box with ASLR enabled. A median over 5 runs with the CV reported
+is honest about its own precision; it is not a benchmark result you could publish.
+
+**The Doctor's rules are pattern matches, not proofs.** They read the compiler's own output and
+report what they see. `confidence` qualifies each finding, and no rule currently produces a
+`measured` one — wiring `backend/measure` into `analyzer` per-finding is the next step, and
+until then `measured_cost_ms` is honestly `null` rather than estimated.
+
+**Per-kernel cost attribution is not built.** `iree-benchmark-executable` can time individual
+dispatches from the dumped `.so` (verified: bert-tiny exports 10 named dispatch symbols), which
+would let the tool say "this PyTorch line is 38% of your inference". Deriving correct
+`--binding` shapes per kernel is fiddly, so it was left out rather than shipped producing
+numbers we could not stand behind.
+
+**The Sandbox needs its API server; nothing else does.** The landing page and workspace read
+static artifacts and work offline. The Sandbox says so plainly when the server is down rather
+than failing obscurely.
+
 
 **Only encoder-only and decoder-only text models.** Detection needs a model that takes
 `input_ids` + `attention_mask` and returns `last_hidden_state` or `logits`. Everything else

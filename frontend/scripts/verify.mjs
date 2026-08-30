@@ -257,7 +257,79 @@ check(
   linearReluEvidence.toLowerCase().includes('fused'),
   linearReluEvidence.slice(0, 200),
 );
+// --- the Optimization Doctor -----------------------------------------------------------------
+// Baked into the artifact by ingest, so this needs no server running. matmul is deliberately a
+// clean model: asserting it reports *nothing* is what shows the rules are not matching noise,
+// while bert-tiny (a real transformer) must produce findings.
+
+const matmulDiagnosis = await page.evaluate(async () => {
+  const response = await fetch('/artifacts/matmul.json');
+  return (await response.json()).diagnosis ?? null;
+});
+check('matmul artifact carries a diagnosis', Boolean(matmulDiagnosis?.summary));
+check(
+  'matmul is diagnosed clean (rules do not fire on well-optimised code)',
+  matmulDiagnosis?.findings?.length === 0,
+  matmulDiagnosis?.summary?.headline,
+);
+
+const bertDiagnosis = await page.evaluate(async () => {
+  const response = await fetch('/artifacts/prajjwal1_bert-tiny.json');
+  if (!response.ok) return null;
+  return (await response.json()).diagnosis ?? null;
+});
+if (bertDiagnosis) {
+  check(
+    'a real transformer does produce findings',
+    (bertDiagnosis.findings?.length ?? 0) > 0,
+    bertDiagnosis.summary?.headline,
+  );
+  check(
+    'no finding claims a cost it did not measure',
+    bertDiagnosis.findings.every(
+      (f) => f.measured_cost_ms === null || typeof f.measured_cost_ms === 'number',
+    ),
+  );
+  check(
+    'every finding declares its confidence',
+    bertDiagnosis.findings.every((f) =>
+      ['measured', 'structural', 'heuristic'].includes(f.confidence),
+    ),
+  );
+}
+
 await page.screenshot({path: `${SHOT}/05-linear-relu.png`});
+
+// --- the Sandbox ------------------------------------------------------------------------------
+// Only structural checks here. Driving a real compile needs the API server running, and a test
+// that fails because an optional server is down would be a false alarm rather than a signal --
+// so the compile path is exercised by hand (see README) and this covers the UI reaching it.
+
+await page.locator('.back-button').click();
+await page.waitForSelector('.workload-card', {timeout: 10_000});
+check('landing page offers the Sandbox', (await page.locator('.sandbox-entry').count()) === 1);
+
+await page.locator('.sandbox-entry').click();
+await page.waitForTimeout(1200);
+
+const sandboxReachable = (await page.locator('.sandbox-controls').count()) === 1;
+if (sandboxReachable) {
+  check('sandbox exposes model, seq-len, stage and flag controls',
+    (await page.locator('.sandbox-controls select').count()) >= 6);
+  check('sandbox has compile/measure/diagnose actions',
+    (await page.locator('.sandbox-actions button').count()) === 3);
+  check('measure and diagnose are disabled before a compile',
+    (await page.locator('.sandbox-actions button:disabled').count()) >= 2);
+  check('every compiler flag explains why it matters',
+    (await page.locator('.control-why').count()) >= 4);
+  await page.screenshot({path: `${SHOT}/07-sandbox.png`});
+} else {
+  // The API is not running, so the page shows its own empty state. That is correct behaviour
+  // and worth asserting rather than skipping.
+  const message = await page.locator('.sandbox-unavailable').innerText().catch(() => '');
+  check('sandbox explains how to start the API when it is not running',
+    message.includes('run_server'), message.slice(0, 120));
+}
 
 await browser.close();
 

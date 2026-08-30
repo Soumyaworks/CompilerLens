@@ -102,6 +102,40 @@ export interface Evidence {
   status: EvidenceStatus;
 }
 
+/**
+ * One Optimization Doctor finding. Mirrors analyzer/rules/base.py's Finding.
+ *
+ * `confidence` and `measured_cost_ms` exist to stop a finding sounding more certain than it is:
+ * a `heuristic` must not read like a `measured`, and a null cost renders as "unmeasured" rather
+ * than as zero.
+ */
+export interface Finding {
+  rule_id: string;
+  severity: 'missed' | 'suboptimal' | 'info';
+  title: string;
+  detail: string;
+  stage_id: string;
+  stage_name: string;
+  confidence: 'measured' | 'structural' | 'heuristic';
+  evidence: string[];
+  line: number | null;
+  measured_cost_ms: number | null;
+  suggestion: string | null;
+}
+
+/** Mirrors analyzer/diagnose.py's return value. */
+export interface Diagnosis {
+  findings: Finding[];
+  summary: {
+    total: number;
+    by_severity: Record<string, number>;
+    measured: number;
+    headline: string;
+  };
+  rules_run: {id: string; title: string; looks_for: string}[];
+  notes: string[];
+}
+
 export interface Artifact {
   compilation_id: string;
   stages: Stage[];
@@ -111,6 +145,8 @@ export interface Artifact {
   target: {backend?: string; cpu?: string; triple?: string; native_vector_size?: number};
   /** Honest caveats about what this artifact does and does not capture. */
   notes: string[];
+  /** Baked in by ingest at build time, so the static site needs no server to show it. */
+  diagnosis?: Diagnosis;
   artifact_version: string;
 }
 

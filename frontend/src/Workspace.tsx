@@ -6,6 +6,7 @@ import type {Artifact, Phase, Stage} from './api/artifact';
 import {PHASE_TITLES} from './api/artifact';
 import {ArtifactMissingError, fetchArtifact} from './api/client';
 import {registerReactPane} from './golden-layout/react-bridge';
+import {DoctorPane} from './panes/DoctorPane';
 import {EvidencePane} from './panes/EvidencePane';
 import {NotesPane} from './panes/NotesPane';
 import type {PhaseFlowPaneState} from './panes/PhaseFlowPane';
@@ -192,6 +193,9 @@ export function Workspace({workloadId, onBack}: WorkspaceProps) {
     registerReactPane<undefined>(layout, 'evidence', () => (
       <EvidencePane artifact={artifact} onNavigateToStage={navigateToStage} />
     ));
+    registerReactPane<undefined>(layout, 'doctor', () => (
+      <DoctorPane artifact={artifact} onNavigateToStage={navigateToStage} />
+    ));
     registerReactPane<undefined>(layout, 'notes', () => <NotesPane notes={artifact.notes} />);
 
     layout.loadLayout(defaultLayoutConfig(artifact) as Parameters<GoldenLayout['loadLayout']>[0]);
@@ -267,6 +271,17 @@ export function Workspace({workloadId, onBack}: WorkspaceProps) {
                   onClick={() => layoutRef.current?.addComponent('evidence', undefined, 'Evidence')}
                 >
                   Evidence
+                </button>
+                <button
+                  type="button"
+                  disabled={!artifact.diagnosis?.findings?.length}
+                  onClick={() => layoutRef.current?.addComponent('doctor', undefined, 'Doctor')}
+                  title={
+                    artifact.diagnosis?.summary?.headline ??
+                    'No diagnosis in this artifact — rebuild with npm run artifact'
+                  }
+                >
+                  Doctor ({artifact.diagnosis?.findings?.length ?? 0})
                 </button>
                 <button
                   type="button"

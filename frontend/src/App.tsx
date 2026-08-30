@@ -1,17 +1,31 @@
 import {useState} from 'react';
 
 import {LandingPage} from './LandingPage';
+import {SandboxPage} from './SandboxPage';
 import {Workspace} from './Workspace';
 
 /**
- * Thin switch between the landing page and the workspace (DESIGN-DOC's entry point,
- * extended to multiple workloads). No router: there are exactly two screens.
+ * Three screens: the workload picker, the static workspace, and the live Sandbox.
+ *
+ * Still no router. The Sandbox is a separate screen rather than a pane inside the workspace
+ * because it has a different data source (a running server, not a static artifact) and a
+ * different failure mode -- the server may simply not be up, which needs its own empty state.
  */
-export function App() {
-  const [workloadId, setWorkloadId] = useState<string | null>(null);
+type Screen = {kind: 'landing'} | {kind: 'workspace'; workloadId: string} | {kind: 'sandbox'};
 
-  if (!workloadId) {
-    return <LandingPage onSelect={setWorkloadId} />;
+export function App() {
+  const [screen, setScreen] = useState<Screen>({kind: 'landing'});
+
+  if (screen.kind === 'sandbox') {
+    return <SandboxPage onBack={() => setScreen({kind: 'landing'})} />;
   }
-  return <Workspace workloadId={workloadId} onBack={() => setWorkloadId(null)} />;
+  if (screen.kind === 'workspace') {
+    return <Workspace workloadId={screen.workloadId} onBack={() => setScreen({kind: 'landing'})} />;
+  }
+  return (
+    <LandingPage
+      onSelect={(workloadId) => setScreen({kind: 'workspace', workloadId})}
+      onOpenSandbox={() => setScreen({kind: 'sandbox'})}
+    />
+  );
 }

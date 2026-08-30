@@ -12,6 +12,7 @@ separate here.
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import re
 import sys
@@ -367,6 +368,11 @@ def _build_evidence(stages: list[Stage]) -> tuple[list[Evidence], dict]:
         )
 
     # --- the compiler's stated codegen plan ---------------------------------------------
+    # These are `info`, not `success`. An attribute in the IR is the compiler *stating its
+    # intent* -- that tiling will use these sizes, that this pipeline was selected. Whether the
+    # decision paid off is a measurement we do not have here, so calling it a success would be
+    # the kind of unsourced claim this project exists to avoid. backend/measure/ is what turns
+    # one of these into a verified win; analyzer/ is what flags it as a problem.
     configurations = _find_stage(stages, "executable-configurations")
     if configurations:
         if match := _TRANSLATION_INFO.search(configurations.text):
@@ -375,8 +381,8 @@ def _build_evidence(stages: list[Stage]) -> tuple[list[Evidence], dict]:
                 "Codegen pipeline",
                 match.group(1),
                 configurations,
-                "translation_info attribute",
-                status="success",
+                "translation_info attribute -- the plan, not a measured outcome",
+                status="info",
             )
         seen_tiles: set[tuple[str, str]] = set()
         for kind, values in _LOWERING_TILES.findall(configurations.text):
@@ -385,7 +391,7 @@ def _build_evidence(stages: list[Stage]) -> tuple[list[Evidence], dict]:
                 continue
             seen_tiles.add((kind, sizes))
             add("tiling", f"Tile sizes ({kind})", f"[{sizes}]", configurations,
-                "lowering_config attribute", status="success")
+                "lowering_config attribute -- the plan, not a measured outcome", status="info")
 
     # --- what the backend actually emitted ----------------------------------------------
     optimized = _find_stage(stages, "llvm-optimized")
@@ -393,13 +399,14 @@ def _build_evidence(stages: list[Stage]) -> tuple[list[Evidence], dict]:
         widths = llvm_parser.vector_width_summary([op.__dict__ for op in optimized.ops])
         if widths:
             dominant, count = next(iter(widths.items()))
+            # An observation about the emitted code, not yet a judgement on it.
             add("vectorization", "Dominant vector type", f"{dominant} ({count} uses)",
-                optimized, "LLVM IR vector types", status="success")
+                optimized, "LLVM IR vector types", status="info")
 
             # Cross-check the emitted width against the target's declared capability. When
             # these agree, vectorisation used the full register -- the strongest single
             # claim we can make from this data, precisely because it is two independent
-            # sources agreeing rather than one assertion.
+            # sources agreeing rather than one assertion. This one earns "success".
             if native_vector_bytes and (lanes := re.match(r"<(\d+) x float>", dominant)):
                 emitted = int(lanes.group(1))
                 expected = native_vector_bytes // _F32_BYTES
@@ -417,6 +424,8 @@ def _build_evidence(stages: list[Stage]) -> tuple[list[Evidence], dict]:
     if assembly:
         fma_count = sum(1 for op in assembly.ops if op.name.startswith("vfmadd"))
         if fma_count:
+            # Vector FMAs in the final assembly are the arithmetic actually reaching the CPU --
+            # an outcome, not a plan, so this one is a genuine success.
             add("instruction-selection", "Vector FMA instructions", f"{fma_count} x vfmadd",
                 assembly, "emitted x86-64 assembly", status="success")
 
@@ -460,7 +469,7 @@ def build_artifact(workload: WorkloadSpec, root: Path | None = None) -> Artifact
             f"source position; none are guessed."
         )
 
-    return Artifact(
+    artifact = Artifact(
         compilation_id=workload.id,
         stages=stages,
         diffs=diffs,
@@ -473,6 +482,21 @@ def build_artifact(workload: WorkloadSpec, root: Path | None = None) -> Artifact
         target=target,
         notes=notes,
     )
+
+    # Run the Doctor here so the static site carries a diagnosis without needing a server.
+    # analyzer/ is stdlib-only for exactly this reason. A rule crashing must not take the
+    # artifact with it -- the IR is the product, the diagnosis is an addition to it.
+    try:
+        from analyzer.diagnose import diagnose
+
+        artifact.diagnosis = diagnose(dataclasses.asdict(artifact))
+    except Exception as exc:  # noqa: BLE001 - report, never fail the build
+        artifact.notes.append(
+            f"The Optimization Doctor could not run for this artifact "
+            f"({type(exc).__name__}: {exc}). The IR and evidence above are unaffected."
+        )
+
+    return artifact
 
 
 def build_index(workloads: dict[str, WorkloadSpec], artifacts: dict[str, Artifact]) -> dict:

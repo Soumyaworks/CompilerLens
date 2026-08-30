@@ -17,7 +17,8 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
-ARTIFACT_VERSION = "0.1"
+# 0.2 added Artifact.diagnosis (the Optimization Doctor's findings, baked in at build time).
+ARTIFACT_VERSION = "0.2"
 
 # Coarse groupings for the pipeline sidebar. A stage's phase decides where it is drawn and
 # what colour it gets, so the user can see at a glance which level of abstraction they are
@@ -165,6 +166,10 @@ class Artifact:
     source: dict[str, Any] = field(default_factory=dict)  # original PyTorch program
     target: dict[str, Any] = field(default_factory=dict)  # backend, triple, cpu
     notes: list[str] = field(default_factory=list)  # honest caveats, shown in the UI
+    # The Optimization Doctor's findings for this artifact (analyzer/diagnose.py). Baked in at
+    # build time so the static site can show a diagnosis without a server running -- the
+    # Sandbox's live /diagnose endpoint returns the identical shape.
+    diagnosis: dict[str, Any] = field(default_factory=dict)
     artifact_version: str = ARTIFACT_VERSION
 
     def to_json(self, indent: int | None = None) -> str:

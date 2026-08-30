@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from pathlib import Path
 
 from huggingface_hub import HfApi, hf_hub_download
 
@@ -88,13 +89,71 @@ class DetectedModel:
         return {k: v for k, v in raw.items() if k not in {"model_type", "architectures"}}
 
 
+def _cached_revision(model_id: str) -> str | None:
+    """The commit sha of the locally cached snapshot, read from the cache itself.
+
+    `models/prefetch.py` exists so a demo can run with no network, but resolving a revision
+    through the Hub API needs one -- so without this, offline mode (and a Hub rate-limit)
+    fails even when the model is fully cached. Falling back to the cache is what makes
+    prefetch deliver what it promises.
+
+    `refs/main` is the right source: a repo can have several snapshots cached from different
+    times, and this file records which one `main` actually points at. Counting snapshot
+    directories and hoping for one would pick arbitrarily.
+    """
+    try:
+        from huggingface_hub.constants import HF_HUB_CACHE
+    except ImportError:
+        return None
+
+    repo_dir = Path(HF_HUB_CACHE) / f"models--{model_id.replace('/', '--')}"
+    snapshots_dir = repo_dir / "snapshots"
+    if not snapshots_dir.is_dir():
+        return None
+
+    def _valid(sha: str) -> bool:
+        """A snapshot is only useful to us if it actually holds the config we will read next.
+
+        Caches are not uniform: a repo can have several snapshots where only one was fully
+        downloaded, and refs can point at an empty one (e.g. a PR revision fetched for a
+        single file). Checking for config.json is what makes the choice correct rather than
+        merely plausible.
+        """
+        return bool(sha) and (snapshots_dir / sha / "config.json").exists()
+
+    ref_main = repo_dir / "refs" / "main"
+    if ref_main.is_file():
+        sha = ref_main.read_text().strip()
+        if _valid(sha):
+            return sha
+
+    # A repo can be cached with no `main` ref at all -- e.g. downloaded via a PR revision,
+    # which lands under refs/refs/pr/<n>. Any single unambiguous ref is still better than
+    # guessing between snapshot directories.
+    refs = [p for p in (repo_dir / "refs").rglob("*") if p.is_file()] if (repo_dir / "refs").is_dir() else []
+    ref_shas = {sha for p in refs if _valid(sha := p.read_text().strip())}
+    if len(ref_shas) == 1:
+        return ref_shas.pop()
+
+    snapshots = [p.name for p in snapshots_dir.iterdir() if p.is_dir() and _valid(p.name)]
+    if len(snapshots) == 1:
+        return snapshots[0]
+    return None
+
+
 def _resolve_revision(model_id: str, revision: str | None) -> str:
     if revision:
         return revision
     try:
         return HfApi().model_info(model_id).sha
-    except Exception as exc:  # network, 404, gated repo
-        raise UnsupportedModelError(f"could not resolve a revision for '{model_id}': {exc}") from exc
+    except Exception as exc:  # network, offline mode, 404, gated repo, rate limit
+        cached = _cached_revision(model_id)
+        if cached:
+            return cached
+        raise UnsupportedModelError(
+            f"could not resolve a revision for '{model_id}': {exc}\n"
+            f"  If the model is cached, pass --revision <sha> to skip the Hub lookup."
+        ) from exc
 
 
 def _raw_config(model_id: str, revision: str) -> dict:
