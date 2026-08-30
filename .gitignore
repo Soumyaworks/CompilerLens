@@ -1,0 +1,26 @@
+# Build output
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Generated artifacts -- rebuild with `npm run artifact` (see README)
+frontend/public/artifacts/
+
+# Verification output, regenerable via `npm run verify`
+frontend/screenshots/
+
+# Compiler byproducts we do not need to vendor
+*.vmfb
+*.bc
+*.o
+*.so
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/

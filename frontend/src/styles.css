@@ -1,0 +1,1144 @@
+/*
+ * CompilerLens design tokens and layout.
+ *
+ * Colours are not chosen by eye. The eight phase hues are the validated categorical
+ * palette stepped for a dark surface, and they pass every gate against this app's
+ * surface (#1a1a19): worst adjacent CVD deltaE 8.4, normal-vision 19.3, all >= 3:1
+ * contrast. Phase colour is always accompanied by the phase name in text, so identity
+ * never rests on hue alone.
+ *
+ * Dark mode is the selected and only mode: this is a compiler tool that sits beside an
+ * editor. The steps below were picked for the dark surface rather than flipped from a
+ * light theme.
+ */
+
+:root {
+  /* Surfaces */
+  --plane: #0d0d0d;
+  --surface-1: #1a1a19;
+  --surface-2: #222221;
+  --surface-3: #2c2c2a;
+
+  /* Ink */
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #898781;
+
+  /* Chrome */
+  --gridline: #2c2c2a;
+  --baseline: #383835;
+  --border: rgba(255, 255, 255, 0.1);
+
+  /* The eight pipeline phases, in fixed categorical slot order. Never cycled: an
+     additional phase folds into "Other" rather than inventing a ninth hue. */
+  --phase-frontend: #3987e5;
+  --phase-input: #d95926;
+  --phase-global: #199e70;
+  --phase-flow: #c98500;
+  --phase-codegen: #d55181;
+  --phase-runtime: #008300;
+  --phase-llvm: #9085e9;
+  --phase-binary: #e66767;
+
+  /* Sequential hue, for magnitude. Bars use a single step -- length encodes the value,
+     so shading bars by size would double-encode and burn the only free channel. */
+  --series-1: #3987e5;
+  --series-1-wash: rgba(57, 135, 229, 0.14);
+
+  /* Status, reserved for state and always paired with an icon and label. */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+
+  --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+
+  --radius: 6px;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--plane);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ------------------------------------------------------------------ topbar ---- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 16px;
+  height: 48px;
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border);
+  flex: none;
+}
+
+.topbar h1 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.topbar h1 span {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.topbar .tagline {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.topbar-meta {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.back-button {
+  padding: 4px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.back-button:hover {
+  color: var(--text-primary);
+}
+
+/* Small key/value chip used for target facts in the top bar. */
+.chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.chip .chip-key {
+  color: var(--text-muted);
+}
+
+.chip .chip-value {
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+
+/* --------------------------------------------------------------- workspace ---- */
+
+.workspace {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  height: 100%;
+}
+
+.pipeline-rail {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  height: 26px;
+  padding: 0 16px;
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border);
+}
+
+/* One heading per phase rather than one segment per stage -- width is proportional to how
+   many stages that phase holds, so the rail still communicates where the pipeline's bulk
+   sits, without needing 55 individually clickable slivers to do it. */
+.pipeline-rail-heading {
+  flex-grow: 1;
+  flex-shrink: 1;
+  flex-basis: 0;
+  min-width: 32px;
+  height: 100%;
+  padding: 0 8px;
+  border: none;
+  border-radius: 3px;
+  background: var(--phase-color);
+  opacity: 0.4;
+  color: var(--text-primary);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pipeline-rail-heading:hover {
+  opacity: 0.65;
+}
+
+/* The ring is a shape cue, not a colour change, so "currently open" reads the same
+   regardless of the heading's own phase hue. */
+.pipeline-rail-heading.active {
+  opacity: 0.9;
+  box-shadow: 0 0 0 1px var(--surface-1), 0 0 0 2px var(--text-primary);
+}
+
+.pipeline-rail-heading[data-gap='true'] {
+  border-top: 2px solid var(--status-warning);
+}
+
+/* -------------------------------------------------------------- phase stepper ---- */
+
+.phase-stepper-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.phase-stepper-nav button {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 3px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.phase-stepper-nav button:hover:not(:disabled) {
+  background: var(--surface-3);
+  color: var(--text-primary);
+}
+
+.phase-stepper-nav button:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.phase-stepper-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  min-width: 38px;
+  text-align: center;
+}
+
+.phase-stepper-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The mini rail: this phase's own stages, at the same visual grammar as the workspace-level
+   rail (milestone blocks vs. pass ticks) but scoped to one phase, for jumping directly to
+   any of them instead of stepping one at a time. */
+.phase-mini-rail {
+  display: flex;
+  align-items: stretch;
+  gap: 1px;
+  height: 14px;
+  margin: 6px 12px 0;
+}
+
+.phase-mini-rail-segment {
+  flex: 1 1 0;
+  min-width: 2px;
+  height: 100%;
+  padding: 0;
+  border: none;
+  border-radius: 1px;
+  background: var(--phase-color);
+  opacity: 0.4;
+  cursor: pointer;
+}
+
+.phase-mini-rail-segment:hover {
+  opacity: 0.7;
+}
+
+.phase-mini-rail-segment-pass {
+  align-self: flex-end;
+  height: 55%;
+}
+
+.phase-mini-rail-segment.active {
+  opacity: 1;
+  box-shadow: 0 0 0 1px var(--surface-1), 0 0 0 2px var(--text-primary);
+}
+
+.golden-layout-container {
+  position: relative;
+  min-height: 0;
+  height: 100%;
+}
+
+.add-pane-menu {
+  position: relative;
+}
+
+.add-pane-button {
+  padding: 4px 10px;
+  background: var(--series-1);
+  border: 1px solid var(--series-1);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.add-pane-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+  padding: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+}
+
+.add-pane-dropdown button {
+  padding: 7px 10px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.add-pane-dropdown button:hover {
+  background: var(--surface-3);
+  color: var(--text-primary);
+}
+
+.add-pane-dropdown button:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.add-pane-dropdown button:disabled:hover {
+  background: none;
+}
+
+/* -------------------------------------------------------------------- pane ---- */
+
+/* Shared shell for every golden-layout pane -- source, stage, evidence, notes. */
+.pane {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+  min-height: 0;
+  background: var(--surface-1);
+}
+
+.pane-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-1);
+  flex-wrap: wrap;
+}
+
+.pane-header-title {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pane-header-path {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.pane-body {
+  min-height: 0;
+  min-width: 0;
+}
+
+.pane-body-scroll {
+  overflow-y: auto;
+  padding: 12px 14px 20px;
+}
+
+.stage-description {
+  margin: 8px 12px 0;
+  max-width: 78ch;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  font-size: 12px;
+}
+
+.stage-path {
+  margin: 6px 12px 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.stage-phase-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* The colour swatch supplements the phase name; the name is the identity channel. */
+.phase-swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex: none;
+  background: var(--phase-color);
+}
+
+.pass-badge {
+  padding: 2px 6px;
+  background: var(--surface-3);
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.view-toggle {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.view-toggle button {
+  padding: 4px 10px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.view-toggle button.active {
+  background: var(--surface-3);
+  color: var(--text-primary);
+}
+
+.view-toggle button:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+/* A documented gap in what the dumps captured. Surfaced, never hidden. */
+.gap-note {
+  display: flex;
+  gap: 9px;
+  margin: 10px 12px 0;
+  padding: 9px 12px;
+  background: rgba(250, 178, 25, 0.08);
+  border-left: 2px solid var(--status-warning);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  line-height: 1.5;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.gap-note-icon {
+  color: var(--status-warning);
+  flex: none;
+  font-weight: 600;
+}
+
+/* loc() filter. */
+.loc-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.loc-toggle:hover {
+  color: var(--text-primary);
+}
+
+.loc-toggle input {
+  margin: 0;
+  cursor: pointer;
+}
+
+.viewer {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  background: var(--surface-1);
+}
+
+/* --------------------------------------------------------------- stage pane ---- */
+
+.stage-pane-header {
+  gap: 12px;
+}
+
+.stats-toggle {
+  padding: 4px 9px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.stats-toggle:hover {
+  color: var(--text-primary);
+}
+
+.stats-toggle.active {
+  background: var(--surface-3);
+  color: var(--text-primary);
+}
+
+/* The IR/diff viewer always gets the pane's full area; stats float above it on demand
+   rather than reserving a permanent column, which used to leave barely any width for the
+   code once a pane got narrow. */
+.stage-pane-body {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+
+.stage-pane-stats {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  bottom: 8px;
+  width: 260px;
+  z-index: 5;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+}
+
+.stage-pane-stats-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 0;
+  width: 18px;
+  height: 18px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.stage-pane-stats-close:hover {
+  color: var(--text-primary);
+}
+
+/*
+ * Monaco leaves the minimap column transparent and does not honour a 'minimap.background'
+ * theme entry, while the view-lines layer is `overflow: visible` and several thousand
+ * pixels wide. MLIR lines are long enough to reach the minimap, so unwrapped code renders
+ * behind it and reads as visual noise. An opaque column fixes it; the minimap canvas still
+ * paints on top.
+ */
+.monaco-editor .minimap {
+  background: var(--surface-1);
+}
+
+/* ------------------------------------------------------------- side panel ---- */
+
+.side {
+  border-left: 1px solid var(--border);
+  background: var(--surface-1);
+  overflow-y: auto;
+  padding: 14px 14px 24px;
+}
+
+.side-section + .side-section {
+  margin-top: 20px;
+}
+
+.side-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+/* Stat tiles: label + value. Proportional figures, because tabular-nums makes a
+   standalone number look loose at this size. */
+.stat-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.stat-tile {
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.stat-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+}
+
+.stat-value {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.stat-value .stat-unit {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+/* ------------------------------------------------------------- histogram ---- */
+
+/* Horizontal bars: nominal categories, so every bar is the same hue and length alone
+   carries magnitude. Values are directly labelled, so no tooltip is load-bearing. */
+.histogram {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.histogram-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+}
+
+.histogram-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.histogram-value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+}
+
+.histogram-track {
+  grid-column: 1 / -1;
+  height: 6px;
+  background: var(--series-1-wash);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+/* 4px rounded data-end, square against the baseline at the left. */
+.histogram-bar {
+  height: 100%;
+  min-width: 2px;
+  background: var(--series-1);
+  border-radius: 0 4px 4px 0;
+}
+
+.histogram-single {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.histogram-single strong {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.histogram-other {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding-top: 2px;
+}
+
+/* -------------------------------------------------------------- evidence ---- */
+
+.evidence-item {
+  padding: 8px 0;
+}
+
+.evidence-item + .evidence-item {
+  border-top: 1px solid var(--gridline);
+}
+
+.evidence-head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+/* Status icon, so state never rests on colour alone. */
+.evidence-icon {
+  flex: none;
+  font-size: 10px;
+}
+
+.evidence-icon[data-status='success'] {
+  color: var(--status-good);
+}
+
+.evidence-icon[data-status='missed'] {
+  color: var(--status-critical);
+}
+
+.evidence-icon[data-status='info'] {
+  color: var(--text-muted);
+}
+
+.evidence-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.evidence-value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-primary);
+  margin-top: 2px;
+  word-break: break-word;
+  line-height: 1.45;
+}
+
+.evidence-source {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.evidence-source button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--series-1);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------ diff ---- */
+
+.diff-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 20px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.diff-summary .diff-arrow {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.delta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.delta[data-sign='add'] {
+  color: var(--status-good);
+}
+
+.delta[data-sign='remove'] {
+  color: var(--status-critical);
+}
+
+.delta[data-sign='none'] {
+  color: var(--text-muted);
+}
+
+/* ----------------------------------------------------------------- notes ---- */
+
+.notes-intro {
+  margin: 0 0 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.notes-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.notes-list li {
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.notes-list li:last-child {
+  margin-bottom: 0;
+}
+
+/* ---------------------------------------------------------------- loading ---- */
+
+.centered {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: 32px;
+  text-align: center;
+}
+
+.centered code {
+  font-family: var(--font-mono);
+  background: var(--surface-2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--text-primary);
+}
+
+.error-box {
+  max-width: 560px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.error-box h2 {
+  color: var(--status-critical);
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+
+/* -------------------------------------------------------------- landing ---- */
+
+.landing {
+  height: 100%;
+  overflow-y: auto;
+  padding: 48px 32px 64px;
+}
+
+.landing-header {
+  max-width: 900px;
+  margin: 0 auto 32px;
+  text-align: center;
+}
+
+.landing-header h1 {
+  font-size: 28px;
+  margin: 0 0 8px;
+  letter-spacing: -0.01em;
+}
+
+.landing-header .tagline {
+  font-size: 14px;
+}
+
+.workload-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.workload-card {
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.workload-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.workload-card-head h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.workload-card-source {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.workload-card-description {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  font-size: 12px;
+}
+
+.workload-card-preview {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  background: var(--plane);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  overflow-x: auto;
+  max-height: 160px;
+}
+
+.workload-card-stats {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.workload-card-open {
+  margin-top: 16px;
+  align-self: flex-start;
+  padding: 6px 14px;
+  background: var(--series-1);
+  border: 1px solid var(--series-1);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* -------------------------------------------------- golden-layout overrides ---- */
+
+/*
+ * golden-layout's bundled dark theme hardcodes its own hex palette rather than exposing
+ * custom properties, so it is retargeted here onto this app's own tokens rather than
+ * used as-is.
+ */
+.lm_goldenlayout {
+  background: var(--plane);
+}
+
+.lm_content {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+}
+
+.lm_splitter {
+  background: var(--plane);
+}
+
+.lm_splitter:hover,
+.lm_splitter.lm_dragging {
+  background: var(--series-1);
+  opacity: 0.4;
+}
+
+.lm_header {
+  height: 26px;
+}
+
+.lm_header .lm_tabs {
+  height: 26px;
+}
+
+.lm_header .lm_tab {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  padding: 5px 10px 4px;
+}
+
+.lm_header .lm_tab .lm_title {
+  padding-top: 0;
+}
+
+.lm_header .lm_tab.lm_active {
+  background: var(--surface-2);
+  color: var(--text-primary);
+  box-shadow: none;
+}
+
+.lm_tab:hover {
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+
+.lm_header .lm_controls > * {
+  opacity: 0.5;
+}
+
+.lm_header .lm_controls > *:hover {
+  opacity: 1;
+}
+
+.lm_dropTargetIndicator {
+  outline: 1px dashed var(--series-1);
+  box-shadow: none;
+}
+
+.lm_dropTargetIndicator .lm_inner {
+  background: var(--series-1);
+  opacity: 0.15;
+}
+
+.lm_maximised .lm_header {
+  background: var(--plane);
+}
+
+/* ------------------------------------------------------- tom-select overrides ---- */
+
+/*
+ * The stage picker's default skin is a light-theme control; retargeted onto this app's
+ * tokens so it reads as part of the same dark surface rather than a foreign widget.
+ */
+.ts-wrapper {
+  min-width: 200px;
+  font-size: 11px;
+}
+
+.ts-wrapper.single .ts-control {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  padding: 5px 8px;
+  box-shadow: none;
+}
+
+.ts-wrapper.focus .ts-control {
+  border-color: var(--series-1);
+  box-shadow: none;
+}
+
+.ts-control input {
+  color: var(--text-primary);
+}
+
+.ts-dropdown {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.ts-dropdown .optgroup-header {
+  padding: 6px 10px 3px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: none;
+}
+
+.ts-dropdown .option {
+  padding: 5px 10px 5px 16px;
+  color: var(--text-secondary);
+}
+
+.ts-dropdown .option.active {
+  background: var(--surface-3);
+  color: var(--text-primary);
+}
+
+.ts-dropdown .no-results {
+  padding: 6px 10px;
+  color: var(--text-muted);
+}

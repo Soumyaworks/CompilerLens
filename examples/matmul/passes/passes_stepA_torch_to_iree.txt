@@ -1,0 +1,380 @@
+// -----// IR Dump After BindSymbolicShapesPass (torch-iree-bind-symbolic-shapes) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %0 = torch.aten.matmul %arg0, %arg1 : !torch.vtensor<[128,128],f32>, !torch.vtensor<[128,128],f32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %0 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After SetStrictSymbolicShapesPass (torch-iree-set-strict-symbolic-shapes) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %0 = torch.aten.matmul %arg0, %arg1 : !torch.vtensor<[128,128],f32>, !torch.vtensor<[128,128],f32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %0 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After CanonicalizerPass (canonicalize) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %0 = torch.aten.matmul %arg0, %arg1 : !torch.vtensor<[128,128],f32>, !torch.vtensor<[128,128],f32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %0 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After RecomposeComplexOps (torch-recompose-complex-ops) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %0 = torch.aten.matmul %arg0, %arg1 : !torch.vtensor<[128,128],f32>, !torch.vtensor<[128,128],f32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %0 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After BitCastTensorPass (torch-iree-bitcast-tensor) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %0 = torch.aten.matmul %arg0, %arg1 : !torch.vtensor<[128,128],f32>, !torch.vtensor<[128,128],f32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %0 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After ReduceOpVariants (torch-reduce-op-variants) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %0 = torch.aten.matmul %arg0, %arg1 : !torch.vtensor<[128,128],f32>, !torch.vtensor<[128,128],f32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %0 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After ConvertCustomQuantOp (torch-convert-custom-quant-op) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %0 = torch.aten.matmul %arg0, %arg1 : !torch.vtensor<[128,128],f32>, !torch.vtensor<[128,128],f32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %0 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After DecomposeComplexOps (torch-decompose-complex-ops) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %0 = torch.aten.mm %arg0, %arg1 : !torch.vtensor<[128,128],f32>, !torch.vtensor<[128,128],f32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %0 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After FuseQuantizedOps (torch-fuse-quantized-ops) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %0 = torch.aten.mm %arg0, %arg1 : !torch.vtensor<[128,128],f32>, !torch.vtensor<[128,128],f32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %0 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After CanonicalizerPass (canonicalize) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %0 = torch.aten.mm %arg0, %arg1 : !torch.vtensor<[128,128],f32>, !torch.vtensor<[128,128],f32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %0 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After ScalarizeShapes (torch-scalarize-shapes) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %0 = torch.aten.mm %arg0, %arg1 : !torch.vtensor<[128,128],f32>, !torch.vtensor<[128,128],f32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %0 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After ConvertTorchToTMTensor (convert-torch-to-tmtensor) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %0 = torch.aten.mm %arg0, %arg1 : !torch.vtensor<[128,128],f32>, !torch.vtensor<[128,128],f32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %0 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After ConvertTMTensorToLinalgExtPass (torch-iree-tm-tensor-to-linalg-ext) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %0 = torch.aten.mm %arg0, %arg1 : !torch.vtensor<[128,128],f32>, !torch.vtensor<[128,128],f32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %0 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After ConvertTorchToTensor (convert-torch-to-tensor) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %0 = torch.aten.mm %arg0, %arg1 : !torch.vtensor<[128,128],f32>, !torch.vtensor<[128,128],f32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %0 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After ConvertTorchUnstructuredToLinalgExtPass (torch-iree-torch-unstructured-to-linalg-ext) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %0 = torch.aten.mm %arg0, %arg1 : !torch.vtensor<[128,128],f32>, !torch.vtensor<[128,128],f32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %0 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After ConvertTorchToLinalg (convert-torch-to-linalg) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %0 = torch_c.to_builtin_tensor %arg1 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %1 = torch_c.to_builtin_tensor %arg0 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %c0 = arith.constant 0 : index loc("ir_00_torch_input.mlir":3:10)
+  %dim = tensor.dim %1, %c0 : tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %c1 = arith.constant 1 : index loc("ir_00_torch_input.mlir":3:10)
+  %dim_0 = tensor.dim %0, %c1 : tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %2 = tensor.empty(%dim, %dim_0) : tensor<?x?xf32> loc("ir_00_torch_input.mlir":3:10)
+  %cst = arith.constant 0.000000e+00 : f32 loc("ir_00_torch_input.mlir":3:10)
+  %3 = linalg.fill ins(%cst : f32) outs(%2 : tensor<?x?xf32>) -> tensor<?x?xf32> loc("ir_00_torch_input.mlir":3:10)
+  %4 = linalg.matmul ins(%1, %0 : tensor<128x128xf32>, tensor<128x128xf32>) outs(%3 : tensor<?x?xf32>) -> tensor<?x?xf32> loc("ir_00_torch_input.mlir":3:10)
+  %cast = tensor.cast %4 : tensor<?x?xf32> to tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %5 = torch_c.from_builtin_tensor %cast : tensor<128x128xf32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %5 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After CSEPass (cse) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %0 = torch_c.to_builtin_tensor %arg1 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %1 = torch_c.to_builtin_tensor %arg0 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %c0 = arith.constant 0 : index loc("ir_00_torch_input.mlir":3:10)
+  %dim = tensor.dim %1, %c0 : tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %c1 = arith.constant 1 : index loc("ir_00_torch_input.mlir":3:10)
+  %dim_0 = tensor.dim %0, %c1 : tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %2 = tensor.empty(%dim, %dim_0) : tensor<?x?xf32> loc("ir_00_torch_input.mlir":3:10)
+  %cst = arith.constant 0.000000e+00 : f32 loc("ir_00_torch_input.mlir":3:10)
+  %3 = linalg.fill ins(%cst : f32) outs(%2 : tensor<?x?xf32>) -> tensor<?x?xf32> loc("ir_00_torch_input.mlir":3:10)
+  %4 = linalg.matmul ins(%1, %0 : tensor<128x128xf32>, tensor<128x128xf32>) outs(%3 : tensor<?x?xf32>) -> tensor<?x?xf32> loc("ir_00_torch_input.mlir":3:10)
+  %cast = tensor.cast %4 : tensor<?x?xf32> to tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %5 = torch_c.from_builtin_tensor %cast : tensor<128x128xf32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %5 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After ConvertTorchToSCF (convert-torch-to-scf) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %0 = torch_c.to_builtin_tensor %arg1 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %1 = torch_c.to_builtin_tensor %arg0 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %c0 = arith.constant 0 : index loc("ir_00_torch_input.mlir":3:10)
+  %c128 = arith.constant 128 : index loc("ir_00_torch_input.mlir":3:10)
+  %c1 = arith.constant 1 : index loc("ir_00_torch_input.mlir":3:10)
+  %c128_0 = arith.constant 128 : index loc("ir_00_torch_input.mlir":3:10)
+  %2 = tensor.empty(%c128, %c128_0) : tensor<?x?xf32> loc("ir_00_torch_input.mlir":3:10)
+  %cst = arith.constant 0.000000e+00 : f32 loc("ir_00_torch_input.mlir":3:10)
+  %3 = linalg.fill ins(%cst : f32) outs(%2 : tensor<?x?xf32>) -> tensor<?x?xf32> loc("ir_00_torch_input.mlir":3:10)
+  %4 = linalg.matmul ins(%1, %0 : tensor<128x128xf32>, tensor<128x128xf32>) outs(%3 : tensor<?x?xf32>) -> tensor<?x?xf32> loc("ir_00_torch_input.mlir":3:10)
+  %cast = tensor.cast %4 : tensor<?x?xf32> to tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %5 = torch_c.from_builtin_tensor %cast : tensor<128x128xf32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %5 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After ConvertTorchToArith (convert-torch-to-arith) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %0 = torch_c.to_builtin_tensor %arg1 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %1 = torch_c.to_builtin_tensor %arg0 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %c0 = arith.constant 0 : index loc("ir_00_torch_input.mlir":3:10)
+  %c128 = arith.constant 128 : index loc("ir_00_torch_input.mlir":3:10)
+  %c1 = arith.constant 1 : index loc("ir_00_torch_input.mlir":3:10)
+  %c128_0 = arith.constant 128 : index loc("ir_00_torch_input.mlir":3:10)
+  %2 = tensor.empty(%c128, %c128_0) : tensor<?x?xf32> loc("ir_00_torch_input.mlir":3:10)
+  %cst = arith.constant 0.000000e+00 : f32 loc("ir_00_torch_input.mlir":3:10)
+  %3 = linalg.fill ins(%cst : f32) outs(%2 : tensor<?x?xf32>) -> tensor<?x?xf32> loc("ir_00_torch_input.mlir":3:10)
+  %4 = linalg.matmul ins(%1, %0 : tensor<128x128xf32>, tensor<128x128xf32>) outs(%3 : tensor<?x?xf32>) -> tensor<?x?xf32> loc("ir_00_torch_input.mlir":3:10)
+  %cast = tensor.cast %4 : tensor<?x?xf32> to tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %5 = torch_c.from_builtin_tensor %cast : tensor<128x128xf32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %5 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After ConvertTorchConversionToMLProgram (convert-torch-conversion-to-mlprogram) //----- //
+#loc2 = loc("ir_00_torch_input.mlir":2:19)
+#loc3 = loc("ir_00_torch_input.mlir":2:57)
+module @module {
+  func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+    %0 = torch_c.to_builtin_tensor %arg1 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc(#loc4)
+    %1 = torch_c.to_builtin_tensor %arg0 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc(#loc4)
+    %c0 = arith.constant 0 : index loc(#loc4)
+    %c128 = arith.constant 128 : index loc(#loc4)
+    %c1 = arith.constant 1 : index loc(#loc4)
+    %c128_0 = arith.constant 128 : index loc(#loc4)
+    %2 = tensor.empty(%c128, %c128_0) : tensor<?x?xf32> loc(#loc4)
+    %cst = arith.constant 0.000000e+00 : f32 loc(#loc4)
+    %3 = linalg.fill ins(%cst : f32) outs(%2 : tensor<?x?xf32>) -> tensor<?x?xf32> loc(#loc4)
+    %4 = linalg.matmul ins(%1, %0 : tensor<128x128xf32>, tensor<128x128xf32>) outs(%3 : tensor<?x?xf32>) -> tensor<?x?xf32> loc(#loc4)
+    %cast = tensor.cast %4 : tensor<?x?xf32> to tensor<128x128xf32> loc(#loc4)
+    %5 = torch_c.from_builtin_tensor %cast : tensor<128x128xf32> -> !torch.vtensor<[128,128],f32> loc(#loc4)
+    return %5 : !torch.vtensor<[128,128],f32> loc(#loc5)
+  } loc(#loc1)
+} loc(#loc)
+#loc = loc("ir_00_torch_input.mlir":1:1)
+#loc1 = loc("ir_00_torch_input.mlir":2:3)
+#loc4 = loc("ir_00_torch_input.mlir":3:10)
+#loc5 = loc("ir_00_torch_input.mlir":4:5)
+
+
+// -----// IR Dump After CanonicalizerPass (canonicalize) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %cst = arith.constant 0.000000e+00 : f32 loc("ir_00_torch_input.mlir":3:10)
+  %0 = torch_c.to_builtin_tensor %arg1 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %1 = torch_c.to_builtin_tensor %arg0 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %2 = tensor.empty() : tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %3 = linalg.fill ins(%cst : f32) outs(%2 : tensor<128x128xf32>) -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %4 = linalg.matmul ins(%1, %0 : tensor<128x128xf32>, tensor<128x128xf32>) outs(%3 : tensor<128x128xf32>) -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %5 = torch_c.from_builtin_tensor %4 : tensor<128x128xf32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %5 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After ResolveShapedTypeResultDimsPass (resolve-shaped-type-result-dims) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %cst = arith.constant 0.000000e+00 : f32 loc("ir_00_torch_input.mlir":3:10)
+  %0 = torch_c.to_builtin_tensor %arg1 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %1 = torch_c.to_builtin_tensor %arg0 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %2 = tensor.empty() : tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %3 = linalg.fill ins(%cst : f32) outs(%2 : tensor<128x128xf32>) -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %4 = linalg.matmul ins(%1, %0 : tensor<128x128xf32>, tensor<128x128xf32>) outs(%3 : tensor<128x128xf32>) -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %5 = torch_c.from_builtin_tensor %4 : tensor<128x128xf32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %5 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After CSEPass (cse) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %cst = arith.constant 0.000000e+00 : f32 loc("ir_00_torch_input.mlir":3:10)
+  %0 = torch_c.to_builtin_tensor %arg1 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %1 = torch_c.to_builtin_tensor %arg0 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %2 = tensor.empty() : tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %3 = linalg.fill ins(%cst : f32) outs(%2 : tensor<128x128xf32>) -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %4 = linalg.matmul ins(%1, %0 : tensor<128x128xf32>, tensor<128x128xf32>) outs(%3 : tensor<128x128xf32>) -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %5 = torch_c.from_builtin_tensor %4 : tensor<128x128xf32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %5 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After CanonicalizerPass (canonicalize) //----- //
+func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+  %cst = arith.constant 0.000000e+00 : f32 loc("ir_00_torch_input.mlir":3:10)
+  %0 = torch_c.to_builtin_tensor %arg1 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %1 = torch_c.to_builtin_tensor %arg0 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %2 = tensor.empty() : tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %3 = linalg.fill ins(%cst : f32) outs(%2 : tensor<128x128xf32>) -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %4 = linalg.matmul ins(%1, %0 : tensor<128x128xf32>, tensor<128x128xf32>) outs(%3 : tensor<128x128xf32>) -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %5 = torch_c.from_builtin_tensor %4 : tensor<128x128xf32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":3:10)
+  return %5 : !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After InlinerPass (inline) //----- //
+#loc2 = loc("ir_00_torch_input.mlir":2:19)
+#loc3 = loc("ir_00_torch_input.mlir":2:57)
+module @module {
+  func.func @main(%arg0: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19), %arg1: !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)) -> !torch.vtensor<[128,128],f32> attributes {torch.assume_strict_symbolic_shapes} {
+    %cst = arith.constant 0.000000e+00 : f32 loc(#loc4)
+    %0 = torch_c.to_builtin_tensor %arg1 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc(#loc4)
+    %1 = torch_c.to_builtin_tensor %arg0 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc(#loc4)
+    %2 = tensor.empty() : tensor<128x128xf32> loc(#loc4)
+    %3 = linalg.fill ins(%cst : f32) outs(%2 : tensor<128x128xf32>) -> tensor<128x128xf32> loc(#loc4)
+    %4 = linalg.matmul ins(%1, %0 : tensor<128x128xf32>, tensor<128x128xf32>) outs(%3 : tensor<128x128xf32>) -> tensor<128x128xf32> loc(#loc4)
+    %5 = torch_c.from_builtin_tensor %4 : tensor<128x128xf32> -> !torch.vtensor<[128,128],f32> loc(#loc4)
+    return %5 : !torch.vtensor<[128,128],f32> loc(#loc5)
+  } loc(#loc1)
+} loc(#loc)
+#loc = loc("ir_00_torch_input.mlir":1:1)
+#loc1 = loc("ir_00_torch_input.mlir":2:3)
+#loc4 = loc("ir_00_torch_input.mlir":3:10)
+#loc5 = loc("ir_00_torch_input.mlir":4:5)
+
+
+// -----// IR Dump After FuncConversionPass (torch-iree-func-conversion) //----- //
+module @module {
+  util.func public @main$async(%arg0: !hal.buffer_view, %arg1: !hal.buffer_view, %arg2: !hal.fence, %arg3: !hal.fence) -> !hal.buffer_view attributes {inlining_policy = #util.inline.never, iree.abi.model = "coarse-fences", iree.abi.stub} {
+    %0 = hal.tensor.import wait(%arg2) => %arg0 : !hal.buffer_view -> tensor<128x128xf32> loc(#loc2)
+    %1 = torch_c.from_builtin_tensor %0 : tensor<128x128xf32> -> !torch.vtensor<[128,128],f32> loc(#loc2)
+    %2 = hal.tensor.import wait(%arg2) => %arg1 : !hal.buffer_view -> tensor<128x128xf32> loc(#loc3)
+    %3 = torch_c.from_builtin_tensor %2 : tensor<128x128xf32> -> !torch.vtensor<[128,128],f32> loc(#loc3)
+    %cst = arith.constant 0.000000e+00 : f32 loc(#loc4)
+    %4 = torch_c.to_builtin_tensor %3 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc(#loc4)
+    %5 = torch_c.to_builtin_tensor %1 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc(#loc4)
+    %6 = tensor.empty() : tensor<128x128xf32> loc(#loc4)
+    %7 = linalg.fill ins(%cst : f32) outs(%6 : tensor<128x128xf32>) -> tensor<128x128xf32> loc(#loc4)
+    %8 = linalg.matmul ins(%5, %4 : tensor<128x128xf32>, tensor<128x128xf32>) outs(%7 : tensor<128x128xf32>) -> tensor<128x128xf32> loc(#loc4)
+    %9 = torch_c.from_builtin_tensor %8 : tensor<128x128xf32> -> !torch.vtensor<[128,128],f32> loc(#loc4)
+    %10 = hal.tensor.barrier join(%8 : tensor<128x128xf32>) => %arg3 : !hal.fence loc(#loc1)
+    %11 = hal.tensor.export %10 : tensor<128x128xf32> -> !hal.buffer_view loc(#loc1)
+    util.return %11 : !hal.buffer_view loc(#loc5)
+  } loc(#loc1)
+  util.func public @main(%arg0: !hal.buffer_view, %arg1: !hal.buffer_view) -> !hal.buffer_view attributes {iree.abi.stub} {
+    %c-1_i32 = arith.constant -1 : i32 loc(#loc1)
+    %c0 = arith.constant 0 : index loc(#loc1)
+    %device_0 = hal.devices.get %c0 : !hal.device loc(#loc1)
+    %0 = util.null : !hal.fence loc(#loc1)
+    %fence = hal.fence.create device(%device_0 : !hal.device) flags("None") : !hal.fence loc(#loc1)
+    %1 = util.call @main$async(%arg0, %arg1, %0, %fence) : (!hal.buffer_view, !hal.buffer_view, !hal.fence, !hal.fence) -> !hal.buffer_view loc(#loc1)
+    %status = hal.fence.await until([%fence]) timeout_millis(%c-1_i32) flags("None") : i32 loc(#loc1)
+    util.return %1 : !hal.buffer_view loc(#loc1)
+  } loc(#loc1)
+} loc(#loc)
+#loc = loc("ir_00_torch_input.mlir":1:1)
+#loc1 = loc("ir_00_torch_input.mlir":2:3)
+#loc2 = loc("ir_00_torch_input.mlir":2:19)
+#loc3 = loc("ir_00_torch_input.mlir":2:57)
+#loc4 = loc("ir_00_torch_input.mlir":3:10)
+#loc5 = loc("ir_00_torch_input.mlir":4:5)
+
+
+// -----// IR Dump After CanonicalizerPass (canonicalize) //----- //
+util.func public @main(%arg0: !hal.buffer_view, %arg1: !hal.buffer_view) -> !hal.buffer_view attributes {iree.abi.stub} {
+  %0 = util.null : !hal.fence loc("ir_00_torch_input.mlir":2:3)
+  %c-1_i32 = arith.constant -1 : i32 loc("ir_00_torch_input.mlir":2:3)
+  %c0 = arith.constant 0 : index loc("ir_00_torch_input.mlir":2:3)
+  %device_0 = hal.devices.get %c0 : !hal.device loc("ir_00_torch_input.mlir":2:3)
+  %fence = hal.fence.create device(%device_0 : !hal.device) flags("None") : !hal.fence loc("ir_00_torch_input.mlir":2:3)
+  %1 = util.call @main$async(%arg0, %arg1, %0, %fence) : (!hal.buffer_view, !hal.buffer_view, !hal.fence, !hal.fence) -> !hal.buffer_view loc("ir_00_torch_input.mlir":2:3)
+  %status = hal.fence.await until([%fence]) timeout_millis(%c-1_i32) flags("None") : i32 loc("ir_00_torch_input.mlir":2:3)
+  util.return %1 : !hal.buffer_view loc("ir_00_torch_input.mlir":2:3)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After CanonicalizerPass (canonicalize) //----- //
+util.func public @main$async(%arg0: !hal.buffer_view, %arg1: !hal.buffer_view, %arg2: !hal.fence, %arg3: !hal.fence) -> !hal.buffer_view attributes {inlining_policy = #util.inline.never, iree.abi.model = "coarse-fences", iree.abi.stub} {
+  %cst = arith.constant 0.000000e+00 : f32 loc("ir_00_torch_input.mlir":3:10)
+  %0 = hal.tensor.import wait(%arg2) => %arg0 : !hal.buffer_view -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":2:19)
+  %1 = torch_c.from_builtin_tensor %0 : tensor<128x128xf32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:19)
+  %2 = hal.tensor.import wait(%arg2) => %arg1 : !hal.buffer_view -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":2:57)
+  %3 = torch_c.from_builtin_tensor %2 : tensor<128x128xf32> -> !torch.vtensor<[128,128],f32> loc("ir_00_torch_input.mlir":2:57)
+  %4 = torch_c.to_builtin_tensor %3 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %5 = torch_c.to_builtin_tensor %1 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %6 = tensor.empty() : tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %7 = linalg.fill ins(%cst : f32) outs(%6 : tensor<128x128xf32>) -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %8 = linalg.matmul ins(%5, %4 : tensor<128x128xf32>, tensor<128x128xf32>) outs(%7 : tensor<128x128xf32>) -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %9 = hal.tensor.barrier join(%8 : tensor<128x128xf32>) => %arg3 : !hal.fence loc("ir_00_torch_input.mlir":2:3)
+  %10 = hal.tensor.export %9 : tensor<128x128xf32> -> !hal.buffer_view loc("ir_00_torch_input.mlir":2:3)
+  util.return %10 : !hal.buffer_view loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After SymbolDCEPass (symbol-dce) //----- //
+module @module {
+  util.func public @main$async(%arg0: !hal.buffer_view, %arg1: !hal.buffer_view, %arg2: !hal.fence, %arg3: !hal.fence) -> !hal.buffer_view attributes {inlining_policy = #util.inline.never, iree.abi.model = "coarse-fences", iree.abi.stub} {
+    %cst = arith.constant 0.000000e+00 : f32 loc(#loc2)
+    %0 = hal.tensor.import wait(%arg2) => %arg0 : !hal.buffer_view -> tensor<128x128xf32> loc(#loc3)
+    %1 = torch_c.from_builtin_tensor %0 : tensor<128x128xf32> -> !torch.vtensor<[128,128],f32> loc(#loc3)
+    %2 = hal.tensor.import wait(%arg2) => %arg1 : !hal.buffer_view -> tensor<128x128xf32> loc(#loc4)
+    %3 = torch_c.from_builtin_tensor %2 : tensor<128x128xf32> -> !torch.vtensor<[128,128],f32> loc(#loc4)
+    %4 = torch_c.to_builtin_tensor %3 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc(#loc2)
+    %5 = torch_c.to_builtin_tensor %1 : !torch.vtensor<[128,128],f32> -> tensor<128x128xf32> loc(#loc2)
+    %6 = tensor.empty() : tensor<128x128xf32> loc(#loc2)
+    %7 = linalg.fill ins(%cst : f32) outs(%6 : tensor<128x128xf32>) -> tensor<128x128xf32> loc(#loc2)
+    %8 = linalg.matmul ins(%5, %4 : tensor<128x128xf32>, tensor<128x128xf32>) outs(%7 : tensor<128x128xf32>) -> tensor<128x128xf32> loc(#loc2)
+    %9 = hal.tensor.barrier join(%8 : tensor<128x128xf32>) => %arg3 : !hal.fence loc(#loc1)
+    %10 = hal.tensor.export %9 : tensor<128x128xf32> -> !hal.buffer_view loc(#loc1)
+    util.return %10 : !hal.buffer_view loc(#loc5)
+  } loc(#loc1)
+  util.func public @main(%arg0: !hal.buffer_view, %arg1: !hal.buffer_view) -> !hal.buffer_view attributes {iree.abi.stub} {
+    %0 = util.null : !hal.fence loc(#loc1)
+    %c-1_i32 = arith.constant -1 : i32 loc(#loc1)
+    %c0 = arith.constant 0 : index loc(#loc1)
+    %device_0 = hal.devices.get %c0 : !hal.device loc(#loc1)
+    %fence = hal.fence.create device(%device_0 : !hal.device) flags("None") : !hal.fence loc(#loc1)
+    %1 = util.call @main$async(%arg0, %arg1, %0, %fence) : (!hal.buffer_view, !hal.buffer_view, !hal.fence, !hal.fence) -> !hal.buffer_view loc(#loc1)
+    %status = hal.fence.await until([%fence]) timeout_millis(%c-1_i32) flags("None") : i32 loc(#loc1)
+    util.return %1 : !hal.buffer_view loc(#loc1)
+  } loc(#loc1)
+} loc(#loc)
+#loc = loc("ir_00_torch_input.mlir":1:1)
+#loc1 = loc("ir_00_torch_input.mlir":2:3)
+#loc2 = loc("ir_00_torch_input.mlir":3:10)
+#loc3 = loc("ir_00_torch_input.mlir":2:19)
+#loc4 = loc("ir_00_torch_input.mlir":2:57)
+#loc5 = loc("ir_00_torch_input.mlir":4:5)
+
+
+// -----// IR Dump After FinalizingBackendTypeConversion (torch-finalizing-backend-type-conversion) //----- //
+util.func public @main(%arg0: !hal.buffer_view, %arg1: !hal.buffer_view) -> !hal.buffer_view attributes {iree.abi.stub} {
+  %0 = util.null : !hal.fence loc("ir_00_torch_input.mlir":2:3)
+  %c-1_i32 = arith.constant -1 : i32 loc("ir_00_torch_input.mlir":2:3)
+  %c0 = arith.constant 0 : index loc("ir_00_torch_input.mlir":2:3)
+  %device_0 = hal.devices.get %c0 : !hal.device loc("ir_00_torch_input.mlir":2:3)
+  %fence = hal.fence.create device(%device_0 : !hal.device) flags("None") : !hal.fence loc("ir_00_torch_input.mlir":2:3)
+  %1 = util.call @main$async(%arg0, %arg1, %0, %fence) : (!hal.buffer_view, !hal.buffer_view, !hal.fence, !hal.fence) -> !hal.buffer_view loc("ir_00_torch_input.mlir":2:3)
+  %status = hal.fence.await until([%fence]) timeout_millis(%c-1_i32) flags("None") : i32 loc("ir_00_torch_input.mlir":2:3)
+  util.return %1 : !hal.buffer_view loc("ir_00_torch_input.mlir":2:3)
+} loc("ir_00_torch_input.mlir":2:3)
+
+// -----// IR Dump After FinalizingBackendTypeConversion (torch-finalizing-backend-type-conversion) //----- //
+util.func public @main$async(%arg0: !hal.buffer_view, %arg1: !hal.buffer_view, %arg2: !hal.fence, %arg3: !hal.fence) -> !hal.buffer_view attributes {inlining_policy = #util.inline.never, iree.abi.model = "coarse-fences", iree.abi.stub} {
+  %cst = arith.constant 0.000000e+00 : f32 loc("ir_00_torch_input.mlir":3:10)
+  %0 = hal.tensor.import wait(%arg2) => %arg0 : !hal.buffer_view -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":2:19)
+  %1 = hal.tensor.import wait(%arg2) => %arg1 : !hal.buffer_view -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":2:57)
+  %2 = tensor.empty() : tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %3 = linalg.fill ins(%cst : f32) outs(%2 : tensor<128x128xf32>) -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %4 = linalg.matmul ins(%0, %1 : tensor<128x128xf32>, tensor<128x128xf32>) outs(%3 : tensor<128x128xf32>) -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+  %5 = hal.tensor.barrier join(%4 : tensor<128x128xf32>) => %arg3 : !hal.fence loc("ir_00_torch_input.mlir":2:3)
+  %6 = hal.tensor.export %5 : tensor<128x128xf32> -> !hal.buffer_view loc("ir_00_torch_input.mlir":2:3)
+  util.return %6 : !hal.buffer_view loc("ir_00_torch_input.mlir":4:5)
+} loc("ir_00_torch_input.mlir":2:3)
+

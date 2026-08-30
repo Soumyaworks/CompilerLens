@@ -1,0 +1,23 @@
+module @module {
+  util.func public @main$async(%arg0: !hal.buffer_view, %arg1: !hal.buffer_view, %arg2: !hal.fence, %arg3: !hal.fence) -> !hal.buffer_view attributes {inlining_policy = #util.inline.never, iree.abi.model = "coarse-fences", iree.abi.stub} {
+    %cst = arith.constant 0.000000e+00 : f32 loc("ir_00_torch_input.mlir":3:10)
+    %0 = hal.tensor.import wait(%arg2) => %arg0 : !hal.buffer_view -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":2:19)
+    %1 = hal.tensor.import wait(%arg2) => %arg1 : !hal.buffer_view -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":2:57)
+    %2 = tensor.empty() : tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+    %3 = linalg.fill ins(%cst : f32) outs(%2 : tensor<128x128xf32>) -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+    %4 = linalg.matmul ins(%0, %1 : tensor<128x128xf32>, tensor<128x128xf32>) outs(%3 : tensor<128x128xf32>) -> tensor<128x128xf32> loc("ir_00_torch_input.mlir":3:10)
+    %5 = hal.tensor.barrier join(%4 : tensor<128x128xf32>) => %arg3 : !hal.fence loc("ir_00_torch_input.mlir":2:3)
+    %6 = hal.tensor.export %5 : tensor<128x128xf32> -> !hal.buffer_view loc("ir_00_torch_input.mlir":2:3)
+    util.return %6 : !hal.buffer_view loc("ir_00_torch_input.mlir":4:5)
+  } loc("ir_00_torch_input.mlir":2:3)
+  util.func public @main(%arg0: !hal.buffer_view, %arg1: !hal.buffer_view) -> !hal.buffer_view attributes {iree.abi.stub} {
+    %0 = util.null : !hal.fence loc("ir_00_torch_input.mlir":2:3)
+    %c-1_i32 = arith.constant -1 : i32 loc("ir_00_torch_input.mlir":2:3)
+    %c0 = arith.constant 0 : index loc("ir_00_torch_input.mlir":2:3)
+    %device_0 = hal.devices.get %c0 : !hal.device loc("ir_00_torch_input.mlir":2:3)
+    %fence = hal.fence.create device(%device_0 : !hal.device) flags("None") : !hal.fence loc("ir_00_torch_input.mlir":2:3)
+    %1 = util.call @main$async(%arg0, %arg1, %0, %fence) : (!hal.buffer_view, !hal.buffer_view, !hal.fence, !hal.fence) -> !hal.buffer_view loc("ir_00_torch_input.mlir":2:3)
+    %status = hal.fence.await until([%fence]) timeout_millis(%c-1_i32) flags("None") : i32 loc("ir_00_torch_input.mlir":2:3)
+    util.return %1 : !hal.buffer_view loc("ir_00_torch_input.mlir":2:3)
+  } loc("ir_00_torch_input.mlir":2:3)
+} loc("ir_00_torch_input.mlir":1:1)

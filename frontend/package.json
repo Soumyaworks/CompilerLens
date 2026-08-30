@@ -1,0 +1,30 @@
+{
+  "name": "compilerlens-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "CompilerLens frontend -- interactive AI compiler pipeline explorer",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "artifact": "cd .. && python3 -m ingest.build --all --out-dir frontend/public/artifacts",
+    "verify": "node scripts/verify.mjs"
+  },
+  "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
+    "golden-layout": "^2.6.0",
+    "monaco-editor": "^0.56.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "tom-select": "^2.6.2"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "@vitejs/plugin-react": "^6.1.1",
+    "playwright": "^1.62.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2"
+  }
+}
