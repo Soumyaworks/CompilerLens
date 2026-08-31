@@ -298,6 +298,27 @@ if (bertDiagnosis) {
   );
 }
 
+// --- kernel cost -------------------------------------------------------------------
+// Data-level checks on the modelled kernel cost breakdown.
+
+const bertData = await page.evaluate(async () => {
+  const response = await fetch('/artifacts/prajjwal1_bert-tiny.json');
+  if (!response.ok) return null;
+  const artifact = await response.json();
+  return {kernels: artifact.kernels ?? null};
+});
+
+if (bertData?.kernels) {
+  const {kernels} = bertData;
+  check('kernel cost model is present', (kernels.kernels?.length ?? 0) > 0,
+    `${kernels.totals?.kernel_count} kernels`);
+  check('kernel cost declares itself modelled, not measured', kernels.basis === 'modelled');
+  check('every kernel states what bounds it',
+    kernels.kernels.every((k) => ['compute', 'memory', 'unknown'].includes(k.bound_by)));
+  check('machine peak is derived, with its assumptions stated',
+    Boolean(kernels.machine?.peak_gflops && kernels.machine?.note));
+}
+
 await page.screenshot({path: `${SHOT}/05-linear-relu.png`});
 
 // --- the Sandbox ------------------------------------------------------------------------------

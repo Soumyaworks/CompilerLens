@@ -18,7 +18,9 @@ from dataclasses import dataclass, field
 from typing import Any
 
 # 0.2 added Artifact.diagnosis (the Optimization Doctor's findings, baked in at build time).
-ARTIFACT_VERSION = "0.2"
+# 0.3 added Artifact.lineage (Level-1 operation lineage, for hover-linked highlighting) and
+#     Artifact.kernels (the modelled per-kernel cost breakdown).
+ARTIFACT_VERSION = "0.3"
 
 # Coarse groupings for the pipeline sidebar. A stage's phase decides where it is drawn and
 # what colour it gets, so the user can see at a glance which level of abstraction they are
@@ -170,6 +172,13 @@ class Artifact:
     # build time so the static site can show a diagnosis without a server running -- the
     # Sandbox's live /diagnose endpoint returns the identical shape.
     diagnosis: dict[str, Any] = field(default_factory=dict)
+    # Level-1 operation lineage (ingest/lineage.py): anchor-stage line number -> every operation
+    # derived from it, per stage. This is what powers hover-linked highlighting.
+    lineage: dict[str, Any] = field(default_factory=dict)
+    # Modelled per-kernel cost (backend/measure/kernels.py mirrored into ingest at build time).
+    # "modelled" throughout: FLOPs come from the shapes in IREE's kernel names, never from a
+    # per-kernel benchmark, because per-kernel timing could not be obtained reliably.
+    kernels: dict[str, Any] = field(default_factory=dict)
     artifact_version: str = ARTIFACT_VERSION
 
     def to_json(self, indent: int | None = None) -> str:

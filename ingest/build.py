@@ -19,6 +19,7 @@ import sys
 from pathlib import Path
 
 from . import llvm_parser, mlir_parser, pass_log
+from .lineage import build_lineage
 from .schema import Artifact, Evidence, Operation, Stage, StageDiff
 from .workloads import WORKLOADS
 from .workloads.base import PassTrackSpec, WorkloadSpec
@@ -445,14 +446,17 @@ def build_artifact(workload: WorkloadSpec, root: Path | None = None) -> Artifact
     if not stages:
         raise SystemExit(f"no stages found under {dump_root}")
 
-    # Evidence and diffs both read the full op index, so trimming happens only after they
-    # have been derived.
+    # Evidence, diffs and lineage all read the full op index, so trimming happens only after
+    # they have been derived. Lineage in particular *must* precede it: trimming clears the op
+    # lists for the LLVM, assembly and per-pass stages, which are exactly the stages a hover
+    # most wants to highlight.
     evidence, target = _build_evidence(stages)
     diffs = _build_diffs(stages)
+    lineage = build_lineage(stages)
+    located = sum(1 for s in stages for op in s.ops if op.source_loc)
     trim_note = _trim_op_index(stages)
 
     source_stage = _find_stage(stages, "pytorch-source")
-    located = sum(1 for s in stages for op in s.ops if op.source_loc)
 
     notes = [
         "Operation counts come from a heuristic textual parser, not a real MLIR parser. "
@@ -481,7 +485,19 @@ def build_artifact(workload: WorkloadSpec, root: Path | None = None) -> Artifact
         },
         target=target,
         notes=notes,
+        # Built above, before _trim_op_index cleared the op lists it depends on.
+        lineage=lineage,
     )
+
+    # Modelled per-kernel cost, from the shapes IREE writes into its own kernel names. Guarded
+    # the same way as the diagnosis: an addition to the artifact, never allowed to sink it.
+    try:
+        artifact.kernels = _build_kernel_costs(stages, target)
+    except Exception as exc:  # noqa: BLE001
+        artifact.notes.append(
+            f"Per-kernel cost modelling failed ({type(exc).__name__}: {exc}). The IR, evidence "
+            f"and stage list above are unaffected."
+        )
 
     # Run the Doctor here so the static site carries a diagnosis without needing a server.
     # analyzer/ is stdlib-only for exactly this reason. A rule crashing must not take the
@@ -497,6 +513,56 @@ def build_artifact(workload: WorkloadSpec, root: Path | None = None) -> Artifact
         )
 
     return artifact
+
+
+def _build_kernel_costs(stages: list[Stage], target: dict) -> dict:
+    """Model each dispatch's arithmetic and memory traffic.
+
+    Reads the codegen stage that still names its kernels. `backend/measure/kernels.py` holds the
+    model; ingest only supplies the text and the machine parameters, so there is one
+    implementation rather than a build-time copy that can drift.
+    """
+    import sys
+    from pathlib import Path as _Path
+
+    repo_root = _Path(__file__).resolve().parents[1]
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+
+    from backend.measure.kernels import analyse_kernels, machine_peak
+
+    stage = _find_stage(stages, "executable-configurations") or _find_stage(stages, "executable-sources")
+    if stage is None:
+        return {}
+
+    native_vector_bytes = target.get("native_vector_size") or 0
+    peak = None
+    if native_vector_bytes:
+        # Host parameters are read from the machine rather than assumed, so the roofline is
+        # honest on whatever box this runs on.
+        import os
+
+        cores = os.cpu_count() or 1
+        mhz = _host_mhz() or 0.0
+        if mhz:
+            peak = machine_peak(cores=cores, mhz=mhz, native_vector_bytes=native_vector_bytes)
+
+    return analyse_kernels(stage.text or "", peak)
+
+
+def _host_mhz() -> float | None:
+    """Nominal clock in MHz from /proc/cpuinfo, or None if it cannot be read.
+
+    Returning None rather than a guess: a fabricated clock would produce a fabricated peak, and
+    every percent-of-peak figure derived from it would be wrong in a way nobody could see.
+    """
+    try:
+        for line in open("/proc/cpuinfo"):
+            if line.lower().startswith("cpu mhz"):
+                return float(line.split(":")[1].strip())
+    except (OSError, ValueError, IndexError):
+        return None
+    return None
 
 
 def build_index(workloads: dict[str, WorkloadSpec], artifacts: dict[str, Artifact]) -> dict:

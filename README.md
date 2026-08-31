@@ -29,12 +29,14 @@ staged implementation plan.
 - Compiler evidence (11 items for matmul, 12 for linear_relu — including a fused-epilogue
   item unique to linear_relu; 23 and 25 for the two downloaded models), each linked back to
   the stage it was read from; clicking a link opens a new stage pane on that stage
-- `npm run verify` — 44 headless-browser assertions across the landing page, workspace,
-  Optimization Doctor, and Sandbox; zero console errors
+- `npm run verify` — 48 headless-browser assertions across the landing page, workspace,
+  Optimization Doctor, kernel cost, and Sandbox; zero console errors
 
 Lineage, the Optimization Doctor, and the AI explanation layer are Stages 2-4 in `PLAN.md`.
 Both original pipeline gaps (missing `loc()` metadata, uncaptured codegen) are closed —
-see "Known gaps" in `PLAN.md` for how.
+see "Known gaps" in `PLAN.md` for how. Operation lineage (`ingest/lineage.py`) is computed into
+every artifact but has no UI yet — see "Operation lineage" below and `ARCHITECTURE-NOTES.md`
+§10.5-H.
 
 ## Quick start
 
@@ -489,6 +491,68 @@ produce dumps the rest of the pipeline cannot interpret.
 The API is additive: the landing page and workspace still read static artifacts and work with
 no server running. Only the Sandbox needs it, and it says so when the server is down.
 
+### 4. Operation lineage — built, not yet exposed in the UI
+
+`ingest/lineage.py` groups every operation across all 41 stages by the `loc()` metadata the
+compiler itself attaches to it (`--mlir-print-debuginfo`), producing a map from one PyTorch
+source line to every operation it became, in every stage:
+
+```
+torch-input:110   %39 = torch.aten.scaled_dot_product_attention %26, %32, ...
+       ↓
+       became 2,166 operations across 25 stages
+       executable-targets   1,928 lines, starting at
+                            @main$async_dispatch_9_attention_2x32x64x64x32
+```
+
+This is DESIGN-DOC section 4.2's operation lineage, at section 7's **Level 1** and only Level 1:
+grouped by the `loc()` metadata the compiler itself attached, with no structural matching and no
+inference. An operation the compiler did not locate is absent from the index rather than guessed
+at — a highlight that pointed at the wrong line would be worse than no highlight.
+
+On `prajjwal1/bert-tiny`: **257 source lines** anchored, **14,441 operations** indexed, 31 of
+those lines reaching a codegen or assembly stage. Every artifact carries this in its `lineage`
+field today.
+
+**There is no UI for it yet.** An interactive hover (Compiler-Explorer-style: hover a source
+line, every open pane highlights what it became) was built and then reverted — it caused
+flickering that a hover-triggered fix couldn't explain, because it reproduced with the mouse
+completely still. See `ARCHITECTURE-NOTES.md` §10.5-H for the failed fix attempts and what a
+retry should do differently. The data is sound; only the frontend wiring is missing.
+
+### 5. What each kernel costs
+
+The **Kernel cost** pane ranks every dispatch by the arithmetic it performs:
+
+```
+  kernel                                    kind      MFLOP  share    AI  bound by
+  dispatch_13_batch_matmul_1x32x512x128     matmul     4.19   40.0%  12.2  compute
+  dispatch_14_batch_matmul_1x32x128x512     matmul     4.19   40.0%  12.2  compute
+  dispatch_10_batch_matmul_1x32x128x128     matmul     1.05   10.0%  10.7  compute
+  dispatch_9_attention_2x32x64x64x32        attention     —       —     —  unknown
+  dispatch_1_reduction_32x128               reduction     —       —     —  memory
+
+  10 kernels · 10.49 MFLOP · 68.1 MB moved · AI 0.15 · 5 memory-bound
+  machine peak ≈ 818 GFLOP/s (8 cores × 3196 MHz × 16 lanes × 2)
+```
+
+The two feed-forward matmuls are **80% of all arithmetic**. Overall arithmetic intensity is
+**0.15 FLOPs per byte**, which says this model is bandwidth-limited rather than compute-limited —
+and against measured whole-model time it reaches about **2.6% of theoretical peak**, exactly what
+you would expect when there is too little arithmetic to amortise per-dispatch overhead.
+
+**These numbers are modelled, and labelled `modelled` everywhere they appear.** FLOPs and bytes
+come from the shapes IREE writes into its own kernel names; the machine peak is derived from
+`/proc/cpuinfo` and the target's `native_vector_size`.
+
+I tried to measure per-kernel time first, with `iree-benchmark-executable`, and it does not work
+honestly: every `hal.executable.export` is `ordinal(0)` within its own executable so the linked
+`.so`'s global ordinals are a guess, and workgroup counts are computed at runtime rather than
+declared. Probing all 12 ordinals with plausible bindings returned **0.0000 ns for 11 of them** —
+the kernels returned without doing their work. A tool that silently reports zero for a matmul
+would be worse than no tool, so per-kernel wall-clock is absent and the measured figure remains
+whole-model time.
+
 ### The overclaim this fixed
 
 `ingest/build.py` used to stamp `status: "success"` on every piece of evidence, including
@@ -510,11 +574,12 @@ report what they see. `confidence` qualifies each finding, and no rule currently
 `measured` one — wiring `backend/measure` into `analyzer` per-finding is the next step, and
 until then `measured_cost_ms` is honestly `null` rather than estimated.
 
-**Per-kernel cost attribution is not built.** `iree-benchmark-executable` can time individual
-dispatches from the dumped `.so` (verified: bert-tiny exports 10 named dispatch symbols), which
-would let the tool say "this PyTorch line is 38% of your inference". Deriving correct
-`--binding` shapes per kernel is fiddly, so it was left out rather than shipped producing
-numbers we could not stand behind.
+**Per-kernel *timing* is not built, and cannot be done honestly with the current tooling.**
+The cost *model* is built (see "What each kernel costs"), but wall-clock per kernel is not:
+`iree-benchmark-executable` needs workgroup counts IREE computes at runtime and never states,
+and probing with guessed values returned 0.0000 ns for 11 of 12 kernels rather than erroring.
+So the tool reports modelled arithmetic per kernel and measured time for the whole model, and
+says which is which.
 
 **The Sandbox needs its API server; nothing else does.** The landing page and workspace read
 static artifacts and work offline. The Sandbox says so plainly when the server is down rather

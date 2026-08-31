@@ -136,6 +136,44 @@ export interface Diagnosis {
   notes: string[];
 }
 
+/**
+ * Modelled per-kernel cost (backend/measure/kernels.py).
+ *
+ * `basis` is always "modelled": FLOPs come from the shapes in IREE's kernel names, never from
+ * timing each kernel. The field exists so the UI cannot forget to say so.
+ */
+export interface KernelCosts {
+  basis: 'modelled';
+  kernels: {
+    name: string;
+    short_name: string;
+    kind: string;
+    dims: number[];
+    flops: number | null;
+    bytes_moved: number;
+    arithmetic_intensity: number | null;
+    bound_by: 'compute' | 'memory' | 'unknown';
+    note: string;
+    flops_share: number | null;
+    bytes_share: number | null;
+  }[];
+  totals: {
+    kernel_count: number;
+    total_flops: number;
+    total_bytes: number;
+    memory_bound_kernels: number;
+    arithmetic_intensity: number | null;
+  };
+  machine: {
+    cores: number;
+    mhz: number;
+    vector_lanes: number;
+    peak_gflops: number;
+    note: string;
+  } | null;
+  notes: string[];
+}
+
 export interface Artifact {
   compilation_id: string;
   stages: Stage[];
@@ -147,6 +185,8 @@ export interface Artifact {
   notes: string[];
   /** Baked in by ingest at build time, so the static site needs no server to show it. */
   diagnosis?: Diagnosis;
+  /** Modelled arithmetic and memory cost per dispatch. */
+  kernels?: KernelCosts;
   artifact_version: string;
 }
 

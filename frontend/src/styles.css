@@ -155,6 +155,10 @@ body {
 
 .workspace {
   display: grid;
+  /* topbar · pipeline rail · golden-layout. The layout row must stay 1fr and the rest auto:
+     give the layout anything else and golden-layout sizes its panes to a height the viewport
+     does not have, which collapses every editor to a few pixels. Adding a fourth child without
+     adding a track here does exactly that. */
   grid-template-rows: auto auto 1fr;
   height: 100%;
 }
@@ -1285,3 +1289,32 @@ body {
 .doctor-rules { margin-top: 0.8rem; font-size: 0.72rem; color: var(--text-muted); }
 .doctor-rules summary { cursor: pointer; color: var(--text-secondary); }
 .doctor-rules ul { margin: 0.4rem 0 0; padding-left: 1rem; line-height: 1.5; }
+
+/* ── Kernel cost ──────────────────────────────────────────────────────────────────── */
+.kernel-totals {
+  display: flex; gap: 0.9rem; flex-wrap: wrap; padding-bottom: 0.5rem;
+  font-size: 0.74rem; color: var(--text-secondary);
+}
+.kernel-machine { font-size: 0.7rem; color: var(--text-muted); margin: 0 0 0.6rem; }
+.kernel-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+.kernel-table th {
+  text-align: left; padding: 0.25rem 0.4rem; color: var(--text-muted);
+  font-weight: 600; font-size: 0.64rem; text-transform: uppercase;
+  letter-spacing: 0.05em; border-bottom: 1px solid var(--border);
+}
+.kernel-table th.num, .kernel-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.kernel-table td { padding: 0.25rem 0.4rem; border-bottom: 1px solid var(--gridline); }
+.kernel-name { position: relative; min-width: 190px; }
+/* The bar sits behind the label rather than beside it, so the table stays narrow. */
+.kernel-bar {
+  position: absolute; left: 0; top: 2px; bottom: 2px;
+  background: rgba(57, 135, 229, 0.16); border-radius: 2px;
+}
+.kernel-label { position: relative; font-family: 'SF Mono', Menlo, monospace; font-size: 0.68rem; }
+.bound-chip {
+  padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.62rem; text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.bound-chip-compute { background: var(--phase-global); color: #fff; }
+.bound-chip-memory { background: var(--phase-input); color: #fff; }
+.bound-chip-unknown { background: var(--surface-3); color: var(--text-muted); }
