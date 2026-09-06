@@ -17,6 +17,8 @@ interface StageViewerBodyProps {
   showLocations: boolean;
   statsOpen: boolean;
   onCloseStats: () => void;
+  revealLine?: number;
+  highlightLines?: number[];
 }
 
 export function StageViewerBody({
@@ -27,10 +29,18 @@ export function StageViewerBody({
   showLocations,
   statsOpen,
   onCloseStats,
+  revealLine,
+  highlightLines,
 }: StageViewerBodyProps) {
   return (
     <div className="pane-body stage-pane-body">
-      <IRViewer stage={stage} hidden={showDiff} showLocations={showLocations} />
+      <IRViewer
+        stage={stage}
+        hidden={showDiff}
+        showLocations={showLocations}
+        revealLine={revealLine}
+        highlightLines={highlightLines}
+      />
       {diffPair && (
         <SemanticDiff
           previous={diffPair.previous}

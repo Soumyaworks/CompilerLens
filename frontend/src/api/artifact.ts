@@ -174,6 +174,22 @@ export interface KernelCosts {
   notes: string[];
 }
 
+export interface LineageEntry {
+  source_text: string;
+  total_ops: number;
+  stage_count: number;
+  stages: Record<string, number[]>;
+  op_names: Record<string, number>;
+}
+
+export interface Lineage {
+  anchor_stage: string;
+  level: number;
+  lines: Record<string, LineageEntry>;
+  summary: {source_lines_covered: number; total_anchored_ops: number};
+  notes: string[];
+}
+
 export interface Artifact {
   compilation_id: string;
   stages: Stage[];
@@ -187,6 +203,8 @@ export interface Artifact {
   diagnosis?: Diagnosis;
   /** Modelled arithmetic and memory cost per dispatch. */
   kernels?: KernelCosts;
+  /** Level-1 operation lineage: source line -> operations across all stages. */
+  lineage?: Lineage;
   artifact_version: string;
 }
 

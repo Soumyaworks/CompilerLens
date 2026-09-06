@@ -1,7 +1,7 @@
 import Editor from '@monaco-editor/react';
-import {useMemo} from 'react';
+import {useMemo, useRef} from 'react';
 
-import type {Stage} from '../api/artifact';
+import type {Lineage, Stage} from '../api/artifact';
 import {stripLocations} from '../api/locations';
 import {monacoLanguage, THEME_NAME} from '../monaco/setup';
 
@@ -27,14 +27,103 @@ interface IRViewerProps {
   hidden?: boolean;
   /** Whether to keep loc(...) metadata in the displayed text. */
   showLocations: boolean;
+  /** Lineage data for highlighting operations in source code. */
+  lineage?: Lineage;
+  /** Callback when a lineage-highlighted line is clicked. */
+  onLineageClick?: (sourceLine: string) => void;
+  /** Highlight these lines with a different color (for lineage jumps). */
+  highlightLines?: number[];
 }
 
-export function IRViewer({stage, revealLine, hidden = false, showLocations}: IRViewerProps) {
+export function IRViewer({
+  stage,
+  revealLine,
+  hidden = false,
+  showLocations,
+  lineage,
+  onLineageClick,
+  highlightLines,
+}: IRViewerProps) {
+  const editorRef = useRef<any>(null);
   const text = useMemo(
     () =>
       stage.language === 'mlir' && !showLocations ? stripLocations(stage.text) : stage.text,
     [showLocations, stage.language, stage.text],
   );
+
+  // Add decorations for lineage-highlighted lines (only for source code with operations)
+  const decorations = useMemo(() => {
+    const decs: Array<{
+      range: {startLineNumber: number; startColumn: number; endLineNumber: number; endColumn: number};
+      options: {
+        isWholeLine: boolean;
+        className: string;
+        glyphMarginClassName: string;
+        glyphMarginHoverMessage: {value: string};
+        mouseDownMessage: {value: string};
+      };
+    }> = [];
+
+    // Add lineage highlighting - highlight ALL lines in the lineage entry
+    if (lineage && onLineageClick) {
+      Object.entries(lineage.lines).forEach(([lineNum, entry]) => {
+        const sourceLineNum = parseInt(lineNum, 10);
+
+        // Skip function signatures and structural lines ONLY in the source stage (torch-input)
+        // In other stages, highlight all lines
+        if (stage.name === 'torch-input' && sourceLineNum < 3) return;
+
+        // Get all lines for this lineage entry from this stage
+        const stageLines = entry.stages[stage.id];
+        if (stageLines && stageLines.length > 0) {
+          // Highlight all lines for this operation
+          stageLines.forEach((line, idx) => {
+            decs.push({
+              range: {
+                startLineNumber: line,
+                startColumn: 1,
+                endLineNumber: line,
+                endColumn: 1,
+              },
+              options: {
+                isWholeLine: true,
+                className: 'lineage-highlight-line',
+                glyphMarginClassName: idx === 0 ? 'lineage-glyph' : '',
+                glyphMarginHoverMessage: {
+                  value: idx === 0 ? `${entry.total_ops.toLocaleString()} operations across ${entry.stage_count} stages` : '',
+                },
+                mouseDownMessage: {value: idx === 0 ? 'Click to trace lineage' : ''},
+              },
+            });
+          });
+        }
+      });
+    }
+
+    // Add highlight for jumped-to lines (all lines for this operation)
+    if (highlightLines && highlightLines.length > 0) {
+      // Add decoration for all lines of this operation
+      highlightLines.forEach((lineNum, idx) => {
+        decs.push({
+          range: {
+            startLineNumber: lineNum,
+            startColumn: 1,
+            endLineNumber: lineNum,
+            endColumn: 1,
+          },
+          options: {
+            isWholeLine: true,
+            className: 'lineage-jump-highlight',
+            glyphMarginClassName: idx === 0 ? 'lineage-jump-glyph' : '',
+            glyphMarginHoverMessage: {value: idx === 0 ? 'Jumped from lineage' : ''},
+            mouseDownMessage: {value: ''},
+          },
+        });
+      });
+    }
+
+    return decs;
+  }, [lineage, onLineageClick, stage.id, stage.name, stage.text, highlightLines]);
 
   return (
     <div className="viewer" style={hidden ? {display: 'none'} : undefined}>
@@ -60,11 +149,29 @@ export function IRViewer({stage, revealLine, hidden = false, showLocations}: IRV
           cursorBlinking: 'smooth',
           padding: {top: 10, bottom: 10},
           bracketPairColorization: {enabled: false},
+          glyphMargin: true,
         }}
         onMount={editor => {
+          editorRef.current = editor;
           if (revealLine) {
             editor.revealLineInCenter(revealLine);
             editor.setPosition({lineNumber: revealLine, column: 1});
+          }
+          // Set decorations for lineage highlights
+          if (decorations.length > 0) {
+            editor.deltaDecorations([], decorations);
+          }
+          // Add click handler for lineage lines
+          if (onLineageClick && lineage) {
+            editor.onMouseDown(e => {
+              if (e.target.type === 2) {
+                // 2 = glyph margin
+                const lineNumber = e.target.position?.lineNumber;
+                if (lineNumber) {
+                  onLineageClick(String(lineNumber));
+                }
+              }
+            });
           }
         }}
       />

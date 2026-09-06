@@ -1,0 +1,218 @@
+/* Lineage highlighting - yellow for all */
+.lineage-highlight-line {
+  background-color: rgba(255, 193, 7, 0.4);
+  border-left: 4px solid #ffc107;
+}
+
+.lineage-glyph {
+  background-color: #ffc107;
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0.9;
+  transition: opacity 0.2s ease;
+}
+
+.lineage-glyph:hover {
+  opacity: 1;
+}
+
+/* Highlight for jumped-to lines - also yellow */
+.lineage-jump-highlight {
+  background-color: rgba(255, 193, 7, 0.4);
+  border-left: 4px solid #ffc107;
+}
+
+.lineage-jump-glyph {
+  background-color: #ffc107;
+  border-radius: 50%;
+  opacity: 1;
+}
+
+/* Lineage timeline pane styles */
+.lineage-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
+.lineage-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.lineage-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.lineage-op-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+}
+
+.lineage-source-loc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+}
+
+.lineage-stats {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.lineage-stat {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.lineage-stat-label {
+  color: var(--text-muted);
+}
+
+.lineage-stat-value {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.lineage-op-names {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lineage-op-names-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.lineage-op-names-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.lineage-op-name-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  font-size: 0.8rem;
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  color: var(--text-primary);
+}
+
+.lineage-op-count {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.lineage-stages {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.lineage-stage-entry {
+  display: flex;
+}
+
+.lineage-stage-button {
+  flex: 1;
+  padding: 0.75rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lineage-stage-button:hover {
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-highlight);
+}
+
+.lineage-stage-button:active {
+  background-color: var(--bg-tertiary);
+}
+
+.lineage-stage-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.lineage-stage-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 0.95rem;
+}
+
+.lineage-stage-phase {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  background-color: var(--bg-primary);
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.lineage-stage-phase::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--phase-color);
+}
+
+.lineage-stage-lines {
+  display: none;
+}
+
+.lineage-stage-snippet {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.lineage-snippet-label {
+  color: var(--text-muted);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.lineage-snippet-text {
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}

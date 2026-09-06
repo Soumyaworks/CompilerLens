@@ -9,6 +9,8 @@ import {registerReactPane} from './golden-layout/react-bridge';
 import {DoctorPane} from './panes/DoctorPane';
 import {EvidencePane} from './panes/EvidencePane';
 import {KernelCostPane} from './panes/KernelCostPane';
+import {LineagePane} from './panes/LineagePane';
+import type {LineagePaneState} from './panes/LineagePane';
 import {NotesPane} from './panes/NotesPane';
 import type {PhaseFlowPaneState} from './panes/PhaseFlowPane';
 import {PhaseFlowPane} from './panes/PhaseFlowPane';
@@ -143,9 +145,13 @@ export function Workspace({workloadId, onBack}: WorkspaceProps) {
 
   // Not memoized: cheap, and every consumer (the rail, EvidencePane's registration below)
   // only ever calls it from an event handler or effect, never diffs it for stability.
-  function navigateToStage(stageId: string) {
+  function navigateToStage(stageId: string, revealLine?: number, highlightLines?: number[]) {
     const stage = artifact?.stages.find(s => s.id === stageId);
-    layoutRef.current?.addComponent('stage', {stageId} satisfies StagePaneState, stage?.title);
+    layoutRef.current?.addComponent(
+      'stage',
+      {stageId, revealLine, highlightLines} satisfies StagePaneState,
+      stage?.title,
+    );
   }
 
   function openPhaseFlow(phase: Phase) {
@@ -173,7 +179,19 @@ export function Workspace({workloadId, onBack}: WorkspaceProps) {
 
     registerReactPane<undefined>(layout, 'source', (_state, _container: ComponentContainer) => {
       const source = artifact.stages.find(s => s.name === 'pytorch-source') ?? artifact.stages[0];
-      return <SourcePane stage={source} />;
+      return (
+        <SourcePane
+          stage={source}
+          artifact={artifact}
+          onOpenLineage={sourceLine => {
+            layoutRef.current?.addComponent(
+              'lineage',
+              {sourceLine} satisfies LineagePaneState,
+              `Lineage (line ${sourceLine})`,
+            );
+          }}
+        />
+      );
     });
     registerReactPane<StagePaneState>(layout, 'stage', (state, container) => (
       <StagePane
@@ -196,6 +214,15 @@ export function Workspace({workloadId, onBack}: WorkspaceProps) {
     ));
     registerReactPane<undefined>(layout, 'doctor', () => (
       <DoctorPane artifact={artifact} onNavigateToStage={navigateToStage} />
+    ));
+    registerReactPane<LineagePaneState>(layout, 'lineage', (state) => (
+      <LineagePane
+        artifact={artifact}
+        initialState={state}
+        onJumpToStage={(stageId, lines) => {
+          navigateToStage(stageId, lines[0], lines);
+        }}
+      />
     ));
     registerReactPane<undefined>(layout, 'kernels', () => <KernelCostPane artifact={artifact} />);
     registerReactPane<undefined>(layout, 'notes', () => <NotesPane notes={artifact.notes} />);
@@ -284,6 +311,18 @@ export function Workspace({workloadId, onBack}: WorkspaceProps) {
                   }
                 >
                   Doctor ({artifact.diagnosis?.findings?.length ?? 0})
+                </button>
+                <button
+                  type="button"
+                  disabled={!artifact.lineage?.lines || Object.keys(artifact.lineage.lines).length === 0}
+                  onClick={() => layoutRef.current?.addComponent('lineage', undefined, 'Lineage')}
+                  title={
+                    artifact.lineage?.summary?.source_lines_covered
+                      ? `${artifact.lineage.summary.source_lines_covered} source lines, ${artifact.lineage.summary.total_anchored_ops.toLocaleString()} operations`
+                      : 'No lineage data in this artifact'
+                  }
+                >
+                  Lineage ({artifact.lineage?.summary?.source_lines_covered ?? 0})
                 </button>
                 <button
                   type="button"
