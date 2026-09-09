@@ -46,6 +46,7 @@ def main() -> int:
     print(f"  network: http://{reachable}:{PORT}   <- use this from another machine")
     print(f"  GET  /options                          the knobs, and why each matters")
     print(f"  POST /compile                          {{model_id, seq_len, stages[], options{{}}}}")
+    print(f"  POST /explore                          {{model_id, seq_len}} -> persisted landing-page artifact")
     print(f"  GET  /compile/{{id}}                     status + signals")
     print(f"  GET  /compile/{{id}}/stage/{{stage}}       raw IR")
     print(f"  POST /compile/{{id}}/benchmark           opt-in timing")

@@ -63,6 +63,7 @@ export interface Job {
   bench: Bench | null;
   diagnosis: Diagnosis | null;
   error: string | null;
+  artifact_id?: string | null;
 }
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
@@ -98,6 +99,14 @@ export function startCompile(body: {
   return call<{job_id: string; status: string}>('/compile', {method: 'POST', body: JSON.stringify(body)});
 }
 
+/** Full pipeline compilation used by the landing-page model search. */
+export function startExplore(model_id: string, seq_len = 16) {
+  return call<{job_id: string; status: string}>('/explore', {
+    method: 'POST',
+    body: JSON.stringify({model_id, seq_len}),
+  });
+}
+
 export function fetchJob(jobId: string) {
   return call<Job>(`/compile/${jobId}`);
 }
@@ -120,12 +129,12 @@ export function diagnoseJob(jobId: string) {
 }
 
 /** Poll until the job leaves `running`. Compiles are ~1-7s, so a short interval is fine. */
-export async function waitForJob(jobId: string, onTick?: (job: Job) => void): Promise<Job> {
-  for (let attempt = 0; attempt < 120; attempt += 1) {
+export async function waitForJob(jobId: string, onTick?: (job: Job) => void, maxAttempts = 120): Promise<Job> {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     const job = await fetchJob(jobId);
     onTick?.(job);
     if (job.status !== 'running') return job;
     await new Promise((resolve) => setTimeout(resolve, 700));
   }
-  throw new Error('compile did not finish within 84s');
+  throw new Error(`compile did not finish within ${Math.round(maxAttempts * 0.7)}s`);
 }

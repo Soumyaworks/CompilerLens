@@ -71,6 +71,20 @@ model compiled by `scripts/compile_hf_model.py`. Run it again whenever the inges
 `examples/`, or the pass logs change; the running dev server picks up new artifacts on the
 next browser refresh, no restart needed.
 
+### Compile from the landing page
+
+Start the API alongside Vite (with the project compiler environment active):
+
+```bash
+python -m backend.api.run_server
+```
+
+Select the magnifying-glass button next to **CompilerLens**, enter a Hugging Face model id,
+and choose **Compile & open**. The full dump pipeline runs in the background, writes the
+trimmed model dumps and normalized artifact, adds a card to the landing page, and opens its
+workspace when complete. The small `hf-internal-testing/tiny-random-BertModel` is a good first
+run. This requires the same IREE/PyTorch/Transformers environment as the command-line compiler.
+
 ### Verifying
 
 ```bash

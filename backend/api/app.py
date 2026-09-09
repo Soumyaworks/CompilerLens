@@ -16,6 +16,8 @@ rather than hidden.
 
 from __future__ import annotations
 
+import json
+import re
 import shutil
 import subprocess
 import tempfile
@@ -101,6 +103,13 @@ class CompileRequest(BaseModel):
     want_asm: bool = False
 
 
+class ExploreRequest(BaseModel):
+    """A full, persisted compilation requested from the landing page."""
+
+    model_id: str = Field(min_length=1, max_length=200)
+    seq_len: int = Field(default=16, ge=1, le=512)
+
+
 class BenchmarkRequest(BaseModel):
     repetitions: int = 5
 
@@ -157,6 +166,76 @@ def compile_model(request: CompileRequest, background: BackgroundTasks):
     }
     background.add_task(_run_compile, job_id, request, flags)
     return {"job_id": job_id, "status": "running"}
+
+
+@app.post("/explore")
+def explore_model(request: ExploreRequest, background: BackgroundTasks):
+    """Compile a Hub model into the same static artifact the Workspace consumes.
+
+    Unlike the Sandbox's short-lived, selected-stage job, this deliberately retains the
+    trimmed dumps under examples/ and updates the public artifact index. This makes a finished
+    search a first-class landing-page entry after a refresh or server restart.
+    """
+    model_id = request.model_id.strip()
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*(?:/[A-Za-z0-9][A-Za-z0-9._-]*)?", model_id):
+        raise HTTPException(status_code=400, detail="model_id must be a Hugging Face repository id")
+    job_id = str(uuid.uuid4())[:8]
+    JOBS[job_id] = {
+        "status": "running", "model_id": model_id, "seq_len": request.seq_len,
+        "options": {}, "flags": [], "stages": {}, "bench": None, "diagnosis": None,
+        "error": None, "compile_seconds": None, "work_dir": None, "artifact_id": None,
+    }
+    background.add_task(_run_explore, job_id, model_id, request.seq_len)
+    return {"job_id": job_id, "status": "running"}
+
+
+def _run_explore(job_id: str, model_id: str, seq_len: int) -> None:
+    """Run the established full dump -> ingest pipeline and publish its artifact."""
+    job = JOBS[job_id]
+    started = time.monotonic()
+    try:
+        from backend.compiler.runner import CompilerRunner, RunConfig, TRIM_CODEGEN_PASSES, TRIM_ELIDE_ATTRS
+        from ingest.build import build_artifact, build_index
+        from ingest.workloads.generated import spec_from_dump_dir
+        from models.detect import detect
+        from models.hf_wrapper import wrap, wrapper_source
+
+        detected = detect(model_id, seq_len=seq_len)
+        module, example_inputs, model_info = wrap(detected)
+        output_dir = REPO_ROOT / "examples" / detected.slug
+        runner = CompilerRunner(RunConfig(
+            layout="ingest", elide_attrs_larger_than=TRIM_ELIDE_ATTRS,
+            pass_log_after=TRIM_CODEGEN_PASSES,
+        ))
+        result = runner.run(module, example_inputs, name=detected.slug, output_dir=output_dir, model_info=model_info)
+        manifest = json.loads(result.manifest_path.read_text())
+        if manifest.get("errors"):
+            raise RuntimeError("; ".join(f"{e['stage']}: {e.get('stderr', '')[:300]}" for e in manifest["errors"]))
+
+        (output_dir / "source.py").write_text(wrapper_source(detected))
+        (output_dir / "model_info.json").write_text(json.dumps(model_info, indent=2))
+        spec = spec_from_dump_dir(output_dir, model_info)
+        artifact = build_artifact(spec, root=output_dir)
+        artifacts_dir = REPO_ROOT / "frontend" / "public" / "artifacts"
+        artifacts_dir.mkdir(parents=True, exist_ok=True)
+        artifact_path = artifacts_dir / f"{spec.id}.json"
+        artifact_path.write_text(artifact.to_json())
+
+        index_path = artifacts_dir / "index.json"
+        existing = json.loads(index_path.read_text()) if index_path.is_file() else {"workloads": []}
+        entry = build_index({spec.id: spec}, {spec.id: artifact})["workloads"][0]
+        existing["workloads"] = [w for w in existing.get("workloads", []) if w.get("id") != spec.id] + [entry]
+        index_path.write_text(json.dumps(existing))
+        # As in scripts/compile_hf_model.py, the untrimmed export only exists so IREE can
+        # compile it. Keeping it would duplicate large model weights for no viewer benefit.
+        full_dir = output_dir / "_full"
+        if full_dir.is_dir():
+            shutil.rmtree(full_dir)
+        job.update(status="done", model_info=model_info, artifact_id=spec.id)
+    except Exception as exc:  # noqa: BLE001 - a background job must report its failure
+        job.update(status="failed", error=f"{type(exc).__name__}: {exc}")
+    finally:
+        job["compile_seconds"] = round(time.monotonic() - started, 2)
 
 
 def _run_compile(job_id: str, request: CompileRequest, flags: list) -> None:
@@ -252,6 +331,7 @@ def get_job(job_id: str):
         "bench": job["bench"],
         "diagnosis": job["diagnosis"],
         "error": job["error"],
+        "artifact_id": job.get("artifact_id"),
     }
 
 
