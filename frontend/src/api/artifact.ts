@@ -3,9 +3,7 @@
  *
  * These types ARE the contract with the compiler side. When ingest/schema.py changes, this
  * file must change with it -- keeping them in sync by hand is the deliberate trade for not
- * needing a codegen step in a 20-day project.
- *
- * See DESIGN-DOC.md section 6.
+ * needing a codegen step.
  */
 
 export type Phase =
@@ -103,7 +101,7 @@ export interface Evidence {
 }
 
 /**
- * What happened to an operation between two phase checkpoints (DESIGN-DOC section 4.2).
+ * What happened to an operation between two phase checkpoints.
  * `created`/`track-change`/`eliminated` are not really "changes" so much as origin, view-
  * switch, and absence markers -- see ingest/lineage.py for exactly how each is decided.
  */

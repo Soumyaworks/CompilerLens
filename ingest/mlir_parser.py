@@ -1,7 +1,6 @@
 """Line-based MLIR operation extraction.
 
-This is deliberately a *heuristic textual* parser, not a real MLIR parser. We have no
-bindings available (pip is unavailable -- see PLAN.md) and, more importantly, we do not
+This is deliberately a *heuristic textual* parser, not a real MLIR parser. More importantly, we do not
 need semantic fidelity: the frontend shows the IR verbatim, and this parser only feeds the
 stage summaries, dialect histograms, and the op index that lineage will later build on.
 

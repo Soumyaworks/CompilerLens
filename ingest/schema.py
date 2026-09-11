@@ -4,10 +4,8 @@ This module is the contract between the compiler side and the frontend. The inge
 produces exactly this shape; the frontend consumes exactly this shape. Neither knows
 anything else about the other.
 
-See DESIGN-DOC.md section 6. Changing a field here is a breaking change for the frontend,
-so bump ARTIFACT_VERSION when you do.
-
-Standard library only -- pip is unavailable in the dev environment (see PLAN.md).
+Changing a field here is a breaking change for the frontend, so bump ARTIFACT_VERSION when
+you do. The ingest package intentionally uses only the Python standard library.
 """
 
 from __future__ import annotations
@@ -18,7 +16,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 # 0.4 added a classified `hops` list to each Artifact.lineage line entry (Created/Carried/
-#     Modified/Lowered/Fused/Split/Eliminated, per DESIGN-DOC section 4.2) -- see
+#     Modified/Lowered/Fused/Split/Eliminated) -- see
 #     ingest/lineage.py. `stages` is unchanged, so nothing that read 0.3 lineage breaks.
 # 0.5 narrows the artifact to compiler stages, diffs, evidence, lineage, and metadata.
 ARTIFACT_VERSION = "0.5"
@@ -66,7 +64,7 @@ class Operation:
     text: str = ""  # source line, trimmed
 
     # Resolved loc(...) metadata as "file:line:col", when the compiler provided one. This is
-    # the Level-1 lineage anchor (DESIGN-DOC section 7): operations derived from the same
+    # the Level-1 lineage anchor: operations derived from the same
     # source construct carry the same value, so `torch.aten.matmul` at line 3 can be traced
     # to everything it became. None for loc(unknown) and for locations we could not resolve
     # -- reporting an unresolved location would corrupt the anchor.
@@ -112,8 +110,8 @@ class Stage:
     pass_name: str | None = None  # "GenericVectorizationPass"
     pass_arg: str | None = None  # "iree-codegen-generic-vectorization"
     parent_stage: str | None = None  # phase stage these sub-stages sit under, for nesting
-    # Set when the pipeline has a known discontinuity at this stage -- see PLAN.md "Known
-    # gaps". Surfaced in the UI rather than hidden, so we never imply we captured a
+    # Set when the pipeline has a known discontinuity at this stage. Surfaced in the UI
+    # rather than hidden, so we never imply we captured a
     # transformation we did not.
     gap_note: str | None = None
 

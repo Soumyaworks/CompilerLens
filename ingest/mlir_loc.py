@@ -1,7 +1,7 @@
 """MLIR location metadata: parsing it, and stripping it for display.
 
 The regenerated dumps carry `loc(...)` on nearly every operation, which is what makes
-Level-1 lineage possible (DESIGN-DOC section 7): an operation in a late stage still names
+Level-1 lineage possible: an operation in a late stage still names
 the line of `ir_00_torch_input.mlir` it came from. It also makes the IR considerably harder
 to read, so the viewer can strip it -- Compiler Explorer's opt-pipeline view has the same
 `filterDebugInfo` option for the same reason.

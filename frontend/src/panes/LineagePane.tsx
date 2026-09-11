@@ -2,7 +2,7 @@ import type {Artifact, LineageEntry} from '../api/artifact';
 import {LineageTimeline} from '../components/LineageTimeline';
 
 /**
- * Operation lineage explorer (DESIGN-DOC section 4.2, Stage 2).
+ * Operation lineage explorer.
  *
  * Click a source line to trace it end-to-end through all compilation stages.
  * Shows a timeline of the operation across stages with line numbers and IR snippets.

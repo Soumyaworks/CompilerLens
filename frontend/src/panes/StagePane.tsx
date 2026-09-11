@@ -10,7 +10,7 @@ import {ViewerControls} from './ViewerControls';
 
 /**
  * The primary pane type: pick any pipeline stage from a searchable, phase-grouped picker,
- * view its IR or diff it against the previous stage in its track (DESIGN-DOC 4.1/4.3).
+ * view its IR or diff it against the previous stage in its track.
  *
  * Independent per pane, matching Compiler Explorer's output panes: each one carries its
  * own picker and its own view state, so two stage panes open side by side never fight over

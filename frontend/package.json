@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "description": "CompilerLens frontend -- interactive AI compiler pipeline explorer",
   "scripts": {
     "dev": "vite",

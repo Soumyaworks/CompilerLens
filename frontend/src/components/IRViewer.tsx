@@ -7,7 +7,7 @@ import {stripLocations} from '../api/locations';
 import {monacoLanguage, THEME_NAME} from '../monaco/setup';
 
 /**
- * Verbatim IR display (DESIGN-DOC section 4.1).
+ * Verbatim IR display.
  *
  * Read-only by design: this is a viewer, and the IR shown is exactly what the compiler
  * emitted. Word wrap is off because MLIR lines are long and wrapping destroys the visual

@@ -1,9 +1,8 @@
 """Lineage: which operations, in which stages, came from one line of the original program.
 
-DESIGN-DOC section 4.2 (Operation Lineage) and section 7's Level 1 -- explicit identifiers.
-This is Level 1 and only Level 1: it groups by the `loc()` metadata the compiler itself
-attached, and does no structural matching or guessing. If the compiler did not say where an
-operation came from, that operation is simply absent from the index.
+This is explicit-identifier lineage: it groups by the `loc()` metadata the compiler itself
+attached and does no structural matching or guessing. If the compiler did not say where an
+operation came from, that operation is absent from the index.
 
 That restraint is the feature. A lineage that silently guessed would produce a highlight that
 looks authoritative and points at the wrong line, which is worse than no highlight.
@@ -15,8 +14,8 @@ carry a resolved location, covering 98 distinct source lines, and the busiest si
 (`torch.aten.scaled_dot_product_attention`) has 2,035 descendants across 12 stages.
 
 On top of that raw index, `_hops_for_line` classifies what happened between consecutive
-*phase* checkpoints (DESIGN-DOC section 4.2's Created / Modified / Lowered / Fused / Split /
-Eliminated), by comparing the operation-name/count aggregate this line has at one phase stage
+*phase* checkpoints (Created / Modified / Lowered / Fused / Split / Eliminated), by comparing
+the operation-name/count aggregate this line has at one phase stage
 against the next. This is still Level 1: the comparison only uses names and counts already
 extracted during parsing, never operand/result/region matching (that is Level 2, section 7),
 and it is scoped per comparison track for the same reason `StageDiff` is (build.py) -- module
@@ -321,7 +320,7 @@ def build_lineage(stages: list) -> dict:
             "total_anchored_ops": sum(v["total_ops"] for v in lines.values()),
         },
         "notes": [
-            "Level 1 lineage (DESIGN-DOC section 7): grouped by the loc() metadata the compiler "
+            "Level 1 lineage: grouped by the loc() metadata the compiler "
             "attached, with no structural matching and no inference. Operations the compiler did "
             "not locate are absent rather than guessed at.",
             f"Line numbers are positions in the '{_ANCHOR_STAGE}' stage, which is the anchor "

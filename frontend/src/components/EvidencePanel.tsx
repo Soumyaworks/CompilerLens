@@ -1,7 +1,7 @@
 import type {Evidence, EvidenceStatus, Stage} from '../api/artifact';
 
 /**
- * Compiler evidence (DESIGN-DOC section 8).
+ * Compiler evidence.
  *
  * Every item is a fact the compiler stated about itself, and every item names the stage it
  * was read from and links there. An explanation that cannot point at its source is exactly

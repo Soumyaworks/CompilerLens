@@ -1,6 +1,6 @@
 """Parse IREE/MLIR `--mlir-print-ir-after-all` logs into per-pass IR snapshots.
 
-This is what closes the codegen gap described in PLAN.md. The log format is:
+The log format is:
 
     // -----// IR Dump After GenericVectorizationPass (iree-codegen-generic-vectorization) //----- //
     <IR>

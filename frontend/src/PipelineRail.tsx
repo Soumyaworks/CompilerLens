@@ -2,8 +2,8 @@ import type {Artifact, Phase} from './api/artifact';
 import {groupByPhase, PHASE_TITLES} from './api/artifact';
 
 /**
- * A compact, always-visible pipeline flow (DESIGN-DOC section 4.3's transformation timeline,
- * made spatial): one heading per phase, sized by how many stages it holds, ringed when a
+ * A compact, always-visible pipeline flow: one heading per phase, sized by how many stages
+ * it holds, ringed when a
  * currently open pane sits somewhere inside it. Clicking a heading opens a PhaseFlowPane --
  * a stepper that walks that phase's stages one at a time -- rather than 55 individual
  * segments each opening their own pane.

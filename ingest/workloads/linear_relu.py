@@ -1,10 +1,9 @@
-"""Linear+ReLU workload: relu(x @ weight + bias), lowered through IREE to llvm-cpu/znver5
-(DESIGN-DOC Demo 2).
+"""Linear+ReLU workload: relu(x @ weight + bias), lowered through IREE to llvm-cpu/znver5.
 
 Structurally this mirrors matmul.py almost exactly -- same ir_00..ir_12 numbering, same
 single dispatch, same pass-log pair, loc() throughout. The thing this workload demonstrates
-that matmul cannot is operation fusion (DESIGN-DOC section 4.4/4.5's "missed/successful
-fusion" category): the bias-add and relu are two separate torch ops (torch.aten.add.Tensor
+that matmul cannot is operation fusion: the bias-add and relu are two separate torch ops
+(torch.aten.add.Tensor
 at line 9, torch.aten.relu at line 10) that IREE first fuses into a single linalg.generic
 epilogue, then fuses *that* into the same dispatch as the matmul itself. All three PyTorch
 ops end up as one kernel.

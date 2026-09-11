@@ -1,5 +1,5 @@
 """Matmul workload: torch.matmul on two 128x128 f32 tensors, lowered through IREE to
-llvm-cpu/znver5 (DESIGN-DOC Demo 1).
+llvm-cpu/znver5.
 
 IREE's real pipeline is a tree, not a line: the host program (flow -> stream -> hal -> vm)
 and the device kernel (executable-sources -> ... -> LLVM -> assembly) diverge after

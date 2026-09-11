@@ -19,8 +19,8 @@ import {StagePane} from './panes/StagePane';
 import {PipelineRail} from './PipelineRail';
 
 /**
- * The golden-layout workspace for one workload (DESIGN-DOC's pipeline explorer, styled
- * after Compiler Explorer's own workspace): a source pane plus independently addable,
+ * The golden-layout workspace for one workload, styled after Compiler Explorer: a source
+ * pane plus independently addable,
  * draggable, resizable, dockable output panes, all reading the same artifact.
  */
 

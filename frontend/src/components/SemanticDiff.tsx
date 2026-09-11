@@ -6,12 +6,11 @@ import {stripLocations} from '../api/locations';
 import {monacoLanguage, THEME_NAME} from '../monaco/setup';
 
 /**
- * Before/after comparison between two adjacent stages in the same track
- * (DESIGN-DOC section 4.3).
+ * Before/after comparison between two adjacent stages in the same track.
  *
  * Stage 1 shows the textual diff plus the precomputed headline of what changed. The
- * semantic classification in DESIGN-DOC section 4.4 -- naming a transformation as
- * "tiled + vectorized matmul" rather than listing added lines -- arrives in Stage 3, once
+ * semantic classification -- naming a transformation as "tiled + vectorized matmul"
+ * rather than listing added lines -- arrives once
  * the lineage engine can substantiate the claim. Showing a textual diff and calling it
  * semantic would be the wrong kind of shortcut.
  *

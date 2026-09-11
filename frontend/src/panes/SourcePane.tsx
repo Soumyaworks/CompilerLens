@@ -2,7 +2,7 @@ import type {Artifact, Stage} from '../api/artifact';
 import {IRViewer} from '../components/IRViewer';
 
 /**
- * The workload's PyTorch source, read-only (DESIGN-DOC section 4.1's entry point).
+ * The workload's PyTorch source, read-only.
  *
  * The Compiler Explorer analogue of the source editor pane -- fixed rather than editable in
  * Stage 1, since there is no live compile yet, but occupying the same role: the thing every

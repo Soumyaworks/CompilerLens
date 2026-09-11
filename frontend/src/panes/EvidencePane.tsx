@@ -2,7 +2,7 @@ import type {Artifact} from '../api/artifact';
 import {EvidencePanel} from '../components/EvidencePanel';
 
 /**
- * Compiler evidence (DESIGN-DOC section 8) as an independently addable/dockable pane.
+ * Compiler evidence as an independently addable/dockable pane.
  *
  * Clicking a source link opens a stage pane on that stage rather than repointing some
  * fixed pane elsewhere -- panes are independent here, so "navigate" means "show me a pane

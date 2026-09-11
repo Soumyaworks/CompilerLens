@@ -5,8 +5,7 @@ import {ArtifactMissingError, fetchIndex} from './api/client';
 import {SandboxUnavailableError, startExplore, userFacingError, waitForJob} from './api/sandbox';
 
 /**
- * Workload picker, shown before entering the explorer (DESIGN-DOC's "pick what you're
- * looking at" entry point, extended to multiple workloads).
+ * Workload picker shown before entering the explorer.
  *
  * A dedicated screen rather than a persistent top-bar dropdown: choosing a workload swaps
  * out the entire golden-layout workspace underneath it, so treating it as a full navigation

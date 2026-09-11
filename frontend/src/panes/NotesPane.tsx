@@ -1,5 +1,5 @@
 /**
- * The artifact's own caveats (DESIGN-DOC's honesty requirement), as a dockable pane.
+ * The artifact's own caveats, as a dockable pane.
  *
  * Adapted from the old floating NotesPanel: a golden-layout pane already has its own
  * close/drag affordances in its tab, so the dialog-style escape/click-outside dismissal is

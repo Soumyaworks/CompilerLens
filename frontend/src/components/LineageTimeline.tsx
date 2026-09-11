@@ -12,7 +12,7 @@ interface LineageTimelineProps {
 }
 
 /**
- * DESIGN-DOC section 4.2's classification, finally rendered. `ingest/lineage.py` decides the
+ * Operation-lineage change classification. `ingest/lineage.py` decides the
  * label from operation-name/count aggregates; this file only displays it -- see that module's
  * docstring for exactly what each label does and does not claim.
  */

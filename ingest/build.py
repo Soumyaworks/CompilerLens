@@ -4,9 +4,8 @@ Usage:
     python3 -m ingest.build --all --out-dir frontend/public/artifacts
     python3 -m ingest.build examples/matmul --out /tmp/one-off.json   # ad hoc, unregistered
 
-Stage 5 (live compilation) will call build_artifact() directly after invoking iree-compile
-into a temporary directory, which is why the file-reading and the artifact-shaping are kept
-separate here.
+Live compilation calls build_artifact() directly after invoking iree-compile into a temporary
+directory, which is why file reading and artifact shaping are kept separate here.
 """
 
 from __future__ import annotations
@@ -45,8 +44,8 @@ def _fusion_evidence(kernel: Stage) -> tuple[str, str] | None:
     """(primary op name, epilogue arith ops) if the dispatch fuses an elementwise epilogue
     onto a primary compute op in the same kernel, else None.
 
-    This is DESIGN-DOC section 4.5's "successful fusion" analysis, generically: any dispatch
-    containing both a named compute op (matmul, conv, ...) and a linalg.generic is fusing
+    Any dispatch containing both a named compute op (matmul, conv, ...) and a linalg.generic
+    is fusing
     something into that op's dispatch, and the arith ops inside the generic's body -- read
     directly from the op list between it and its linalg.yield, not guessed at -- say what.
     """

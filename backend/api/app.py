@@ -6,12 +6,11 @@ pass traces is not*. So `POST /compile` takes the list of stages you actually wa
 and compiles only those. Benchmarking is a separate opt-in call because it costs seconds, and
 firing it on every flag change would make the UI feel broken.
 
-Everything here delegates to the same classes the CLI uses -- CompilerRunner, the analyzer
-rules, backend.measure -- so there is no second implementation to keep in sync.
+Everything here delegates to the same compiler and measurement classes the CLI uses, so there
+is no second implementation to keep in sync.
 
-In-memory job tracking, no database: DESIGN-DOC section 13 excludes that explicitly. Restarting
-the server loses in-flight jobs, which is an acceptable trade for a hackathon MVP and is stated
-rather than hidden.
+Job tracking is intentionally in memory. Restarting the server loses in-flight Sandbox jobs;
+persisted landing-page artifacts remain on disk.
 """
 
 from __future__ import annotations
