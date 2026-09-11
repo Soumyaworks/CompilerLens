@@ -4,9 +4,8 @@ import type {Evidence, EvidenceStatus, Stage} from '../api/artifact';
  * Compiler evidence (DESIGN-DOC section 8).
  *
  * Every item is a fact the compiler stated about itself, and every item names the stage it
- * was read from and links there. This panel is the foundation the Optimization Doctor
- * (Stage 3) and the AI explanation layer (Stage 4) are built on: an explanation that
- * cannot point at its source is exactly what this project exists to replace.
+ * was read from and links there. An explanation that cannot point at its source is exactly
+ * what this project exists to replace.
  *
  * Status is carried by an icon AND a colour, never colour alone.
  */

@@ -17,13 +17,11 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
-# 0.2 added Artifact.diagnosis (the Optimization Doctor's findings, baked in at build time).
-# 0.3 added Artifact.lineage (Level-1 operation lineage, for hover-linked highlighting) and
-#     Artifact.kernels (the modelled per-kernel cost breakdown).
 # 0.4 added a classified `hops` list to each Artifact.lineage line entry (Created/Carried/
 #     Modified/Lowered/Fused/Split/Eliminated, per DESIGN-DOC section 4.2) -- see
 #     ingest/lineage.py. `stages` is unchanged, so nothing that read 0.3 lineage breaks.
-ARTIFACT_VERSION = "0.4"
+# 0.5 narrows the artifact to compiler stages, diffs, evidence, lineage, and metadata.
+ARTIFACT_VERSION = "0.5"
 
 # Coarse groupings for the pipeline sidebar. A stage's phase decides where it is drawn and
 # what colour it gets, so the user can see at a glance which level of abstraction they are
@@ -147,8 +145,6 @@ class StageDiff:
 class Evidence:
     """A single verifiable fact recovered from compiler output.
 
-    Evidence is the source of truth for the Optimization Doctor (Stage 3) and the only
-    thing the AI layer (Stage 4) is allowed to reason from -- see DESIGN-DOC section 4.6.
     Every instance must cite where it came from, because an unsourced claim is exactly what
     this project exists to avoid.
     """
@@ -171,17 +167,9 @@ class Artifact:
     source: dict[str, Any] = field(default_factory=dict)  # original PyTorch program
     target: dict[str, Any] = field(default_factory=dict)  # backend, triple, cpu
     notes: list[str] = field(default_factory=list)  # honest caveats, shown in the UI
-    # The Optimization Doctor's findings for this artifact (analyzer/diagnose.py). Baked in at
-    # build time so the static site can show a diagnosis without a server running -- the
-    # Sandbox's live /diagnose endpoint returns the identical shape.
-    diagnosis: dict[str, Any] = field(default_factory=dict)
     # Level-1 operation lineage (ingest/lineage.py): anchor-stage line number -> every operation
     # derived from it, per stage. This is what powers hover-linked highlighting.
     lineage: dict[str, Any] = field(default_factory=dict)
-    # Modelled per-kernel cost (backend/measure/kernels.py mirrored into ingest at build time).
-    # "modelled" throughout: FLOPs come from the shapes in IREE's kernel names, never from a
-    # per-kernel benchmark, because per-kernel timing could not be obtained reliably.
-    kernels: dict[str, Any] = field(default_factory=dict)
     artifact_version: str = ARTIFACT_VERSION
 
     def to_json(self, indent: int | None = None) -> str:

@@ -73,9 +73,9 @@ DWARF locations we deliberately don't resolve into a fake source position -- see
 `ingest/mlir_loc.py`). Those still need structural matching (name + operand/result types +
 shape signature), so Level 2 isn't going away, just shrinking to the minority case.
 
-## Stage 3 — Semantic diff + Optimization Doctor
+## Stage 3 — Semantic diff + compiler evidence
 
-Goal: explain the transformation, not just show it (DESIGN-DOC §4.4, §4.5).
+Goal: explain the transformation, not just show it (DESIGN-DOC §4.4 and §8).
 
 Evidence already recoverable from the existing dumps — no new compiler work needed:
 

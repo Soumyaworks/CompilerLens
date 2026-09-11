@@ -60,7 +60,6 @@ export function LineagePane({artifact, initialState, onJumpToStage}: LineagePane
           lineageEntry={lineageEntry}
           sourceStage={sourceStage}
           stages={artifact.stages}
-          diagnosis={artifact.diagnosis}
           onJumpToStage={onJumpToStage}
         />
       </div>

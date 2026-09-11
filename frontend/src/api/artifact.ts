@@ -103,78 +103,6 @@ export interface Evidence {
 }
 
 /**
- * One Optimization Doctor finding. Mirrors analyzer/rules/base.py's Finding.
- *
- * `confidence` and `measured_cost_ms` exist to stop a finding sounding more certain than it is:
- * a `heuristic` must not read like a `measured`, and a null cost renders as "unmeasured" rather
- * than as zero.
- */
-export interface Finding {
-  rule_id: string;
-  severity: 'missed' | 'suboptimal' | 'info';
-  title: string;
-  detail: string;
-  stage_id: string;
-  stage_name: string;
-  confidence: 'measured' | 'structural' | 'heuristic';
-  evidence: string[];
-  line: number | null;
-  measured_cost_ms: number | null;
-  suggestion: string | null;
-}
-
-/** Mirrors analyzer/diagnose.py's return value. */
-export interface Diagnosis {
-  findings: Finding[];
-  summary: {
-    total: number;
-    by_severity: Record<string, number>;
-    measured: number;
-    headline: string;
-  };
-  rules_run: {id: string; title: string; looks_for: string}[];
-  notes: string[];
-}
-
-/**
- * Modelled per-kernel cost (backend/measure/kernels.py).
- *
- * `basis` is always "modelled": FLOPs come from the shapes in IREE's kernel names, never from
- * timing each kernel. The field exists so the UI cannot forget to say so.
- */
-export interface KernelCosts {
-  basis: 'modelled';
-  kernels: {
-    name: string;
-    short_name: string;
-    kind: string;
-    dims: number[];
-    flops: number | null;
-    bytes_moved: number;
-    arithmetic_intensity: number | null;
-    bound_by: 'compute' | 'memory' | 'unknown';
-    note: string;
-    flops_share: number | null;
-    bytes_share: number | null;
-  }[];
-  totals: {
-    kernel_count: number;
-    total_flops: number;
-    total_bytes: number;
-    memory_bound_kernels: number;
-    arithmetic_intensity: number | null;
-  };
-  machine: {
-    cores: number;
-    mhz: number;
-    vector_lanes: number;
-    peak_gflops: number;
-    note: string;
-  } | null;
-  notes: string[];
-}
-
-/**
  * What happened to an operation between two phase checkpoints (DESIGN-DOC section 4.2).
  * `created`/`track-change`/`eliminated` are not really "changes" so much as origin, view-
  * switch, and absence markers -- see ingest/lineage.py for exactly how each is decided.
@@ -234,10 +162,6 @@ export interface Artifact {
   target: {backend?: string; cpu?: string; triple?: string; native_vector_size?: number};
   /** Honest caveats about what this artifact does and does not capture. */
   notes: string[];
-  /** Baked in by ingest at build time, so the static site needs no server to show it. */
-  diagnosis?: Diagnosis;
-  /** Modelled arithmetic and memory cost per dispatch. */
-  kernels?: KernelCosts;
   /** Level-1 operation lineage: source line -> operations across all stages. */
   lineage?: Lineage;
   artifact_version: string;

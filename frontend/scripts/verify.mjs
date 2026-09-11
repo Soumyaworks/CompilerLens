@@ -257,70 +257,6 @@ check(
   linearReluEvidence.toLowerCase().includes('fused'),
   linearReluEvidence.slice(0, 200),
 );
-// --- the Optimization Doctor -----------------------------------------------------------------
-// Baked into the artifact by ingest, so this needs no server running. matmul is deliberately a
-// clean model: asserting it reports *nothing* is what shows the rules are not matching noise,
-// while bert-tiny (a real transformer) must produce findings.
-
-const matmulDiagnosis = await page.evaluate(async () => {
-  const response = await fetch('/artifacts/matmul.json');
-  return (await response.json()).diagnosis ?? null;
-});
-check('matmul artifact carries a diagnosis', Boolean(matmulDiagnosis?.summary));
-check(
-  'matmul is diagnosed clean (rules do not fire on well-optimised code)',
-  matmulDiagnosis?.findings?.length === 0,
-  matmulDiagnosis?.summary?.headline,
-);
-
-const bertDiagnosis = await page.evaluate(async () => {
-  const response = await fetch('/artifacts/prajjwal1_bert-tiny.json');
-  // Vite's dev-server SPA fallback returns 200 + index.html for any unmatched path, so
-  // `response.ok` alone does not detect a missing artifact -- check the content type too.
-  if (!response.ok || !response.headers.get('content-type')?.includes('json')) return null;
-  return (await response.json()).diagnosis ?? null;
-});
-if (bertDiagnosis) {
-  check(
-    'a real transformer does produce findings',
-    (bertDiagnosis.findings?.length ?? 0) > 0,
-    bertDiagnosis.summary?.headline,
-  );
-  check(
-    'no finding claims a cost it did not measure',
-    bertDiagnosis.findings.every(
-      (f) => f.measured_cost_ms === null || typeof f.measured_cost_ms === 'number',
-    ),
-  );
-  check(
-    'every finding declares its confidence',
-    bertDiagnosis.findings.every((f) =>
-      ['measured', 'structural', 'heuristic'].includes(f.confidence),
-    ),
-  );
-}
-
-// --- kernel cost -------------------------------------------------------------------
-// Data-level checks on the modelled kernel cost breakdown.
-
-const bertData = await page.evaluate(async () => {
-  const response = await fetch('/artifacts/prajjwal1_bert-tiny.json');
-  if (!response.ok || !response.headers.get('content-type')?.includes('json')) return null;
-  const artifact = await response.json();
-  return {kernels: artifact.kernels ?? null};
-});
-
-if (bertData?.kernels) {
-  const {kernels} = bertData;
-  check('kernel cost model is present', (kernels.kernels?.length ?? 0) > 0,
-    `${kernels.totals?.kernel_count} kernels`);
-  check('kernel cost declares itself modelled, not measured', kernels.basis === 'modelled');
-  check('every kernel states what bounds it',
-    kernels.kernels.every((k) => ['compute', 'memory', 'unknown'].includes(k.bound_by)));
-  check('machine peak is derived, with its assumptions stated',
-    Boolean(kernels.machine?.peak_gflops && kernels.machine?.note));
-}
-
 await page.screenshot({path: `${SHOT}/05-linear-relu.png`});
 
 // --- the Sandbox ------------------------------------------------------------------------------
@@ -339,10 +275,10 @@ const sandboxReachable = (await page.locator('.sandbox-controls').count()) === 1
 if (sandboxReachable) {
   check('sandbox exposes model, seq-len, stage and flag controls',
     (await page.locator('.sandbox-controls select').count()) >= 6);
-  check('sandbox has compile/measure/diagnose actions',
-    (await page.locator('.sandbox-actions button').count()) === 3);
-  check('measure and diagnose are disabled before a compile',
-    (await page.locator('.sandbox-actions button:disabled').count()) >= 2);
+  check('sandbox has compile and measure actions',
+    (await page.locator('.sandbox-actions button').count()) === 2);
+  check('measure is disabled before a compile',
+    (await page.locator('.sandbox-actions button:disabled').count()) >= 1);
   check('every compiler flag explains why it matters',
     (await page.locator('.control-why').count()) >= 4);
   await page.screenshot({path: `${SHOT}/07-sandbox.png`});

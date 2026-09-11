@@ -1,8 +1,8 @@
 """LLVM IR and target-assembly extraction.
 
 Same philosophy as mlir_parser: textual, heuristic, and honest about it. The frontend
-displays these files verbatim; what we extract here drives the summaries and, for the
-Optimization Doctor in Stage 3, the vectorisation evidence.
+displays these files verbatim; what we extract here drives the summaries and vectorisation
+evidence.
 """
 
 from __future__ import annotations

@@ -29,14 +29,14 @@ staged implementation plan.
 - Compiler evidence (11 items for matmul, 12 for linear_relu — including a fused-epilogue
   item unique to linear_relu; 23 and 25 for the two downloaded models), each linked back to
   the stage it was read from; clicking a link opens a new stage pane on that stage
-- `npm run verify` — 48 headless-browser assertions across the landing page, workspace,
-  Optimization Doctor, kernel cost, and Sandbox; zero console errors
+- `npm run verify` — headless-browser assertions across the landing page, workspace,
+  lineage explorer, and Sandbox; zero console errors
 
-Lineage, the Optimization Doctor, and the AI explanation layer are Stages 2-4 in `PLAN.md`.
+Lineage, semantic diff, and the AI explanation layer are Stages 2-4 in `PLAN.md`.
 Both original pipeline gaps (missing `loc()` metadata, uncaptured codegen) are closed —
 see "Known gaps" in `PLAN.md` for how. Operation lineage (`ingest/lineage.py`) is computed into
-every artifact but has no UI yet — see "Operation lineage" below and `ARCHITECTURE-NOTES.md`
-§10.5-H.
+every artifact and exposed in both workspace panes and a dedicated explorer — see "Operation
+lineage" below.
 
 ## Quick start
 
@@ -93,7 +93,7 @@ npm run verify       # headless browser checks + screenshots
 
 Renders the app in Chromium and asserts the landing page, golden-layout workspace, stage
 picker (search + phase grouping), diff worker, histogram, evidence-driven pane navigation,
-add-pane, loc() toggle, and the second workload's distinct evidence all actually work — 27
+add-pane, loc() toggle, and the second workload's distinct evidence all actually work — 39
 checks, fails on any console error. Needs `npm run dev` already running in another terminal
 (it hits `localhost:5173`), and a one-time browser install:
 
@@ -386,10 +386,10 @@ but 11 layers, so it generates *more* stages and operations — and a bigger art
 `bert-tiny`'s 4.4M parameters in 2 layers. Layer count drives the IR; weights drive the
 `.vmfb`.
 
-## Measuring, diagnosing, and playing
+## Measuring and playing
 
-Three capabilities on top of the viewer. They stack: the Doctor needs measurement to say
-what something *cost*, and the Sandbox needs a live compiler to change anything.
+Two capabilities complement the viewer: controlled benchmarking measures compiler choices,
+and the Sandbox uses the live compiler to try those choices interactively.
 
 ### 1. Measure — every decision gets a number
 
@@ -429,53 +429,7 @@ Guards, in `backend/measure/bench.py`: median over ≥5 repetitions, variance al
 `reliable: false` above 5% CV, and any ratio inside the noise floor reported as *no
 difference* rather than a win.
 
-### 2. Diagnose — the tool tells you what is wrong
-
-```bash
-python3 -c "
-from analyzer.diagnose import diagnose_file
-d = diagnose_file('frontend/public/artifacts/prajjwal1_bert-tiny.json')
-print(d['summary']['headline'])
-for f in d['findings']: print(f\"  [{f['severity']}] {f['title']}\")"
-```
-
-The diagnosis is also **baked into every artifact at build time** by `npm run artifact`, so the
-static site shows it with no server running: open any workload and add the **Doctor** pane. The
-Sandbox's live `POST /diagnose` returns the identical shape, which is why both share one
-component.
-
-`matmul` and `linear_relu` are diagnosed **clean — zero findings**. That is the point: the rules
-do not fire on well-optimised code, so when they do fire on a real transformer it means
-something. `npm run verify` asserts both halves of that.
-
-On `prajjwal1/bert-tiny`, unprompted:
-
-```
-5 missed optimisation(s). Most significant: 166 single-lane vector operations.
-  [missed] 166 single-lane vector operations
-  [missed] dispatch_0_elementwise_ runs as its own kernel
-  [missed] dispatch_4_elementwise_transpose_ runs as its own kernel
-  [missed] dispatch_8_elementwise_transpose_ runs as its own kernel
-  [info  ] 2 layout-only kernel(s)
-```
-
-Three rules, each verified to fire on a real model:
-
-| Rule | Looks for | Why it matters |
-|---|---|---|
-| `missed-vectorization` | `vector<1xf32>` survivors, and widths below `native_vector_size` | a one-lane vector is scalar code in vector syntax |
-| `missed-fusion` | memory-bound kernels running as their own dispatch | each pays a full memory round trip for almost no arithmetic |
-| `layout-churn` | transpose/pack kernels with no arithmetic | pure data movement — sometimes worth it, which is why it is `info` |
-
-Every `Finding` carries fields designed to stop it sounding more certain than it is:
-
-- **`confidence`** — `measured` (timed both ways) / `structural` (the IR plainly shows it) /
-  `heuristic` (this pattern usually means trouble). A heuristic finding must not look measured.
-- **`measured_cost_ms`** — `null` until something actually timed it, rendered as
-  "unmeasured" rather than as zero.
-- **`evidence`** — the IR line, quoted verbatim, with a line number to jump to.
-
-### 3. Play — the Sandbox
+### 2. Play — the Sandbox
 
 ```bash
 # terminal 1
@@ -487,8 +441,8 @@ cd frontend && npm run dev
 
 Then open the app and click **Open the Compiler Sandbox →**. Pick a model, flip a flag, hit
 Compile. Measured latency: **~1-3s for a compile**, because the Sandbox only compiles the
-stage you are looking at rather than all 41. `Measure` and `Diagnose` are separate buttons
-because they cost seconds and firing them on every flag change would make the UI feel broken.
+stage you are looking at rather than all 41. Measurement is an explicit action because it
+costs seconds and firing it on every flag change would make the UI feel broken.
 
 Flipping `target-cpu` from `host` to `generic` in the browser, on bert-tiny:
 
@@ -505,7 +459,7 @@ produce dumps the rest of the pipeline cannot interpret.
 The API is additive: the landing page and workspace still read static artifacts and work with
 no server running. Only the Sandbox needs it, and it says so when the server is down.
 
-### 4. Operation lineage — built, not yet exposed in the UI
+### 3. Operation lineage
 
 `ingest/lineage.py` groups every operation across all 41 stages by the `loc()` metadata the
 compiler itself attaches to it (`--mlir-print-debuginfo`), producing a map from one PyTorch
@@ -528,44 +482,9 @@ On `prajjwal1/bert-tiny`: **257 source lines** anchored, **14,441 operations** i
 those lines reaching a codegen or assembly stage. Every artifact carries this in its `lineage`
 field today.
 
-**There is no UI for it yet.** An interactive hover (Compiler-Explorer-style: hover a source
-line, every open pane highlights what it became) was built and then reverted — it caused
-flickering that a hover-triggered fix couldn't explain, because it reproduced with the mouse
-completely still. See `ARCHITECTURE-NOTES.md` §10.5-H for the failed fix attempts and what a
-retry should do differently. The data is sound; only the frontend wiring is missing.
-
-### 5. What each kernel costs
-
-The **Kernel cost** pane ranks every dispatch by the arithmetic it performs:
-
-```
-  kernel                                    kind      MFLOP  share    AI  bound by
-  dispatch_13_batch_matmul_1x32x512x128     matmul     4.19   40.0%  12.2  compute
-  dispatch_14_batch_matmul_1x32x128x512     matmul     4.19   40.0%  12.2  compute
-  dispatch_10_batch_matmul_1x32x128x128     matmul     1.05   10.0%  10.7  compute
-  dispatch_9_attention_2x32x64x64x32        attention     —       —     —  unknown
-  dispatch_1_reduction_32x128               reduction     —       —     —  memory
-
-  10 kernels · 10.49 MFLOP · 68.1 MB moved · AI 0.15 · 5 memory-bound
-  machine peak ≈ 818 GFLOP/s (8 cores × 3196 MHz × 16 lanes × 2)
-```
-
-The two feed-forward matmuls are **80% of all arithmetic**. Overall arithmetic intensity is
-**0.15 FLOPs per byte**, which says this model is bandwidth-limited rather than compute-limited —
-and against measured whole-model time it reaches about **2.6% of theoretical peak**, exactly what
-you would expect when there is too little arithmetic to amortise per-dispatch overhead.
-
-**These numbers are modelled, and labelled `modelled` everywhere they appear.** FLOPs and bytes
-come from the shapes IREE writes into its own kernel names; the machine peak is derived from
-`/proc/cpuinfo` and the target's `native_vector_size`.
-
-I tried to measure per-kernel time first, with `iree-benchmark-executable`, and it does not work
-honestly: every `hal.executable.export` is `ordinal(0)` within its own executable so the linked
-`.so`'s global ordinals are a guess, and workgroup counts are computed at runtime rather than
-declared. Probing all 12 ordinals with plausible bindings returned **0.0000 ns for 11 of them** —
-the kernels returned without doing their work. A tool that silently reports zero for a matmul
-would be worse than no tool, so per-kernel wall-clock is absent and the measured figure remains
-whole-model time.
+The workspace exposes lineage in two ways: click a highlighted source operation to open its
+timeline as a pane, or choose **Operation Lineage** for a full-page explorer with a searchable
+operation list. Each timeline hop links back to the corresponding stage and IR lines.
 
 ### The overclaim this fixed
 
@@ -582,18 +501,6 @@ from 11 "success" items to 2.
 **Timings are comparable to each other, not across machines.** Every number in this README was
 measured on one 8-core znver5 box with ASLR enabled. A median over 5 runs with the CV reported
 is honest about its own precision; it is not a benchmark result you could publish.
-
-**The Doctor's rules are pattern matches, not proofs.** They read the compiler's own output and
-report what they see. `confidence` qualifies each finding, and no rule currently produces a
-`measured` one — wiring `backend/measure` into `analyzer` per-finding is the next step, and
-until then `measured_cost_ms` is honestly `null` rather than estimated.
-
-**Per-kernel *timing* is not built, and cannot be done honestly with the current tooling.**
-The cost *model* is built (see "What each kernel costs"), but wall-clock per kernel is not:
-`iree-benchmark-executable` needs workgroup counts IREE computes at runtime and never states,
-and probing with guessed values returned 0.0000 ns for 11 of 12 kernels rather than erroring.
-So the tool reports modelled arithmetic per kernel and measured time for the whole model, and
-says which is which.
 
 **The Sandbox needs its API server; nothing else does.** The landing page and workspace read
 static artifacts and work offline. The Sandbox says so plainly when the server is down rather

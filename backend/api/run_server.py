@@ -50,7 +50,6 @@ def main() -> int:
     print(f"  GET  /compile/{{id}}                     status + signals")
     print(f"  GET  /compile/{{id}}/stage/{{stage}}       raw IR")
     print(f"  POST /compile/{{id}}/benchmark           opt-in timing")
-    print(f"  POST /compile/{{id}}/diagnose            run the Doctor")
     uvicorn.run("backend.api.app:app", host=HOST, port=PORT, reload=False)
     return 0
 

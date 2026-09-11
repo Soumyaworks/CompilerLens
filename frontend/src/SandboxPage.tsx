@@ -2,18 +2,15 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import * as monaco from 'monaco-editor';
 
 import {
-  type Diagnosis,
   type Job,
   type OptionSpec,
   SandboxUnavailableError,
   benchmarkJob,
-  diagnoseJob,
   fetchOptions,
   fetchStage,
   startCompile,
   waitForJob,
 } from './api/sandbox';
-import {FindingsList} from './components/FindingsList';
 import {MetricBar} from './components/MetricBar';
 import {THEME_NAME, monacoLanguage} from './monaco/setup';
 
@@ -50,7 +47,6 @@ export function SandboxPage({onBack}: {onBack: () => void}) {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
   const [ir, setIr] = useState('');
-  const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
   // Kept so a flag flip can be compared against the previous compile rather than forgotten.
   const [previous, setPrevious] = useState<{options: Record<string, string>; job: Job} | null>(null);
 
@@ -103,7 +99,6 @@ export function SandboxPage({onBack}: {onBack: () => void}) {
 
   async function compile() {
     setBusy(true);
-    setDiagnosis(null);
     setStatus('compiling…');
     try {
       if (job?.bench) setPrevious({options: job.options, job});
@@ -139,21 +134,6 @@ export function SandboxPage({onBack}: {onBack: () => void}) {
       const bench = await benchmarkJob(job.job_id, 5);
       setJob({...job, bench});
       setStatus(`measured ${bench.median_ms.toFixed(3)} ms`);
-    } catch (error) {
-      setStatus(String(error));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function diagnose() {
-    if (!job || job.status !== 'done') return;
-    setBusy(true);
-    setStatus('running the Doctor…');
-    try {
-      const result = await diagnoseJob(job.job_id);
-      setDiagnosis(result);
-      setStatus(result.summary.headline);
     } catch (error) {
       setStatus(String(error));
     } finally {
@@ -243,9 +223,6 @@ export function SandboxPage({onBack}: {onBack: () => void}) {
             <button type="button" onClick={measure} disabled={busy || job?.status !== 'done'}>
               Measure
             </button>
-            <button type="button" onClick={diagnose} disabled={busy || job?.status !== 'done'}>
-              Diagnose
-            </button>
           </div>
         </aside>
 
@@ -274,26 +251,10 @@ export function SandboxPage({onBack}: {onBack: () => void}) {
             </div>
           )}
 
-          <div className="sandbox-panes">
-            <section className="sandbox-ir">
-              <h3>{stage}</h3>
-              <div className="sandbox-editor" ref={editorHost} />
-            </section>
-
-            {diagnosis && (
-              <section className="sandbox-doctor">
-                <h3>
-                  Doctor <span className="muted">{diagnosis.summary.headline}</span>
-                </h3>
-                <FindingsList findings={diagnosis.findings} />
-                <ul className="doctor-notes">
-                  {diagnosis.notes.map((note) => (
-                    <li key={note}>{note}</li>
-                  ))}
-                </ul>
-              </section>
-            )}
-          </div>
+          <section className="sandbox-ir">
+            <h3>{stage}</h3>
+            <div className="sandbox-editor" ref={editorHost} />
+          </section>
         </main>
       </div>
     </div>

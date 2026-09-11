@@ -90,7 +90,6 @@ export function LineageExplorerPage({artifact, onBack}: LineageExplorerPageProps
                 lineageEntry={lineageEntry}
                 sourceStage={anchorStage}
                 stages={artifact.stages}
-                diagnosis={artifact.diagnosis}
                 onJumpToStage={jumpToStage}
               />
             </>

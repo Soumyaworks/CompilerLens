@@ -179,37 +179,7 @@ Detected transformation:
 
 The UI should explain what the transformation means.
 
-### 4.5 Optimization Doctor
-
-Identify optimization successes and missed opportunities.
-
-Example:
-
-``` text
-🔴 Missed Vectorization
-
-Operation: %42
-Pass: vectorize
-
-Reason:
-Dynamic loop bound prevented vectorization.
-
-Evidence:
-- Dynamic iteration count
-- Vector width = 8
-
-Suggestion:
-Specialize common static dimensions or introduce
-padding/versioning where appropriate.
-```
-
-Initial optimization analyses:
-
-1.  Missed vectorization
-2.  Missed fusion
-3.  Unnecessary memory/layout conversion
-
-### 4.6 AI Explanation Layer
+### 4.5 AI Explanation Layer
 
 The LLM should not guess compiler behavior.
 
@@ -219,8 +189,6 @@ Architecture:
 Compiler Output
       ↓
 Structured Evidence
-      ↓
-Optimization Analyzer
       ↓
 Evidence JSON
       ↓
@@ -250,11 +218,11 @@ evidence.
                             │
              ┌──────────────┼──────────────┐
              ▼              ▼              ▼
-       Compiler Runner   Analyzer          LLM
+       Compiler Runner   Lineage           LLM
              │              │              │
              ▼              ▼              ▼
-        MLIR / LLVM      Lineage &       Explanation
-                         Optimization
+        MLIR / LLVM      Operation       Explanation
+                         history
              │
              ▼
        Compiler Artifacts
@@ -375,21 +343,19 @@ Introduce specialized rules for:
 The goal is not perfect semantic equivalence. The goal is reliable
 lineage for the supported demo workloads.
 
-## 8. Optimization Evidence
+## 8. Compiler Evidence
 
-Every optimization analysis should produce structured evidence.
+Every claim about an optimization should be backed by structured compiler evidence.
 
 Example:
 
 ``` json
 {
-  "pass": "vectorization",
-  "status": "missed",
-  "confidence": 0.91,
-  "evidence": [
-    "dynamic loop bound",
-    "non-unit stride"
-  ]
+  "kind": "vector-width",
+  "label": "Native vector width",
+  "value": "64 bytes",
+  "stage_id": "s09",
+  "source": "hal.executable.variant target attribute"
 }
 ```
 
@@ -493,15 +459,9 @@ compiler optimized, but also what it failed to optimize.
 -   Add filtering by operation/pass/transformation.
 -   Improve navigation between source, transformation, and result.
 
-### Week 3 --- Optimization Intelligence + AI
+### Week 3 --- Compiler Evidence + AI
 
 #### Soumya
-
-Implement initial optimization rules:
-
-1.  Missed vectorization
-2.  Missed fusion
-3.  Unnecessary memory/layout conversion
 
 Integrate compiler remarks and evidence.
 
@@ -511,7 +471,6 @@ Build the structured explanation API.
 
 Build:
 
--   Optimization Doctor UI
 -   AI explanation panel
 -   Evidence display
 -   Suggestion UI
@@ -553,11 +512,6 @@ compilerlens/
 │       ├── llvm/
 │       └── instrumentation/
 │
-├── analyzer/
-│   ├── transformations/
-│   ├── lineage/
-│   └── rules/
-│
 ├── examples/
 │   ├── matmul.py
 │   ├── linear_relu.py
@@ -576,7 +530,7 @@ compilerlens/
   Pass extraction            Owner     
   Operation lineage          Owner     Support
   Transformation detection   Owner     
-  Optimization rules         Owner     
+  Compiler evidence          Owner
   Backend API                Owner     Support
   Artifact schema            Owner     Support
   Frontend architecture                Owner
@@ -609,7 +563,7 @@ compilerlens/
 -   Machine-code view
 -   Performance metrics
 -   Execution-time comparison
--   More optimization rules
+-   More compiler evidence sources
 -   Compiler pipeline customization
 -   Saved compilations
 -   Search across IR

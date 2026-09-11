@@ -1194,10 +1194,7 @@ body {
   color: var(--text-muted);
 }
 
-/* ── Sandbox + Doctor ─────────────────────────────────────────────────────────────────
-   The live-compile screen and the findings list. Uses the same surface/ink tokens as the
-   rest of the app; severity and confidence get their own colours because the whole point
-   of those chips is to be scannable at a glance. */
+/* ── Sandbox ───────────────────────────────────────────────────────────────────────── */
 
 .sandbox-entry {
   margin-top: 1.25rem;
@@ -1277,91 +1274,17 @@ body {
   border-radius: 3px; font-size: 0.72rem; color: var(--text-secondary);
 }
 
-.sandbox-panes { flex: 1; display: flex; gap: 0.7rem; min-height: 0; }
 .sandbox-ir { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.sandbox-ir h3, .sandbox-doctor h3 {
+.sandbox-ir h3 {
   margin: 0 0 0.4rem; font-size: 0.78rem; text-transform: uppercase;
   letter-spacing: 0.07em; color: var(--text-muted); font-weight: 600;
 }
 .sandbox-editor {
   flex: 1; border: 1px solid var(--border); border-radius: 5px; overflow: hidden; min-height: 220px;
 }
-.sandbox-doctor { width: 420px; flex-shrink: 0; overflow-y: auto; }
-
-.findings-list { list-style: none; padding: 0; margin: 0; }
-.findings-empty { color: var(--text-muted); font-size: 0.85rem; }
-.finding {
-  padding: 0.6rem; margin-bottom: 0.5rem; background: var(--surface-1);
-  border: 1px solid var(--border); border-left-width: 3px; border-radius: 4px;
-}
-.finding-missed { border-left-color: var(--phase-input); }
-.finding-suboptimal { border-left-color: var(--phase-flow); }
-.finding-info { border-left-color: var(--phase-frontend); }
-.finding-head { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
-.finding-title { margin: 0; font-size: 0.85rem; font-weight: 600; flex: 1 1 100%; }
-.finding-severity, .finding-confidence {
-  font-size: 0.6rem; padding: 0.1rem 0.35rem; border-radius: 3px;
-  letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600;
-}
-.sev-missed { background: var(--phase-input); color: #fff; }
-.sev-suboptimal { background: var(--phase-flow); color: #000; }
-.sev-info { background: var(--phase-frontend); color: #fff; }
-/* Confidence is deliberately low-contrast: it qualifies the claim, it is not the claim. */
-.conf-measured { background: var(--phase-global); color: #fff; }
-.conf-structural { background: var(--surface-3); color: var(--text-secondary); }
-.conf-heuristic { background: var(--surface-2); color: var(--text-muted); }
-.finding-detail { margin: 0.4rem 0; font-size: 0.78rem; line-height: 1.45; color: var(--text-secondary); }
-.finding-meta { display: flex; gap: 0.6rem; align-items: center; font-size: 0.7rem; color: var(--text-muted); }
-.finding-jump {
-  background: none; border: none; color: var(--phase-frontend); cursor: pointer;
-  font-size: 0.7rem; padding: 0; text-decoration: underline;
-}
-.finding-evidence {
-  margin: 0.4rem 0 0; padding: 0.4rem; background: var(--plane); border-radius: 3px;
-  font-size: 0.68rem; overflow-x: auto; color: var(--text-secondary); white-space: pre-wrap;
-}
-.finding-suggestion { margin: 0.4rem 0 0; font-size: 0.72rem; color: var(--text-secondary); }
-.doctor-notes { margin: 0.8rem 0 0; padding-left: 1rem; font-size: 0.68rem; color: var(--text-muted); }
-
 .sandbox-unavailable { padding: 2rem; max-width: 640px; margin: 0 auto; }
 .sandbox-unavailable pre {
   padding: 0.7rem; background: var(--surface-1); border: 1px solid var(--border);
   border-radius: 4px; font-size: 0.78rem;
 }
 .sandbox-unavailable .muted { color: var(--text-muted); font-size: 0.8rem; }
-.pane-header-meta {
-  margin-left: auto; color: var(--text-muted); font-size: 0.7rem;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 55%;
-}
-.doctor-rules { margin-top: 0.8rem; font-size: 0.72rem; color: var(--text-muted); }
-.doctor-rules summary { cursor: pointer; color: var(--text-secondary); }
-.doctor-rules ul { margin: 0.4rem 0 0; padding-left: 1rem; line-height: 1.5; }
-
-/* ── Kernel cost ──────────────────────────────────────────────────────────────────── */
-.kernel-totals {
-  display: flex; gap: 0.9rem; flex-wrap: wrap; padding-bottom: 0.5rem;
-  font-size: 0.74rem; color: var(--text-secondary);
-}
-.kernel-machine { font-size: 0.7rem; color: var(--text-muted); margin: 0 0 0.6rem; }
-.kernel-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
-.kernel-table th {
-  text-align: left; padding: 0.25rem 0.4rem; color: var(--text-muted);
-  font-weight: 600; font-size: 0.64rem; text-transform: uppercase;
-  letter-spacing: 0.05em; border-bottom: 1px solid var(--border);
-}
-.kernel-table th.num, .kernel-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
-.kernel-table td { padding: 0.25rem 0.4rem; border-bottom: 1px solid var(--gridline); }
-.kernel-name { position: relative; min-width: 190px; }
-/* The bar sits behind the label rather than beside it, so the table stays narrow. */
-.kernel-bar {
-  position: absolute; left: 0; top: 2px; bottom: 2px;
-  background: rgba(57, 135, 229, 0.16); border-radius: 2px;
-}
-.kernel-label { position: relative; font-family: 'SF Mono', Menlo, monospace; font-size: 0.68rem; }
-.bound-chip {
-  padding: 0.05rem 0.3rem; border-radius: 3px; font-size: 0.62rem; text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.bound-chip-compute { background: var(--phase-global); color: #fff; }
-.bound-chip-memory { background: var(--phase-input); color: #fff; }
-.bound-chip-unknown { background: var(--surface-3); color: var(--text-muted); }

@@ -1,7 +1,6 @@
 import {useState} from 'react';
-import type {Diagnosis, Finding, LineageChange, LineageEntry, LineageHop, Stage} from '../api/artifact';
+import type {LineageChange, LineageEntry, LineageHop, Stage} from '../api/artifact';
 import {PHASE_TITLES} from '../api/artifact';
-import {FindingsList} from './FindingsList';
 import '../styles/lineage.css';
 
 interface LineageTimelineProps {
@@ -9,7 +8,6 @@ interface LineageTimelineProps {
   lineageEntry: LineageEntry;
   sourceStage: Stage | undefined;
   stages: Stage[];
-  diagnosis: Diagnosis | undefined;
   onJumpToStage: (stageId: string, lines: number[]) => void;
 }
 
@@ -55,27 +53,19 @@ function groupHops(hops: LineageHop[]): TimelineItem[] {
   return items;
 }
 
-function findingsForStage(diagnosis: Diagnosis | undefined, stageId: string): Finding[] {
-  if (!diagnosis?.findings.length) return [];
-  return diagnosis.findings.filter(f => f.stage_id === stageId);
-}
-
 function HopCard({
   hop,
   stageMap,
   jumpLines,
-  diagnosis,
   onJumpToStage,
 }: {
   hop: LineageHop;
   stageMap: Map<string, Stage>;
   jumpLines: (stageId: string) => number[];
-  diagnosis: Diagnosis | undefined;
   onJumpToStage: (stageId: string, lines: number[]) => void;
 }) {
   const stage = stageMap.get(hop.stage_id);
   if (!stage) return null;
-  const findings = findingsForStage(diagnosis, hop.stage_id);
   const opNames = Object.entries(hop.op_names).slice(0, 6);
 
   return (
@@ -118,15 +108,6 @@ function HopCard({
           </span>
         )}
       </button>
-
-      {findings.length > 0 && (
-        <div className="lineage-hop-findings">
-          <span className="lineage-findings-label">
-            The Doctor also flagged this stage ({findings.length}):
-          </span>
-          <FindingsList findings={findings} />
-        </div>
-      )}
     </div>
   );
 }
@@ -135,13 +116,11 @@ function CollapsedRun({
   hops,
   stageMap,
   jumpLines,
-  diagnosis,
   onJumpToStage,
 }: {
   hops: LineageHop[];
   stageMap: Map<string, Stage>;
   jumpLines: (stageId: string) => number[];
-  diagnosis: Diagnosis | undefined;
   onJumpToStage: (stageId: string, lines: number[]) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -166,7 +145,6 @@ function CollapsedRun({
               hop={hop}
               stageMap={stageMap}
               jumpLines={jumpLines}
-              diagnosis={diagnosis}
               onJumpToStage={onJumpToStage}
             />
           ))}
@@ -181,7 +159,6 @@ export function LineageTimeline({
   lineageEntry,
   sourceStage,
   stages,
-  diagnosis,
   onJumpToStage,
 }: LineageTimelineProps) {
   const stageMap = new Map(stages.map(s => [s.id, s]));
@@ -230,7 +207,6 @@ export function LineageTimeline({
               hops={item.hops}
               stageMap={stageMap}
               jumpLines={jumpLines}
-              diagnosis={diagnosis}
               onJumpToStage={onJumpToStage}
             />
           ) : (
@@ -239,7 +215,6 @@ export function LineageTimeline({
               hop={item.hop}
               stageMap={stageMap}
               jumpLines={jumpLines}
-              diagnosis={diagnosis}
               onJumpToStage={onJumpToStage}
             />
           )

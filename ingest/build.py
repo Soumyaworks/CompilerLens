@@ -12,7 +12,6 @@ separate here.
 from __future__ import annotations
 
 import argparse
-import dataclasses
 import json
 import re
 import sys
@@ -313,8 +312,8 @@ def _trim_op_index(stages: list[Stage]) -> str | None:
 def _build_evidence(stages: list[Stage]) -> tuple[list[Evidence], dict]:
     """Recover the compiler's own statements about what it decided to do.
 
-    Everything returned here is a quotation, not an inference. Stage 3's Optimization
-    Doctor and Stage 4's AI layer are both built strictly on top of this.
+    Everything returned here is a quotation, not an inference. Semantic diffs and the AI
+    explanation layer are built strictly on top of this evidence.
     """
     evidence: list[Evidence] = []
     target: dict = {}
@@ -489,80 +488,7 @@ def build_artifact(workload: WorkloadSpec, root: Path | None = None) -> Artifact
         lineage=lineage,
     )
 
-    # Modelled per-kernel cost, from the shapes IREE writes into its own kernel names. Guarded
-    # the same way as the diagnosis: an addition to the artifact, never allowed to sink it.
-    try:
-        artifact.kernels = _build_kernel_costs(stages, target)
-    except Exception as exc:  # noqa: BLE001
-        artifact.notes.append(
-            f"Per-kernel cost modelling failed ({type(exc).__name__}: {exc}). The IR, evidence "
-            f"and stage list above are unaffected."
-        )
-
-    # Run the Doctor here so the static site carries a diagnosis without needing a server.
-    # analyzer/ is stdlib-only for exactly this reason. A rule crashing must not take the
-    # artifact with it -- the IR is the product, the diagnosis is an addition to it.
-    try:
-        from analyzer.diagnose import diagnose
-
-        artifact.diagnosis = diagnose(dataclasses.asdict(artifact))
-    except Exception as exc:  # noqa: BLE001 - report, never fail the build
-        artifact.notes.append(
-            f"The Optimization Doctor could not run for this artifact "
-            f"({type(exc).__name__}: {exc}). The IR and evidence above are unaffected."
-        )
-
     return artifact
-
-
-def _build_kernel_costs(stages: list[Stage], target: dict) -> dict:
-    """Model each dispatch's arithmetic and memory traffic.
-
-    Reads the codegen stage that still names its kernels. `backend/measure/kernels.py` holds the
-    model; ingest only supplies the text and the machine parameters, so there is one
-    implementation rather than a build-time copy that can drift.
-    """
-    import sys
-    from pathlib import Path as _Path
-
-    repo_root = _Path(__file__).resolve().parents[1]
-    if str(repo_root) not in sys.path:
-        sys.path.insert(0, str(repo_root))
-
-    from backend.measure.kernels import analyse_kernels, machine_peak
-
-    stage = _find_stage(stages, "executable-configurations") or _find_stage(stages, "executable-sources")
-    if stage is None:
-        return {}
-
-    native_vector_bytes = target.get("native_vector_size") or 0
-    peak = None
-    if native_vector_bytes:
-        # Host parameters are read from the machine rather than assumed, so the roofline is
-        # honest on whatever box this runs on.
-        import os
-
-        cores = os.cpu_count() or 1
-        mhz = _host_mhz() or 0.0
-        if mhz:
-            peak = machine_peak(cores=cores, mhz=mhz, native_vector_bytes=native_vector_bytes)
-
-    return analyse_kernels(stage.text or "", peak)
-
-
-def _host_mhz() -> float | None:
-    """Nominal clock in MHz from /proc/cpuinfo, or None if it cannot be read.
-
-    Returning None rather than a guess: a fabricated clock would produce a fabricated peak, and
-    every percent-of-peak figure derived from it would be wrong in a way nobody could see.
-    """
-    try:
-        for line in open("/proc/cpuinfo"):
-            if line.lower().startswith("cpu mhz"):
-                return float(line.split(":")[1].strip())
-    except (OSError, ValueError, IndexError):
-        return None
-    return None
 
 
 def build_index(workloads: dict[str, WorkloadSpec], artifacts: dict[str, Artifact]) -> dict:

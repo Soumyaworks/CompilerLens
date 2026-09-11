@@ -61,13 +61,6 @@ export interface Bench {
   notes: string[];
 }
 
-// The Doctor's shapes are identical whether they came from a static artifact or from the live
-// /diagnose endpoint, so they live in api/artifact.ts. Imported for use below and re-exported
-// so Sandbox consumers have one place to import from.
-import type {Diagnosis, Finding} from './artifact';
-
-export type {Diagnosis, Finding};
-
 export interface Job {
   job_id: string;
   status: 'running' | 'done' | 'failed';
@@ -80,7 +73,6 @@ export interface Job {
   compile_seconds: number | null;
   model_info: Record<string, unknown> | null;
   bench: Bench | null;
-  diagnosis: Diagnosis | null;
   error: string | null;
   artifact_id?: string | null;
 }
@@ -166,10 +158,6 @@ export function benchmarkJob(jobId: string, repetitions = 5) {
     method: 'POST',
     body: JSON.stringify({repetitions}),
   });
-}
-
-export function diagnoseJob(jobId: string) {
-  return call<Diagnosis>(`/compile/${jobId}/diagnose`, {method: 'POST'});
 }
 
 /** Poll until the job leaves `running`. Compiles are ~1-7s, so a short interval is fine. */

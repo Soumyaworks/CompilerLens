@@ -7,9 +7,7 @@ import {PHASE_TITLES} from './api/artifact';
 import {ArtifactMissingError, fetchArtifact} from './api/client';
 import {registerReactPane} from './golden-layout/react-bridge';
 import {LineageExplorerPage} from './LineageExplorerPage';
-import {DoctorPane} from './panes/DoctorPane';
 import {EvidencePane} from './panes/EvidencePane';
-import {KernelCostPane} from './panes/KernelCostPane';
 import {LineagePane} from './panes/LineagePane';
 import type {LineagePaneState} from './panes/LineagePane';
 import {NotesPane} from './panes/NotesPane';
@@ -218,9 +216,6 @@ export function Workspace({workloadId, onBack}: WorkspaceProps) {
     registerReactPane<undefined>(layout, 'evidence', () => (
       <EvidencePane artifact={artifact} onNavigateToStage={navigateToStage} />
     ));
-    registerReactPane<undefined>(layout, 'doctor', () => (
-      <DoctorPane artifact={artifact} onNavigateToStage={navigateToStage} />
-    ));
     registerReactPane<LineagePaneState>(layout, 'lineage', (state) => (
       <LineagePane
         artifact={artifact}
@@ -230,7 +225,6 @@ export function Workspace({workloadId, onBack}: WorkspaceProps) {
         }}
       />
     ));
-    registerReactPane<undefined>(layout, 'kernels', () => <KernelCostPane artifact={artifact} />);
     registerReactPane<undefined>(layout, 'notes', () => <NotesPane notes={artifact.notes} />);
 
     layout.loadLayout(defaultLayoutConfig(artifact) as Parameters<GoldenLayout['loadLayout']>[0]);
@@ -309,17 +303,6 @@ export function Workspace({workloadId, onBack}: WorkspaceProps) {
                 </button>
                 <button
                   type="button"
-                  disabled={!artifact.diagnosis?.findings?.length}
-                  onClick={() => layoutRef.current?.addComponent('doctor', undefined, 'Doctor')}
-                  title={
-                    artifact.diagnosis?.summary?.headline ??
-                    'No diagnosis in this artifact — rebuild with npm run artifact'
-                  }
-                >
-                  Doctor ({artifact.diagnosis?.findings?.length ?? 0})
-                </button>
-                <button
-                  type="button"
                   disabled={!artifact.lineage?.lines || Object.keys(artifact.lineage.lines).length === 0}
                   onClick={() => layoutRef.current?.addComponent('lineage', undefined, 'Lineage')}
                   title={
@@ -329,14 +312,6 @@ export function Workspace({workloadId, onBack}: WorkspaceProps) {
                   }
                 >
                   Lineage ({artifact.lineage?.summary?.source_lines_covered ?? 0})
-                </button>
-                <button
-                  type="button"
-                  disabled={!artifact.kernels?.kernels?.length}
-                  onClick={() => layoutRef.current?.addComponent('kernels', undefined, 'Kernel cost')}
-                  title="Modelled arithmetic and memory cost per dispatch"
-                >
-                  Kernel cost ({artifact.kernels?.totals?.kernel_count ?? 0})
                 </button>
                 <button
                   type="button"

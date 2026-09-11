@@ -171,7 +171,6 @@ def compile_model(request: CompileRequest, background: BackgroundTasks):
         "flags": flags,
         "stages": {},
         "bench": None,
-        "diagnosis": None,
         "error": None,
         "compile_seconds": None,
         "work_dir": None,
@@ -197,7 +196,7 @@ def explore_model(request: ExploreRequest, background: BackgroundTasks):
     job_id = str(uuid.uuid4())[:8]
     JOBS[job_id] = {
         "status": "running", "model_id": model_id, "seq_len": request.seq_len,
-        "options": {}, "flags": [], "stages": {}, "bench": None, "diagnosis": None,
+        "options": {}, "flags": [], "stages": {}, "bench": None,
         "error": None, "compile_seconds": None, "work_dir": None, "artifact_id": None,
     }
     background.add_task(_run_explore, job_id, model_id, request.seq_len)
@@ -446,7 +445,6 @@ def get_job(job_id: str):
         "compile_seconds": job["compile_seconds"],
         "model_info": job.get("model_info"),
         "bench": job["bench"],
-        "diagnosis": job["diagnosis"],
         "error": job["error"],
         "artifact_id": job.get("artifact_id"),
     }
@@ -482,35 +480,6 @@ def benchmark_job(job_id: str, request: BenchmarkRequest):
 
     job["bench"] = result.as_dict()
     return job["bench"]
-
-
-@app.post("/compile/{job_id}/diagnose")
-def diagnose_job(job_id: str):
-    """Run the Doctor's rules over this job's compiled stages."""
-    job = JOBS.get(job_id)
-    if job is None:
-        raise HTTPException(status_code=404, detail="unknown job_id")
-    if job["status"] != "done":
-        raise HTTPException(status_code=409, detail=f"job is '{job['status']}'")
-
-    from analyzer.diagnose import diagnose
-
-    # The rules read an artifact-shaped dict, so present this job's stages in that shape.
-    stages = []
-    for index, (name, path) in enumerate(sorted(job["stages"].items())):
-        stages.append(
-            {
-                "id": f"s{index:02d}",
-                "name": name,
-                "title": name.replace("-", " ").title(),
-                "language": "mlir",
-                "kind": "phase",
-                "text": Path(path).read_text(),
-                "ops": [],
-            }
-        )
-    job["diagnosis"] = diagnose({"stages": stages})
-    return job["diagnosis"]
 
 
 @app.get("/health")
