@@ -174,6 +174,57 @@ export interface KernelCosts {
   notes: string[];
 }
 
+/**
+ * What happened to an operation between two phase checkpoints (DESIGN-DOC section 4.2).
+ * `created`/`track-change`/`eliminated` are not really "changes" so much as origin, view-
+ * switch, and absence markers -- see ingest/lineage.py for exactly how each is decided.
+ */
+export type LineageChange =
+  | 'created'
+  | 'carried'
+  | 'modified'
+  | 'lowered'
+  | 'fused'
+  | 'split'
+  | 'track-change'
+  | 'eliminated';
+
+export type LineageConfidence = 'definitional' | 'structural' | 'heuristic';
+
+export interface LineageHop {
+  kind: 'origin' | 'transition' | 'track-change' | 'elimination';
+  /** The stage this hop lands on (for `elimination`, the stage where it is no longer found). */
+  stage_id: string;
+  from_stage: string | null;
+  change: LineageChange;
+  confidence: LineageConfidence;
+  from_count: number | null;
+  to_count: number;
+  op_names: Record<string, number>;
+  /** Backend-generated, human-readable explanation of this hop -- see ingest/lineage.py. */
+  detail: string;
+  /** Intermediate --mlir-print-ir-after-all pass snapshots folded into this hop, not listed. */
+  pass_count: number;
+}
+
+export interface LineageEntry {
+  source_text: string;
+  total_ops: number;
+  stage_count: number;
+  stages: Record<string, number[]>;
+  op_names: Record<string, number>;
+  /** Classified phase-to-phase trace -- see ingest/lineage.py's module docstring. */
+  hops: LineageHop[];
+}
+
+export interface Lineage {
+  anchor_stage: string;
+  level: number;
+  lines: Record<string, LineageEntry>;
+  summary: {source_lines_covered: number; total_anchored_ops: number};
+  notes: string[];
+}
+
 export interface Artifact {
   compilation_id: string;
   stages: Stage[];
@@ -187,6 +238,8 @@ export interface Artifact {
   diagnosis?: Diagnosis;
   /** Modelled arithmetic and memory cost per dispatch. */
   kernels?: KernelCosts;
+  /** Level-1 operation lineage: source line -> operations across all stages. */
+  lineage?: Lineage;
   artifact_version: string;
 }
 
@@ -250,4 +303,24 @@ export function groupByPhase(stages: Stage[]): PhaseGroup[] {
     }
   }
   return groups;
+}
+
+// Anchor-stage (torch-input) operations that are declarations/literals/plumbing feeding a
+// real operation, not an operation a user wrote: scalar constants, global weight
+// declarations, embedded constant tensors, shape-list construction, dialect-bridging casts,
+// and the function signature itself. Shared by the source pane's glyph filter and the
+// Lineage Explorer's operation list so the two can't drift apart -- see IRViewer.tsx's
+// earlier `sourceLineNum < 3` bug, which was exactly this kind of rule duplicated and
+// hardcoded in one place while being wrong in the other.
+const NON_TRACEABLE_ANCHOR_OPS = new Set([
+  'func.func',
+  'util.global',
+  'util.global.load',
+  'torch.vtensor.literal',
+  'torch.prim.ListConstruct',
+  'torch_c.from_builtin_tensor',
+]);
+
+export function isTraceableAnchorOp(opName: string): boolean {
+  return !NON_TRACEABLE_ANCHOR_OPS.has(opName) && !opName.startsWith('torch.constant.');
 }

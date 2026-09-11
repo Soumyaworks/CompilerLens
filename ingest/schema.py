@@ -20,7 +20,10 @@ from typing import Any
 # 0.2 added Artifact.diagnosis (the Optimization Doctor's findings, baked in at build time).
 # 0.3 added Artifact.lineage (Level-1 operation lineage, for hover-linked highlighting) and
 #     Artifact.kernels (the modelled per-kernel cost breakdown).
-ARTIFACT_VERSION = "0.3"
+# 0.4 added a classified `hops` list to each Artifact.lineage line entry (Created/Carried/
+#     Modified/Lowered/Fused/Split/Eliminated, per DESIGN-DOC section 4.2) -- see
+#     ingest/lineage.py. `stages` is unchanged, so nothing that read 0.3 lineage breaks.
+ARTIFACT_VERSION = "0.4"
 
 # Coarse groupings for the pipeline sidebar. A stage's phase decides where it is drawn and
 # what colour it gets, so the user can see at a glance which level of abstraction they are

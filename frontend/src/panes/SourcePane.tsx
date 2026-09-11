@@ -1,4 +1,4 @@
-import type {Stage} from '../api/artifact';
+import type {Artifact, Stage} from '../api/artifact';
 import {IRViewer} from '../components/IRViewer';
 
 /**
@@ -11,9 +11,11 @@ import {IRViewer} from '../components/IRViewer';
 
 interface SourcePaneProps {
   stage: Stage;
+  artifact?: Artifact;
+  onOpenLineage?: (sourceLine: string) => void;
 }
 
-export function SourcePane({stage}: SourcePaneProps) {
+export function SourcePane({stage, artifact, onOpenLineage}: SourcePaneProps) {
   return (
     <div className="pane">
       <div className="pane-header">
@@ -21,7 +23,12 @@ export function SourcePane({stage}: SourcePaneProps) {
         <span className="pane-header-path">{stage.source_path}</span>
       </div>
       <div className="pane-body">
-        <IRViewer stage={stage} showLocations={true} />
+        <IRViewer
+          stage={stage}
+          showLocations={true}
+          lineage={artifact?.lineage}
+          onLineageClick={onOpenLineage}
+        />
       </div>
     </div>
   );

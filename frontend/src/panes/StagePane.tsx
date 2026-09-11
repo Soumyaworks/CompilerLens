@@ -19,6 +19,8 @@ import {ViewerControls} from './ViewerControls';
 
 export interface StagePaneState {
   stageId: string;
+  revealLine?: number;
+  highlightLines?: number[];
 }
 
 interface StagePaneProps {
@@ -93,6 +95,8 @@ export function StagePane({artifact, initialState, container, onSelectStage}: St
         showLocations={viewer.showLocations}
         statsOpen={viewer.statsOpen}
         onCloseStats={() => viewer.setStatsOpen(false)}
+        revealLine={initialState?.revealLine}
+        highlightLines={initialState?.highlightLines}
       />
     </div>
   );
