@@ -377,7 +377,7 @@
   padding: 0.8rem;
 }
 
-.lineage-explorer-ir { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.lineage-explorer-ir { flex: 1.3; display: flex; flex-direction: column; min-width: 0; }
 .lineage-explorer-ir h3 {
   margin: 0 0 0.4rem;
   font-size: 0.78rem;
@@ -394,8 +394,11 @@
   min-height: 220px;
 }
 
+/* Left (code) pane is a little bigger than the operation-list/timeline pane for readability --
+   was the reverse (description pane dominant) when this page only ever showed the plain
+   operation list; now that the list is filtered down, code readability matters more. */
 .lineage-explorer-detail {
-  flex: 1.6;
+  flex: 1;
   min-width: 0;
   overflow-y: auto;
   border: 1px solid var(--border);

@@ -304,3 +304,23 @@ export function groupByPhase(stages: Stage[]): PhaseGroup[] {
   }
   return groups;
 }
+
+// Anchor-stage (torch-input) operations that are declarations/literals/plumbing feeding a
+// real operation, not an operation a user wrote: scalar constants, global weight
+// declarations, embedded constant tensors, shape-list construction, dialect-bridging casts,
+// and the function signature itself. Shared by the source pane's glyph filter and the
+// Lineage Explorer's operation list so the two can't drift apart -- see IRViewer.tsx's
+// earlier `sourceLineNum < 3` bug, which was exactly this kind of rule duplicated and
+// hardcoded in one place while being wrong in the other.
+const NON_TRACEABLE_ANCHOR_OPS = new Set([
+  'func.func',
+  'util.global',
+  'util.global.load',
+  'torch.vtensor.literal',
+  'torch.prim.ListConstruct',
+  'torch_c.from_builtin_tensor',
+]);
+
+export function isTraceableAnchorOp(opName: string): boolean {
+  return !NON_TRACEABLE_ANCHOR_OPS.has(opName) && !opName.startsWith('torch.constant.');
+}

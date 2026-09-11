@@ -2,6 +2,7 @@ import Editor from '@monaco-editor/react';
 import {useMemo, useRef} from 'react';
 
 import type {Lineage, Stage} from '../api/artifact';
+import {isTraceableAnchorOp} from '../api/artifact';
 import {stripLocations} from '../api/locations';
 import {monacoLanguage, THEME_NAME} from '../monaco/setup';
 
@@ -64,11 +65,12 @@ export function IRViewer({
       };
     }> = [];
 
-    // The anchor stage's own operation at each line -- used below to skip `func.func`, which
-    // is scaffolding (the function signature), not something a user wrote an expression on.
-    // Its ABI/runtime boilerplate descendants (hal.*, util.*, memref.*) have no location of
-    // their own and default to the function's, which would otherwise dump all of it onto
-    // whichever line happens to hold the signature -- a different line in every workload.
+    // The anchor stage's own operation at each line -- used below to skip scaffolding
+    // (the function signature, scalar constants, global weight declarations, embedded
+    // constant tensors), none of which is something a user wrote an expression on. Their
+    // ABI/runtime boilerplate descendants (hal.*, util.*, memref.*) have no location of
+    // their own and default to whichever anchor line they're attached to, which would
+    // otherwise dump all of it onto that line -- see `isTraceableAnchorOp`.
     const anchorOpByLine =
       stage.name === 'torch-input' ? new Map(stage.ops.map(op => [op.line, op.name])) : null;
 
@@ -77,7 +79,8 @@ export function IRViewer({
       Object.entries(lineage.lines).forEach(([lineNum, entry]) => {
         const sourceLineNum = parseInt(lineNum, 10);
 
-        if (anchorOpByLine && anchorOpByLine.get(sourceLineNum) === 'func.func') return;
+        const anchorOpName = anchorOpByLine?.get(sourceLineNum);
+        if (anchorOpName && !isTraceableAnchorOp(anchorOpName)) return;
 
         // Get all lines for this lineage entry from this stage
         const stageLines = entry.stages[stage.id];
