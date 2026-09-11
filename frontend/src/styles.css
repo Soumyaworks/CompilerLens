@@ -962,7 +962,12 @@ body {
 .model-search-form { display: flex; gap: 8px; margin-top: 14px; }
 .model-search-form input { flex: 1; min-width: 0; padding: 8px 10px; background: var(--plane); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius); font: 12px var(--font-mono); }
 .model-search-form .workload-card-open { margin-top: 0; white-space: nowrap; }
-.model-search-status { margin: 12px 0 0; color: var(--text-secondary); line-height: 1.4; }
+.model-search-status {
+  margin: 12px 0 0;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
 
 .landing-header .tagline {
   font-size: 14px;

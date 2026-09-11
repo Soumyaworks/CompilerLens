@@ -22,6 +22,25 @@ const BASE =
 
 export class SandboxUnavailableError extends Error {}
 
+/** A short message intended for display in the UI. */
+export class ApiRequestError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+    this.name = 'ApiRequestError';
+  }
+}
+
+/** Last-resort protection for errors returned inside an otherwise successful job response. */
+export function userFacingError(error: unknown, fallback = 'The operation failed.'): string {
+  const raw = error instanceof Error ? error.message : String(error ?? '');
+  const compact = raw.replace(/\s+/g, ' ').trim();
+  if (!compact) return fallback;
+  if (/unrecognized model (identifier|type)/i.test(compact)) {
+    return 'This model architecture is not recognized by the installed Transformers version. Try a supported BERT-like or GPT-like model.';
+  }
+  return compact.length > 500 ? `${compact.slice(0, 497)}…` : compact;
+}
+
 export interface OptionSpec {
   flag: string;
   values: string[];
@@ -79,10 +98,35 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
     );
   }
   if (!response.ok) {
-    const detail = await response.text().catch(() => '');
-    throw new Error(`${path} returned ${response.status}: ${detail.slice(0, 300)}`);
+    throw new ApiRequestError(await responseMessage(response), response.status);
   }
   return (await response.json()) as T;
+}
+
+/** Extract FastAPI's useful `detail` without exposing its JSON envelope or a huge body. */
+async function responseMessage(response: Response): Promise<string> {
+  const fallback = `Request failed (${response.status})`;
+  let body: unknown;
+  try {
+    body = await response.json();
+  } catch {
+    return fallback;
+  }
+
+  if (!body || typeof body !== 'object' || !('detail' in body)) return fallback;
+  const detail = (body as {detail?: unknown}).detail;
+  let message = '';
+  if (typeof detail === 'string') {
+    message = detail;
+  } else if (Array.isArray(detail)) {
+    // FastAPI/Pydantic validation errors are arrays. Their `msg` fields are the only parts a
+    // user can act on; locations, input echoes and URLs are implementation details.
+    message = detail
+      .map((item) => item && typeof item === 'object' && 'msg' in item ? String(item.msg) : '')
+      .filter(Boolean)
+      .join(' ');
+  }
+  return userFacingError(message, fallback);
 }
 
 export function fetchOptions() {

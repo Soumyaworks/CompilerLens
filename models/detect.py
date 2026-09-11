@@ -58,7 +58,7 @@ class DetectedModel:
         """Filesystem/URL-safe id: prajjwal1/bert-tiny -> prajjwal1_bert-tiny."""
         return self.model_id.replace("/", "_")
 
-    def load_model(self):
+    def load_model(self, *, dtype=None):
         """Instantiate the model in eval mode. Imported lazily so --dry-run stays fast.
 
         When detection had to fall back to sniffing config keys, the Auto classes cannot load
@@ -70,12 +70,19 @@ class DetectedModel:
         from transformers import AutoConfig, AutoModel, AutoModelForCausalLM
 
         model_class = AutoModelForCausalLM if self.causal else AutoModel
+        load_kwargs = {"revision": self.revision}
+        if dtype is not None:
+            # Some checkpoints are stored as bfloat16. Turbine's current FX importer lifts
+            # constants through NumPy, which cannot consume a torch.bfloat16 tensor. Loading
+            # directly in float32 avoids both that bridge failure and a temporary bf16->f32
+            # copy of the complete model after loading.
+            load_kwargs["dtype"] = dtype
 
         if self.detected_via == "autoconfig":
-            return model_class.from_pretrained(self.model_id, revision=self.revision).eval()
+            return model_class.from_pretrained(self.model_id, **load_kwargs).eval()
 
         config = AutoConfig.for_model(self.model_type, **self._config_overrides())
-        model = model_class.from_pretrained(self.model_id, revision=self.revision, config=config)
+        model = model_class.from_pretrained(self.model_id, config=config, **load_kwargs)
         return model.eval()
 
     def _config_overrides(self) -> dict:

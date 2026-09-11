@@ -2,7 +2,7 @@ import {useEffect, useState} from 'react';
 
 import type {WorkloadIndex, WorkloadSummary} from './api/artifact';
 import {ArtifactMissingError, fetchIndex} from './api/client';
-import {SandboxUnavailableError, startExplore, waitForJob} from './api/sandbox';
+import {SandboxUnavailableError, startExplore, userFacingError, waitForJob} from './api/sandbox';
 
 /**
  * Workload picker, shown before entering the explorer (DESIGN-DOC's "pick what you're
@@ -125,7 +125,7 @@ export function LandingPage({onSelect, onOpenSandbox}: LandingPageProps) {
         if (job.compile_seconds) setSearchStatus(`Compiling… ${job.compile_seconds}s elapsed`);
       }, 900);
       if (result.status === 'failed' || !result.artifact_id) {
-        setSearchStatus(`Compilation failed: ${result.error ?? 'no artifact was produced'}`);
+        setSearchStatus(`Compilation failed: ${userFacingError(result.error, 'No artifact was produced.')}`);
         return;
       }
       setSearchStatus('Compiled. Opening the new pipeline…');
@@ -133,7 +133,7 @@ export function LandingPage({onSelect, onOpenSandbox}: LandingPageProps) {
     } catch (cause) {
       const message = cause instanceof SandboxUnavailableError
         ? cause.message
-        : cause instanceof Error ? cause.message : String(cause);
+        : userFacingError(cause);
       setSearchStatus(message);
     } finally {
       setSearching(false);

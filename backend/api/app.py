@@ -17,6 +17,7 @@ rather than hidden.
 from __future__ import annotations
 
 import json
+import logging
 import re
 import shutil
 import subprocess
@@ -31,6 +32,17 @@ from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+LOGGER = logging.getLogger(__name__)
+_MODEL_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*(?:/[A-Za-z0-9][A-Za-z0-9._-]*)?")
+_PUBLIC_ERROR_LIMIT = 500
+# Full-stage artifacts duplicate a model's constants into textual MLIR. The largest verified
+# demo (distilgpt2, 82M parameters) is already hundreds of MB; substantially larger models can
+# turn one click into multi-GB files. The lower-level CLI remains available for deliberate runs.
+_MAX_EXPLORE_PARAMETERS = 100_000_000
+
+
+class ExploreModelTooLargeError(RuntimeError):
+    pass
 
 app = FastAPI(title="CompilerLens Sandbox API")
 
@@ -176,9 +188,12 @@ def explore_model(request: ExploreRequest, background: BackgroundTasks):
     trimmed dumps under examples/ and updates the public artifact index. This makes a finished
     search a first-class landing-page entry after a refresh or server restart.
     """
-    model_id = request.model_id.strip()
-    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*(?:/[A-Za-z0-9][A-Za-z0-9._-]*)?", model_id):
-        raise HTTPException(status_code=400, detail="model_id must be a Hugging Face repository id")
+    model_id = _normalize_model_id(request.model_id)
+    if not _MODEL_ID.fullmatch(model_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Enter a Hugging Face model ID such as organization/model-name or distilgpt2.",
+        )
     job_id = str(uuid.uuid4())[:8]
     JOBS[job_id] = {
         "status": "running", "model_id": model_id, "seq_len": request.seq_len,
@@ -193,6 +208,7 @@ def _run_explore(job_id: str, model_id: str, seq_len: int) -> None:
     """Run the established full dump -> ingest pipeline and publish its artifact."""
     job = JOBS[job_id]
     started = time.monotonic()
+    phase = "looking up the model"
     try:
         from backend.compiler.runner import CompilerRunner, RunConfig, TRIM_CODEGEN_PASSES, TRIM_ELIDE_ATTRS
         from ingest.build import build_artifact, build_index
@@ -201,8 +217,15 @@ def _run_explore(job_id: str, model_id: str, seq_len: int) -> None:
         from models.hf_wrapper import wrap, wrapper_source
 
         detected = detect(model_id, seq_len=seq_len)
+        phase = "loading the model"
         module, example_inputs, model_info = wrap(detected)
+        param_count = int(model_info.get("param_count") or 0)
+        if param_count > _MAX_EXPLORE_PARAMETERS:
+            raise ExploreModelTooLargeError(
+                f"{param_count} parameters exceeds the {_MAX_EXPLORE_PARAMETERS} parameter interactive limit"
+            )
         output_dir = REPO_ROOT / "examples" / detected.slug
+        phase = "exporting and compiling the model"
         runner = CompilerRunner(RunConfig(
             layout="ingest", elide_attrs_larger_than=TRIM_ELIDE_ATTRS,
             pass_log_after=TRIM_CODEGEN_PASSES,
@@ -210,8 +233,9 @@ def _run_explore(job_id: str, model_id: str, seq_len: int) -> None:
         result = runner.run(module, example_inputs, name=detected.slug, output_dir=output_dir, model_info=model_info)
         manifest = json.loads(result.manifest_path.read_text())
         if manifest.get("errors"):
-            raise RuntimeError("; ".join(f"{e['stage']}: {e.get('stderr', '')[:300]}" for e in manifest["errors"]))
+            raise RuntimeError(_compiler_failure_message(manifest["errors"]))
 
+        phase = "building the CompilerLens artifact"
         (output_dir / "source.py").write_text(wrapper_source(detected))
         (output_dir / "model_info.json").write_text(json.dumps(model_info, indent=2))
         spec = spec_from_dump_dir(output_dir, model_info)
@@ -233,9 +257,102 @@ def _run_explore(job_id: str, model_id: str, seq_len: int) -> None:
             shutil.rmtree(full_dir)
         job.update(status="done", model_info=model_info, artifact_id=spec.id)
     except Exception as exc:  # noqa: BLE001 - a background job must report its failure
-        job.update(status="failed", error=f"{type(exc).__name__}: {exc}")
+        # The UI gets an actionable, bounded explanation. Keep the complete exception and
+        # traceback in the server terminal for developers diagnosing an unfamiliar model.
+        LOGGER.exception("Explore job %s failed while %s (%s)", job_id, phase, model_id)
+        job.update(status="failed", error=_friendly_explore_error(exc, model_id, phase))
     finally:
         job["compile_seconds"] = round(time.monotonic() - started, 2)
+
+
+def _normalize_model_id(value: str) -> str:
+    """Accept either a Hub repository ID or a pasted huggingface.co model URL."""
+    model_id = value.strip().rstrip("/")
+    prefix = "https://huggingface.co/"
+    if model_id.startswith(prefix):
+        parts = model_id[len(prefix):].split("/")
+        # Ignore URL suffixes such as /tree/main. Official repositories can have a single
+        # segment; community repositories normally have owner/name.
+        if len(parts) > 1 and parts[1] not in {"blob", "commit", "discussions", "resolve", "tree"}:
+            model_id = "/".join(parts[:2])
+        else:
+            model_id = parts[0] if parts else ""
+    return model_id
+
+
+def _one_line(value: object, limit: int = _PUBLIC_ERROR_LIMIT) -> str:
+    return re.sub(r"\s+", " ", str(value)).strip()[:limit]
+
+
+def _compiler_failure_message(errors: list[dict]) -> str:
+    first = errors[0] if errors else {}
+    stage = first.get("stage", "an IREE stage")
+    stderr = str(first.get("stderr") or "")
+    # MLIR diagnostics often begin with command chatter. Prefer the first actual error line.
+    lines = [line.strip() for line in stderr.splitlines() if line.strip()]
+    diagnostic = next((line for line in lines if "error:" in line.lower()), lines[0] if lines else "")
+    suffix = f" The compiler reported: {_one_line(diagnostic, 220)}" if diagnostic else ""
+    extra = len(errors) - 1
+    more = f" ({extra} additional stage failure{'s' if extra != 1 else ''} recorded.)" if extra else ""
+    return f"IREE could not compile stage {stage}.{suffix}{more}"
+
+
+def _friendly_explore_error(exc: Exception, model_id: str, phase: str) -> str:
+    """Convert dependency/compiler exceptions into stable messages suitable for the UI."""
+    raw = _one_line(exc, 2000)
+    lower = raw.lower()
+    kind = type(exc).__name__.lower()
+
+    if isinstance(exc, ExploreModelTooLargeError):
+        count_match = re.search(r"(\d+) parameters", raw)
+        count = int(count_match.group(1)) if count_match else 0
+        size = f" ({count / 1_000_000:.0f}M parameters)" if count else ""
+        return (
+            f"'{model_id}' is too large for interactive full-pipeline capture{size}. "
+            "Use a model below 100M parameters; larger models can generate multi-gigabyte IR artifacts."
+        )
+    if any(token in lower or token in kind for token in ("repository not found", "not found", "404")):
+        return (
+            f"We couldn't find a public Hugging Face model named '{model_id}'. "
+            "Check the spelling, or sign in on the server if the model is private or gated."
+        )
+    if any(token in lower or token in kind for token in ("gatedrepo", "gated repo", "401", "403", "unauthorized", "forbidden")):
+        return (
+            f"'{model_id}' requires Hugging Face access or authentication. "
+            "Request access to the model and authenticate the server before trying again."
+        )
+    if any(token in lower for token in ("connection", "timed out", "timeout", "offline", "name resolution")):
+        return "CompilerLens could not reach Hugging Face. Check the server's network connection and try again."
+    if "no vocab_size" in lower:
+        return (
+            f"'{model_id}' is not a supported text model. CompilerLens currently expects a model "
+            "that accepts token IDs, such as a BERT-like encoder or GPT-like decoder."
+        )
+    if "encoder-decoder" in lower or "decoder_input_ids" in lower:
+        return (
+            f"'{model_id}' is an encoder-decoder model, which is not supported yet. "
+            "Try an encoder-only BERT-like model or a decoder-only GPT-like model."
+        )
+    if "unrecognized model identifier" in lower or "unrecognized model type" in lower:
+        return (
+            f"Hugging Face found '{model_id}', but its model architecture is not recognized by "
+            "the installed Transformers version. Try a supported BERT-like or GPT-like model."
+        )
+    if raw.startswith("IREE could not compile stage"):
+        return _one_line(raw)
+    if phase == "loading the model":
+        return (
+            f"Hugging Face found '{model_id}', but CompilerLens could not load it with the current "
+            "text-model adapter. See the API terminal for the technical details."
+        )
+    if phase == "exporting and compiling the model":
+        return (
+            f"'{model_id}' loaded, but its PyTorch operations could not be exported or compiled by "
+            "the current IREE pipeline. See the API terminal for the failing operation."
+        )
+    if phase == "building the CompilerLens artifact":
+        return "The model compiled, but CompilerLens could not build its visualization artifact. See the API terminal."
+    return f"CompilerLens could not process '{model_id}'. See the API terminal for technical details."
 
 
 def _run_compile(job_id: str, request: CompileRequest, flags: list) -> None:

@@ -57,7 +57,10 @@ def wrap(detected: DetectedModel) -> tuple[HFWrapper, tuple, dict]:
     Returns (module, example_inputs, model_info) where model_info goes into the manifest and
     into the generated ingest spec.
     """
-    hf_model = detected.load_model()
+    # Export in float32 even when Hub weights are stored as bfloat16. Turbine currently
+    # materializes parameter constants through NumPy, whose PyTorch bridge rejects bf16.
+    # Loading directly in f32 avoids that importer failure (at the cost of larger memory use).
+    hf_model = detected.load_model(dtype=torch.float32)
     module = HFWrapper(hf_model, detected.output_attr)
     example_inputs = build_example_inputs(detected)
     model_info = {
@@ -68,6 +71,7 @@ def wrap(detected: DetectedModel) -> tuple[HFWrapper, tuple, dict]:
         "seq_len": detected.seq_len,
         "vocab_size": detected.vocab_size,
         "param_count": sum(p.numel() for p in hf_model.parameters()),
+        "compile_dtype": "float32",
         "detected_via": detected.detected_via,
     }
     return module, example_inputs, model_info
@@ -97,6 +101,7 @@ from transformers import {model_class}
 model = {model_class}.from_pretrained(
     "{detected.model_id}",
     revision="{detected.revision}",
+    dtype=torch.float32,  # Turbine's NumPy constant bridge cannot import bfloat16 weights.
 ).eval()
 
 
