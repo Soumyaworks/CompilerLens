@@ -41,7 +41,7 @@
   flex-direction: column;
   gap: 0.75rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border);
 }
 
 .lineage-title {
@@ -109,8 +109,8 @@
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem 0.5rem;
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background-color: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 3px;
   font-size: 0.8rem;
   font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
@@ -135,24 +135,23 @@
 .lineage-stage-button {
   flex: 1;
   padding: 0.75rem;
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  background-color: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 4px;
   cursor: pointer;
   text-align: left;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
 .lineage-stage-button:hover {
-  background-color: var(--bg-tertiary);
-  border-color: var(--border-highlight);
+  background-color: var(--surface-3);
 }
 
 .lineage-stage-button:active {
-  background-color: var(--bg-tertiary);
+  background-color: var(--surface-3);
 }
 
 .lineage-stage-header {
@@ -174,7 +173,7 @@
   align-items: center;
   gap: 0.25rem;
   padding: 0.2rem 0.5rem;
-  background-color: var(--bg-primary);
+  background-color: var(--surface-1);
   border-radius: 3px;
   font-size: 0.75rem;
   font-weight: 600;
@@ -199,7 +198,7 @@
   gap: 0.5rem;
   font-size: 0.8rem;
   padding-top: 0.5rem;
-  border-top: 1px solid var(--border-color);
+  border-top: 1px solid var(--border);
 }
 
 .lineage-snippet-label {
@@ -215,4 +214,267 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
+}
+
+/* ── Classified hops (Created/Carried/Modified/Lowered/Fused/Split/Eliminated) ──────── */
+
+.lineage-hops {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.lineage-hop-detail {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.lineage-hop-names {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.lineage-change-badge {
+  font-size: 0.62rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.change-created { background: var(--phase-frontend); color: #fff; }
+.change-carried { background: var(--surface-2); color: var(--text-muted); }
+.change-modified { background: var(--phase-global); color: #fff; }
+.change-lowered { background: var(--phase-llvm); color: #fff; }
+.change-fused { background: var(--phase-codegen); color: #fff; }
+.change-split { background: var(--phase-flow); color: #000; }
+.change-track-change { background: var(--surface-3); color: var(--text-secondary); }
+.change-eliminated { background: var(--phase-input); color: #fff; }
+
+.lineage-pass-chip {
+  align-self: flex-start;
+  font-size: 0.68rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 3px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border: 1px dashed var(--border);
+}
+
+.lineage-hop-findings {
+  margin: -0.25rem 0.25rem 0.25rem;
+  padding: 0.5rem 0.6rem;
+  border-left: 3px solid var(--phase-input);
+  background: var(--surface-1);
+  border-radius: 0 4px 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.lineage-findings-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Collapsed run of consecutive "carried" hops -- the noise reduction, collapsed by default. */
+
+.lineage-run-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-1);
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.lineage-run-toggle:hover {
+  background: var(--surface-2);
+}
+
+.lineage-run-summary {
+  flex: 1;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.lineage-run-caret {
+  color: var(--text-muted);
+}
+
+.lineage-run-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.5rem 0 0 1rem;
+  border-left: 1px dashed var(--border);
+  margin-left: 0.5rem;
+}
+
+/* ── Dedicated Lineage page (LineageExplorerPage) ───────────────────────────────────── */
+
+/* `position: fixed` takes this out of .workspace's grid placement entirely (grid items with
+   a non-static position aren't sized as part of the grid), so it can't perturb the 3-row
+   grid the golden-layout container depends on regardless of whether it's mounted. */
+.lineage-explorer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: var(--surface-1);
+}
+
+.lineage-explorer-button {
+  padding: 4px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.lineage-explorer-button:hover:not(:disabled) { color: var(--text-primary); background: var(--surface-3); }
+.lineage-explorer-button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.lineage-explorer { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+.lineage-explorer-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-1);
+}
+.lineage-explorer-header h1 { font-size: 1rem; margin: 0; font-weight: 600; }
+.lineage-explorer-header .muted { color: var(--text-muted); font-weight: 400; }
+.lineage-explorer-stage-label {
+  margin-left: auto;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+}
+
+/* The description pane is the point of this page, so it gets more width than the IR pane --
+   the opposite ratio of the Sandbox's fixed 420px Doctor strip. */
+.lineage-explorer-panes {
+  flex: 1;
+  display: flex;
+  gap: 0.7rem;
+  min-height: 0;
+  padding: 0.8rem;
+}
+
+.lineage-explorer-ir { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.lineage-explorer-ir h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.lineage-explorer-editor {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  overflow: hidden;
+  min-height: 220px;
+}
+
+.lineage-explorer-detail {
+  flex: 1.6;
+  min-width: 0;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface-1);
+}
+
+.lineage-back-link {
+  display: inline-block;
+  margin: 0.9rem 0 0 1rem;
+  background: none;
+  border: none;
+  color: var(--phase-frontend);
+  cursor: pointer;
+  font-size: 0.78rem;
+  padding: 0;
+  text-decoration: underline;
+}
+
+/* The clickable operation list -- the entry point that replaces highlighted-line-in-source. */
+
+.lineage-op-list { padding: 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
+.lineage-op-list-empty { padding: 1rem; }
+
+.lineage-op-list-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+.lineage-op-list-title { font-weight: 600; color: var(--text-primary); font-size: 0.95rem; }
+.lineage-op-list-count { font-size: 0.75rem; color: var(--text-muted); }
+
+.lineage-op-list-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.lineage-op-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.7rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+}
+.lineage-op-row:hover { background: var(--surface-3); }
+
+.lineage-op-row-line {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  min-width: 2.4em;
+}
+
+.lineage-op-row-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.lineage-op-row-stats {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  white-space: nowrap;
 }

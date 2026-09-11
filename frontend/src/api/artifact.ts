@@ -174,12 +174,47 @@ export interface KernelCosts {
   notes: string[];
 }
 
+/**
+ * What happened to an operation between two phase checkpoints (DESIGN-DOC section 4.2).
+ * `created`/`track-change`/`eliminated` are not really "changes" so much as origin, view-
+ * switch, and absence markers -- see ingest/lineage.py for exactly how each is decided.
+ */
+export type LineageChange =
+  | 'created'
+  | 'carried'
+  | 'modified'
+  | 'lowered'
+  | 'fused'
+  | 'split'
+  | 'track-change'
+  | 'eliminated';
+
+export type LineageConfidence = 'definitional' | 'structural' | 'heuristic';
+
+export interface LineageHop {
+  kind: 'origin' | 'transition' | 'track-change' | 'elimination';
+  /** The stage this hop lands on (for `elimination`, the stage where it is no longer found). */
+  stage_id: string;
+  from_stage: string | null;
+  change: LineageChange;
+  confidence: LineageConfidence;
+  from_count: number | null;
+  to_count: number;
+  op_names: Record<string, number>;
+  /** Backend-generated, human-readable explanation of this hop -- see ingest/lineage.py. */
+  detail: string;
+  /** Intermediate --mlir-print-ir-after-all pass snapshots folded into this hop, not listed. */
+  pass_count: number;
+}
+
 export interface LineageEntry {
   source_text: string;
   total_ops: number;
   stage_count: number;
   stages: Record<string, number[]>;
   op_names: Record<string, number>;
+  /** Classified phase-to-phase trace -- see ingest/lineage.py's module docstring. */
+  hops: LineageHop[];
 }
 
 export interface Lineage {

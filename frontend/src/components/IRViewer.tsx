@@ -64,14 +64,20 @@ export function IRViewer({
       };
     }> = [];
 
+    // The anchor stage's own operation at each line -- used below to skip `func.func`, which
+    // is scaffolding (the function signature), not something a user wrote an expression on.
+    // Its ABI/runtime boilerplate descendants (hal.*, util.*, memref.*) have no location of
+    // their own and default to the function's, which would otherwise dump all of it onto
+    // whichever line happens to hold the signature -- a different line in every workload.
+    const anchorOpByLine =
+      stage.name === 'torch-input' ? new Map(stage.ops.map(op => [op.line, op.name])) : null;
+
     // Add lineage highlighting - highlight ALL lines in the lineage entry
     if (lineage && onLineageClick) {
       Object.entries(lineage.lines).forEach(([lineNum, entry]) => {
         const sourceLineNum = parseInt(lineNum, 10);
 
-        // Skip function signatures and structural lines ONLY in the source stage (torch-input)
-        // In other stages, highlight all lines
-        if (stage.name === 'torch-input' && sourceLineNum < 3) return;
+        if (anchorOpByLine && anchorOpByLine.get(sourceLineNum) === 'func.func') return;
 
         // Get all lines for this lineage entry from this stage
         const stageLines = entry.stages[stage.id];
@@ -123,7 +129,7 @@ export function IRViewer({
     }
 
     return decs;
-  }, [lineage, onLineageClick, stage.id, stage.name, stage.text, highlightLines]);
+  }, [lineage, onLineageClick, stage.id, stage.name, stage.text, stage.ops, highlightLines]);
 
   return (
     <div className="viewer" style={hidden ? {display: 'none'} : undefined}>

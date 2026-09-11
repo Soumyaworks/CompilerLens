@@ -275,7 +275,9 @@ check(
 
 const bertDiagnosis = await page.evaluate(async () => {
   const response = await fetch('/artifacts/prajjwal1_bert-tiny.json');
-  if (!response.ok) return null;
+  // Vite's dev-server SPA fallback returns 200 + index.html for any unmatched path, so
+  // `response.ok` alone does not detect a missing artifact -- check the content type too.
+  if (!response.ok || !response.headers.get('content-type')?.includes('json')) return null;
   return (await response.json()).diagnosis ?? null;
 });
 if (bertDiagnosis) {
@@ -303,7 +305,7 @@ if (bertDiagnosis) {
 
 const bertData = await page.evaluate(async () => {
   const response = await fetch('/artifacts/prajjwal1_bert-tiny.json');
-  if (!response.ok) return null;
+  if (!response.ok || !response.headers.get('content-type')?.includes('json')) return null;
   const artifact = await response.json();
   return {kernels: artifact.kernels ?? null};
 });

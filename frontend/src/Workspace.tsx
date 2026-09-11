@@ -6,6 +6,7 @@ import type {Artifact, Phase, Stage} from './api/artifact';
 import {PHASE_TITLES} from './api/artifact';
 import {ArtifactMissingError, fetchArtifact} from './api/client';
 import {registerReactPane} from './golden-layout/react-bridge';
+import {LineageExplorerPage} from './LineageExplorerPage';
 import {DoctorPane} from './panes/DoctorPane';
 import {EvidencePane} from './panes/EvidencePane';
 import {KernelCostPane} from './panes/KernelCostPane';
@@ -113,6 +114,11 @@ export function Workspace({workloadId, onBack}: WorkspaceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<GoldenLayout | null>(null);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
+  // Whether the dedicated Lineage page (LineageExplorerPage) is showing instead of the
+  // golden-layout workspace. The workspace's container div and PipelineRail stay mounted
+  // (just hidden) rather than unmounted, so golden-layout's instance -- tied to that DOM
+  // node -- survives toggling back and forth.
+  const [lineageExplorerOpen, setLineageExplorerOpen] = useState(false);
   // Which stage each currently-open stage pane is showing, keyed by its own container --
   // purely for the pipeline rail's "you are here" markers. Panes register themselves
   // (StagePane's onSelectStage) rather than this being lifted, controlled state, since
@@ -342,10 +348,40 @@ export function Workspace({workloadId, onBack}: WorkspaceProps) {
               </div>
             )}
           </div>
+          <button
+            type="button"
+            className="lineage-explorer-button"
+            disabled={!artifact.lineage?.lines || Object.keys(artifact.lineage.lines).length === 0}
+            onClick={() => setLineageExplorerOpen(true)}
+            title={
+              artifact.lineage?.summary?.source_lines_covered
+                ? `${artifact.lineage.summary.source_lines_covered} source lines, ${artifact.lineage.summary.total_anchored_ops.toLocaleString()} operations`
+                : 'No lineage data in this artifact'
+            }
+          >
+            Operation Lineage
+          </button>
         </div>
       </header>
-      <PipelineRail artifact={artifact} activeStageIds={activeStageIds} onOpenPhase={openPhaseFlow} />
-      <div className="golden-layout-container" ref={containerRef} />
+      {/* PipelineRail and the golden-layout container stay as direct grid children (the grid
+          has exactly 3 explicit row tracks -- see .workspace's CSS comment) and are hidden
+          individually via style rather than merged into one wrapper, which would collapse
+          them into a single "auto" row instead of the golden-layout container's required
+          "1fr" row. The overlay below is `position: fixed`, which removes it from the grid's
+          placement entirely, so it can't perturb this regardless of whether it's open. */}
+      <div style={{display: lineageExplorerOpen ? 'none' : undefined}}>
+        <PipelineRail artifact={artifact} activeStageIds={activeStageIds} onOpenPhase={openPhaseFlow} />
+      </div>
+      <div
+        className="golden-layout-container"
+        ref={containerRef}
+        style={{display: lineageExplorerOpen ? 'none' : undefined}}
+      />
+      {lineageExplorerOpen && (
+        <div className="lineage-explorer-overlay">
+          <LineageExplorerPage artifact={artifact} onBack={() => setLineageExplorerOpen(false)} />
+        </div>
+      )}
     </div>
   );
 }
