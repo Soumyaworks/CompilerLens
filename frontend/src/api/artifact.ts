@@ -102,18 +102,12 @@ export interface Evidence {
 
 /**
  * What happened to an operation between two phase checkpoints.
- * `created`/`track-change`/`eliminated` are not really "changes" so much as origin, view-
- * switch, and absence markers -- see ingest/lineage.py for exactly how each is decided.
+ * `created`/`track-change`/`untraceable` are not really "changes" so much as origin, view-
+ * switch, and absence markers. `changed` deliberately does not say *how* -- a count/name-set
+ * delta alone cannot support naming a specific compiler mechanism (split/fuse/lower/modify);
+ * a real case read an opaque-compilation event as "fusion" this way. See ingest/lineage.py.
  */
-export type LineageChange =
-  | 'created'
-  | 'carried'
-  | 'modified'
-  | 'lowered'
-  | 'fused'
-  | 'split'
-  | 'track-change'
-  | 'eliminated';
+export type LineageChange = 'created' | 'carried' | 'changed' | 'track-change' | 'untraceable';
 
 export type LineageConfidence = 'definitional' | 'structural' | 'heuristic';
 
@@ -245,4 +239,14 @@ const NON_TRACEABLE_ANCHOR_OPS = new Set([
 
 export function isTraceableAnchorOp(opName: string): boolean {
   return !NON_TRACEABLE_ANCHOR_OPS.has(opName) && !opName.startsWith('torch.constant.');
+}
+
+// The type signature is everything after the last top-level " : " -- MLIR's own convention
+// for "operands : types". Used only to cluster same-shape occurrences of the same operation
+// in the Lineage Explorer's operation list; falls back to '' (ungrouped by shape, grouped by
+// name alone) if the text doesn't match, which just means a slightly less compressed list,
+// never a wrong one.
+export function opShapeSignature(text: string): string {
+  const idx = text.lastIndexOf(' : ');
+  return idx === -1 ? '' : text.slice(idx + 3).trim();
 }

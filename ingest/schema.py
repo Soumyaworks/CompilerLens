@@ -19,7 +19,12 @@ from typing import Any
 #     Modified/Lowered/Fused/Split/Eliminated) -- see
 #     ingest/lineage.py. `stages` is unchanged, so nothing that read 0.3 lineage breaks.
 # 0.5 narrows the artifact to compiler stages, diffs, evidence, lineage, and metadata.
-ARTIFACT_VERSION = "0.5"
+# 0.6 drops the Modified/Lowered/Fused/Split/Eliminated hop labels -- a count delta alone
+#     cannot support naming which compiler mechanism produced it (a real case read an
+#     opaque-compilation event as "fusion"; see ingest/lineage.py). `hops[].change` is now
+#     only `created` / `carried` / `changed` / `track-change` / `untraceable`; the op-name/
+#     count aggregates themselves (`op_names`, `from_count`, `to_count`) are unchanged.
+ARTIFACT_VERSION = "0.6"
 
 # Coarse groupings for the pipeline sidebar. A stage's phase decides where it is drawn and
 # what colour it gets, so the user can see at a glance which level of abstraction they are

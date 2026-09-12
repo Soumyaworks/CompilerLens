@@ -1,5 +1,5 @@
 import Editor from '@monaco-editor/react';
-import {useMemo, useRef} from 'react';
+import {useEffect, useMemo, useRef} from 'react';
 
 import type {Lineage, Stage} from '../api/artifact';
 import {isTraceableAnchorOp} from '../api/artifact';
@@ -46,6 +46,7 @@ export function IRViewer({
   highlightLines,
 }: IRViewerProps) {
   const editorRef = useRef<any>(null);
+  const decorationIdsRef = useRef<string[]>([]);
   const text = useMemo(
     () =>
       stage.language === 'mlir' && !showLocations ? stripLocations(stage.text) : stage.text,
@@ -134,6 +135,24 @@ export function IRViewer({
     return decs;
   }, [lineage, onLineageClick, stage.id, stage.name, stage.text, stage.ops, highlightLines]);
 
+  // Re-applied on every change, not just at mount -- picking a different operation while
+  // still viewing the same stage (e.g. torch-input, whose IRViewer never remounts across
+  // selections) does not remount Monaco, so onMount alone would leave the old highlight and
+  // scroll position in place. `decorationIdsRef` tracks what's currently applied so this
+  // replaces rather than accumulates.
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    decorationIdsRef.current = editor.deltaDecorations(decorationIdsRef.current, decorations);
+  }, [decorations]);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor || !revealLine) return;
+    editor.revealLineInCenter(revealLine);
+    editor.setPosition({lineNumber: revealLine, column: 1});
+  }, [revealLine]);
+
   return (
     <div className="viewer" style={hidden ? {display: 'none'} : undefined}>
       <Editor
@@ -166,10 +185,10 @@ export function IRViewer({
             editor.revealLineInCenter(revealLine);
             editor.setPosition({lineNumber: revealLine, column: 1});
           }
-          // Set decorations for lineage highlights
-          if (decorations.length > 0) {
-            editor.deltaDecorations([], decorations);
-          }
+          // Seeded here (rather than left as [] and only picked up by the effect above) so
+          // the effect's next `deltaDecorations` call replaces these, instead of leaving them
+          // behind and accumulating a duplicate set.
+          decorationIdsRef.current = editor.deltaDecorations([], decorations);
           // Add click handler for lineage lines
           if (onLineageClick && lineage) {
             editor.onMouseDown(e => {

@@ -117,6 +117,12 @@
   color: var(--text-primary);
 }
 
+.lineage-op-name-more {
+  color: var(--text-muted);
+  border-style: dashed;
+  background: none;
+}
+
 .lineage-op-count {
   color: var(--text-muted);
   font-size: 0.75rem;
@@ -237,24 +243,6 @@
   gap: 0.4rem;
 }
 
-.lineage-change-badge {
-  font-size: 0.62rem;
-  padding: 0.1rem 0.4rem;
-  border-radius: 3px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.change-created { background: var(--phase-frontend); color: #fff; }
-.change-carried { background: var(--surface-2); color: var(--text-muted); }
-.change-modified { background: var(--phase-global); color: #fff; }
-.change-lowered { background: var(--phase-llvm); color: #fff; }
-.change-fused { background: var(--phase-codegen); color: #fff; }
-.change-split { background: var(--phase-flow); color: #000; }
-.change-track-change { background: var(--surface-3); color: var(--text-secondary); }
-.change-eliminated { background: var(--phase-input); color: #fff; }
 
 .lineage-pass-chip {
   align-self: flex-start;
@@ -318,15 +306,16 @@
 
 .lineage-explorer-button {
   padding: 4px 10px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  background: var(--series-1);
+  border: 1px solid var(--series-1);
   border-radius: var(--radius);
-  color: var(--text-secondary);
+  color: var(--text-primary);
   font: inherit;
   font-size: 11px;
+  font-weight: 600;
   cursor: pointer;
 }
-.lineage-explorer-button:hover:not(:disabled) { color: var(--text-primary); background: var(--surface-3); }
+.lineage-explorer-button:hover:not(:disabled) { opacity: 0.85; }
 .lineage-explorer-button:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .lineage-explorer { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
@@ -460,4 +449,57 @@
   font-size: 0.7rem;
   color: var(--text-muted);
   white-space: nowrap;
+}
+
+/* A cluster of same-name, same-shape operations (e.g. one mm shape repeated once per layer) --
+   same dashed-border/caret idiom as .lineage-run-toggle, so both "collapsed repetition" ideas
+   in this feature (timeline hops, operation list) read as one system. */
+
+.lineage-op-group-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.7rem;
+  background: var(--surface-1);
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+}
+.lineage-op-group-toggle:hover { background: var(--surface-2); }
+
+.lineage-op-group-name {
+  flex-shrink: 0;
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.lineage-op-group-signature {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.lineage-op-group-count {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.lineage-op-group-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.4rem 0 0 1rem;
+  margin-top: 0.4rem;
+  border-left: 1px dashed var(--border);
 }

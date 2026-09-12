@@ -14,8 +14,10 @@ import './styles/lineage.css';
  * operations instead of a highlighted line to notice and click, and a description pane that
  * gets the width instead of whatever golden-layout leaves it.
  *
- * `torch-input` (the anchor) is never highlighted here, by design -- only stages you jump to
- * via a hop get the yellow jump-highlight, exactly as the in-workspace pane already does.
+ * `torch-input` never shows the old glyph-highlight-everything decoration (no `lineage`/
+ * `onLineageClick` props reach IRViewer here) -- but picking an operation from the list does
+ * scroll to and highlight that one line, and jumping through a hop does the same on whichever
+ * stage it lands on. Both go through the same `jumpHighlightLines`/`revealLine` state.
  */
 
 interface LineageExplorerPageProps {
@@ -35,13 +37,12 @@ export function LineageExplorerPage({artifact, onBack}: LineageExplorerPageProps
   const [jumpHighlightLines, setJumpHighlightLines] = useState<number[] | undefined>(undefined);
 
   const selectedStage = stageMap.get(selectedStageId) ?? anchorStage;
-  const isAnchor = selectedStage.id === anchorStage.id;
   const lineageEntry = selectedLine ? artifact.lineage?.lines[selectedLine] : undefined;
 
   function selectOperation(line: string) {
     setSelectedLine(line);
     setSelectedStageId(anchorStage.id);
-    setJumpHighlightLines(undefined);
+    setJumpHighlightLines([Number(line)]);
   }
 
   function backToOperations() {
@@ -74,7 +75,8 @@ export function LineageExplorerPage({artifact, onBack}: LineageExplorerPageProps
             <IRViewer
               stage={selectedStage}
               showLocations={false}
-              highlightLines={isAnchor ? undefined : jumpHighlightLines}
+              highlightLines={jumpHighlightLines}
+              revealLine={jumpHighlightLines?.[0]}
             />
           </div>
         </section>
