@@ -13,14 +13,20 @@ into a `source_loc` on each parsed operation. Measured on prajjwal1/bert-tiny: 7
 carry a resolved location, covering 98 distinct source lines, and the busiest single line
 (`torch.aten.scaled_dot_product_attention`) has 2,035 descendants across 12 stages.
 
-On top of that raw index, `_hops_for_line` classifies what happened between consecutive
-*phase* checkpoints (Created / Modified / Lowered / Fused / Split / Eliminated), by comparing
-the operation-name/count aggregate this line has at one phase stage
-against the next. This is still Level 1: the comparison only uses names and counts already
-extracted during parsing, never operand/result/region matching (that is Level 2, section 7),
-and it is scoped per comparison track for the same reason `StageDiff` is (build.py) -- module
-and device-kernel tracks are two different views of the program, not a succession of one into
-the other, so a count difference across that boundary would be an artifact of scope, not of
+On top of that raw index, `_hops_for_line` walks consecutive *phase* checkpoints and reports
+the operation-name/count aggregate this line has at each one. It used to also classify each
+step as Created/Modified/Lowered/Fused/Split/Eliminated, inferring a specific compiler
+mechanism from nothing but a count delta -- verified wrong on real data (GPT-2's layer_norm:
+"Fused" at the codegen -> hal boundary, when what actually happened is the dispatch became an
+opaque hal.executable and the two leftover ops were incidental HAL bookkeeping, not layer_norm
+at all). A count going up or down is real, observed evidence; which of split/fuse/lower/modify
+produced it is not something a count alone can support, so this only reports "carried"
+(exact same name-set and count -- the one claim a count actually proves) or "changed" (it
+didn't), plus the counts and names themselves. Still Level 1: names and counts already
+extracted during parsing, never operand/result/region matching (that would be Level 2), and
+still scoped per comparison track for the same reason `StageDiff` is (build.py) -- module and
+device-kernel tracks are two different views of the program, not a succession of one into the
+other, so a count difference across that boundary would be an artifact of scope, not of
 compilation.
 
 Stdlib only, like the rest of ingest/.
@@ -47,7 +53,7 @@ _STRUCTURAL = "structural"
 _HEURISTIC = "heuristic"
 _DEFINITIONAL = "definitional"
 
-_MAX_NAMES_IN_DETAIL = 4
+_MAX_NAMES_IN_DETAIL = 6
 
 
 def _split_loc(source_loc: str) -> tuple | None:
@@ -58,15 +64,37 @@ def _split_loc(source_loc: str) -> tuple | None:
 
 
 def _name_list(names: dict) -> str:
-    return ", ".join(sorted(names)[:_MAX_NAMES_IN_DETAIL])
+    """The names in `names`, already sorted rarest-first by `_by_rarity` -- least frequent
+    (and therefore most identifying: a lone `math.rsqrt` says far more about what this line
+    does than four more `arith.constant`s) shown first, with an honest `+N more` instead of
+    silently dropping names once the display limit is hit.
+    """
+    ordered = list(names)
+    shown = ordered[:_MAX_NAMES_IN_DETAIL]
+    remaining = len(ordered) - len(shown)
+    label = ", ".join(shown)
+    return f"{label}, +{remaining} more" if remaining > 0 else label
 
 
-def _classify(prev_names: dict, curr_names: dict, prev_phase: str, curr_phase: str) -> tuple:
+def _by_rarity(counts: dict) -> dict:
+    """Same (name -> count) data, ordered least-frequent-first.
+
+    This is the single ordering both `_name_list`'s one-line detail and the frontend's op-name
+    chips read (`hop.op_names` is emitted in this order) -- one sort, not two independently
+    written ones that can drift, per the earlier `sourceLineNum < 3` lesson.
+    """
+    return dict(sorted(counts.items(), key=lambda kv: (kv[1], kv[0])))
+
+
+def _classify(prev_names: dict, curr_names: dict) -> tuple:
     """One hop's (change, confidence, detail), from the op-name/count aggregate on each side.
 
-    Exhaustive over (same/different name-set) x (same/higher/lower count) -- every pair of
-    phase hits lands in exactly one branch, so nothing here is ever left unclassified within
-    a track.
+    Only claims what a count/name-set comparison can actually prove: that nothing changed
+    ("carried"), or that something did ("changed"). Earlier versions tried to name *which*
+    compiler mechanism produced a count delta (split/fused/lowered/modified) -- dropped after
+    finding a real case where that guessed wrong (see module docstring): a count drop at a
+    codegen -> hal boundary read as "Fused" when the real story was the dispatch going opaque,
+    not fusion. The names and counts are still shown in full; this just stops narrating them.
     """
     prev_total = sum(prev_names.values())
     curr_total = sum(curr_names.values())
@@ -74,28 +102,10 @@ def _classify(prev_names: dict, curr_names: dict, prev_phase: str, curr_phase: s
 
     if set(prev_names) == set(curr_names) and prev_total == curr_total:
         return "carried", _STRUCTURAL, f"Unchanged: still {curr_total} op(s) ({curr_label})."
-    if curr_total > prev_total:
-        return (
-            "split",
-            _STRUCTURAL,
-            f"Expanded from {prev_total} to {curr_total} operation(s): {curr_label}.",
-        )
-    if curr_total < prev_total:
-        return (
-            "fused",
-            _STRUCTURAL,
-            f"Collapsed from {prev_total} to {curr_total} operation(s): {curr_label}.",
-        )
-    if prev_phase != curr_phase:
-        return (
-            "lowered",
-            _STRUCTURAL,
-            f"Rewritten into {curr_label} (moved from '{prev_phase}' to '{curr_phase}').",
-        )
     return (
-        "modified",
+        "changed",
         _STRUCTURAL,
-        f"Rewritten into {curr_label}, same operation count, still in '{curr_phase}'.",
+        f"{curr_total} operation(s) here now (was {prev_total}): {curr_label}.",
     )
 
 
@@ -125,7 +135,7 @@ def _hops_for_line(
     prev_sid: str | None = None
     for sid in phase_hits:
         stage = by_id[sid]
-        names = dict(stage_names[sid])
+        names = _by_rarity(stage_names[sid])
         total = sum(names.values())
 
         if prev_sid is None:
@@ -145,7 +155,7 @@ def _hops_for_line(
             )
         else:
             prev_stage = by_id[prev_sid]
-            prev_names = dict(stage_names[prev_sid])
+            prev_names = _by_rarity(stage_names[prev_sid])
             if stage.track != prev_stage.track:
                 # A track boundary is a change of *view* (e.g. whole-module vs. one extracted
                 # device kernel), not a compilation step -- comparing counts across it would
@@ -170,9 +180,7 @@ def _hops_for_line(
                     }
                 )
             else:
-                change, confidence, detail = _classify(
-                    prev_names, names, prev_stage.phase, stage.phase
-                )
+                change, confidence, detail = _classify(prev_names, names)
                 hops.append(
                     {
                         "kind": "transition",
@@ -200,17 +208,17 @@ def _hops_for_line(
                     "kind": "elimination",
                     "stage_id": next_stage.id,
                     "from_stage": phase_hits[-1],
-                    "change": "eliminated",
+                    "change": "untraceable",
                     "confidence": _HEURISTIC,
                     "from_count": sum(dict(stage_names[phase_hits[-1]]).values()),
                     "to_count": 0,
                     "op_names": {},
                     "detail": (
-                        f"No operations trace back to this line in '{next_stage.title}', though "
-                        f"that stage still has {next_stage.op_count} operations from other "
-                        f"lines -- likely folded away (dead-code elimination or constant "
-                        f"folding). Inferred from absence, not confirmed against a specific "
-                        f"pass."
+                        f"No operations trace back to this line from '{next_stage.title}' "
+                        f"onward in the '{next_stage.track}' track, though that stage still "
+                        f"has {next_stage.op_count} operations from other lines. Absence, not "
+                        f"a claim about why -- this could be a real removal, or just a place "
+                        f"loc() metadata stopped surviving."
                     ),
                     "pass_count": 0,
                 }
@@ -325,10 +333,14 @@ def build_lineage(stages: list) -> dict:
             "not locate are absent rather than guessed at.",
             f"Line numbers are positions in the '{_ANCHOR_STAGE}' stage, which is the anchor "
             f"every later stage's loc() points back to.",
-            "`hops` classifies phase-to-phase change (Created/Carried/Modified/Lowered/Fused/"
-            "Split) from operation-name and -count aggregates at this line -- still Level 1, "
-            "not per-instance def/use tracking. `eliminated` is inferred from absence in the "
-            "next same-track phase stage and is marked heuristic, never asserted as a confirmed "
-            "dead-code-elimination event.",
+            "`hops` reports the operation-name/count aggregate at this line, phase by phase -- "
+            "still Level 1, not per-instance def/use tracking. Each hop is only ever `carried` "
+            "(exact same name-set and count as the previous phase) or `changed` (it wasn't); "
+            "it does not name which compiler mechanism produced a change, since a count delta "
+            "alone cannot support that claim -- see ingest/lineage.py's module docstring for "
+            "the case that showed this (a real GPT-2 layer_norm) where a naive count-based "
+            "guess called an opaque-compilation event 'fusion'. `untraceable` marks absence in "
+            "the next same-track phase stage and is marked heuristic -- it is not a claim about "
+            "why the trace stops there.",
         ],
     }

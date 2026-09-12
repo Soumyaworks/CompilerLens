@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import type {LineageChange, LineageEntry, LineageHop, Stage} from '../api/artifact';
+import type {LineageEntry, LineageHop, Stage} from '../api/artifact';
 import {PHASE_TITLES} from '../api/artifact';
 import '../styles/lineage.css';
 
@@ -10,22 +10,6 @@ interface LineageTimelineProps {
   stages: Stage[];
   onJumpToStage: (stageId: string, lines: number[]) => void;
 }
-
-/**
- * Operation-lineage change classification. `ingest/lineage.py` decides the
- * label from operation-name/count aggregates; this file only displays it -- see that module's
- * docstring for exactly what each label does and does not claim.
- */
-const CHANGE_LABELS: Record<LineageChange, string> = {
-  created: 'Created',
-  carried: 'Carried',
-  modified: 'Modified',
-  lowered: 'Lowered',
-  fused: 'Fused',
-  split: 'Split',
-  'track-change': 'View change',
-  eliminated: 'Eliminated',
-};
 
 type TimelineItem = {kind: 'hop'; hop: LineageHop} | {kind: 'run'; hops: LineageHop[]};
 
@@ -66,7 +50,12 @@ function HopCard({
 }) {
   const stage = stageMap.get(hop.stage_id);
   if (!stage) return null;
-  const opNames = Object.entries(hop.op_names).slice(0, 6);
+  // Backend already orders `op_names` rarest-first (ingest/lineage.py's `_by_rarity`) -- a
+  // lone `math.rsqrt` is more identifying than a fourth `arith.constant`, so it survives the
+  // cut here instead of being silently dropped by whatever order the dict happened to be in.
+  const allOpNames = Object.entries(hop.op_names);
+  const opNames = allOpNames.slice(0, 6);
+  const hiddenNameCount = allOpNames.length - opNames.length;
 
   return (
     <div className="lineage-hop">
@@ -78,9 +67,6 @@ function HopCard({
       >
         <div className="lineage-stage-header">
           <span className="lineage-stage-name">{stage.title}</span>
-          <span className={`lineage-change-badge change-${hop.change}`}>
-            {CHANGE_LABELS[hop.change]}
-          </span>
           <span
             className="lineage-stage-phase"
             style={{['--phase-color' as string]: `var(--phase-${stage.phase})`}}
@@ -98,6 +84,9 @@ function HopCard({
                 {name} <span className="lineage-op-count">×{count}</span>
               </span>
             ))}
+            {hiddenNameCount > 0 && (
+              <span className="lineage-op-name-tag lineage-op-name-more">+{hiddenNameCount} more</span>
+            )}
           </div>
         )}
 
@@ -130,7 +119,6 @@ function CollapsedRun({
   return (
     <div className="lineage-hop lineage-run">
       <button type="button" className="lineage-run-toggle" onClick={() => setOpen(o => !o)}>
-        <span className="lineage-change-badge change-carried">Carried</span>
         <span className="lineage-run-summary">
           Unchanged through {hops.length} phases ({opCount} op{opCount === 1 ? '' : 's'})
           {totalPasses > 0 ? ` — +${totalPasses} pass snapshots not shown` : ''}
