@@ -4,7 +4,24 @@ CompilerLens is an interactive explorer for AI compiler pipelines. It compiles a
 Hugging Face model through IREE and presents the resulting Torch, MLIR, LLVM IR, and x86-64
 stages in one navigable interface.
 
-## What it provides
+## Table of Contents
+
+- [Key Capabilities](#key-capabilities)
+- [System Architecture and Repository Layout](#system-architecture-and-repository-layout)
+- [System Requirements](#system-requirements)
+- [Installation](#installation)
+- [Running CompilerLens Locally](#running-compilerlens-locally)
+- [Compiling Models from the Web Interface](#compiling-models-from-the-web-interface)
+- [Supported Model Architectures](#supported-model-architectures)
+- [Command-Line Model Compilation](#command-line-model-compilation)
+- [Compiler Sandbox and Benchmarking](#compiler-sandbox-and-benchmarking)
+- [Validation and Testing](#validation-and-testing)
+- [Troubleshooting](#troubleshooting)
+- [Contributions](#contributions)
+- [Citation](#citation)
+- [License](#license)
+
+## Key Capabilities
 
 - A searchable timeline of compiler stages and passes
 - Side-by-side textual and semantic diffs
@@ -13,52 +30,143 @@ stages in one navigable interface.
 - A landing-page search flow that compiles a Hugging Face model and adds it as a workload
 - A Sandbox for changing selected compiler options and benchmarking the result
 
-## How the project is organized
+## System Architecture and Repository Layout
 
-```text
-Hugging Face / PyTorch model
-            │
-            ▼
-   models/ + backend/compiler/
-       model loading and IREE compilation
-            │
-            ▼
-        examples/<model>/
-          raw compiler dumps
-            │
-            ▼
-           ingest/
-      normalized artifact JSON
-            │
-            ▼
-          frontend/
-   interactive pipeline explorer
+CompilerLens separates model acquisition, compilation, artifact construction, and
+visualization. The normalized artifact is the contract between the Python compiler pipeline and
+the TypeScript frontend.
+
+### End-to-end data flow
+
+```mermaid
+flowchart TB
+    subgraph Browser[React frontend]
+        Landing[Landing page and model search]
+        Workspace[Pipeline workspace]
+        Lineage[Operation lineage explorer]
+        Sandbox[Compiler Sandbox]
+    end
+
+    subgraph Service[FastAPI service]
+        ExploreAPI[Persistent exploration job]
+        CompileAPI[Temporary Sandbox job]
+        Jobs[In-memory job state]
+        Benchmark[Whole-model benchmark]
+    end
+
+    subgraph ModelLayer[Model acquisition]
+        Detect[Resolve revision and architecture]
+        Hub[Hugging Face cache or Hub]
+        Wrapper[Traceable PyTorch wrapper and inputs]
+    end
+
+    subgraph CompilerLayer[Compilation]
+        Export[Turbine AOT export]
+        IREE[iree-compile and iree-opt]
+        Dumps[Stage, pass, LLVM IR and assembly dumps]
+    end
+
+    subgraph ArtifactLayer[Artifact construction]
+        Ingest[Parse and normalize dumps]
+        Analysis[Diffs, evidence and operation lineage]
+        Artifacts[Artifact JSON and workload index]
+    end
+
+    Landing -->|POST /explore| ExploreAPI
+    Sandbox -->|POST /compile| CompileAPI
+    ExploreAPI --> Detect
+    CompileAPI --> Detect
+    Detect --> Hub --> Wrapper --> Export --> IREE --> Dumps
+
+    Dumps -->|persistent model| Ingest --> Analysis --> Artifacts
+    Artifacts --> Landing
+    Artifacts --> Workspace --> Lineage
+
+    Dumps -->|selected temporary stages| Jobs --> Sandbox
+    Jobs --> Benchmark --> Sandbox
 ```
+
+The pipeline performs the following steps:
+
+1. `models/detect.py` resolves the Hugging Face revision and determines the supported model
+   signature.
+2. `models/hf_wrapper.py` loads the model, normalizes its inputs, and exposes a traceable tensor
+   output.
+3. `backend/compiler/runner.py` exports the PyTorch module through Turbine and invokes
+   `iree-compile` and `iree-opt` to capture the lowering pipeline.
+4. The raw stage, pass, LLVM IR, and assembly dumps are written under `examples/<model>/` for
+   persisted compilations.
+5. `ingest/` parses those dumps and derives stage metadata, diffs, compiler evidence, and
+   operation lineage.
+6. The resulting artifact and workload index are written to `frontend/public/artifacts/`.
+7. The React frontend loads that artifact and renders it through Monaco Editor and Golden
+   Layout.
+
+### Artifact contract
+
+Each workload is represented by one normalized JSON document containing:
+
+- Model and compilation metadata
+- Ordered compiler stages with complete IR text
+- Operation summaries and histograms
+- Track-aware stage diffs
+- Compiler evidence with source-stage references
+- Source-to-stage operation lineage
+- Explicit notes for incomplete or unavailable compiler data
+
+The Python schema is defined in `ingest/schema.py` and mirrored by
+`frontend/src/api/artifact.ts`. A schema change must update both definitions and increment the
+artifact version.
+
+### Runtime modes
+
+| Mode | Entry point | API required | Persistence | Primary purpose |
+|---|---|---:|---|---|
+| Static explorer | `npm run artifact` + `npm run dev` | No | Generated artifact files | Explore existing compiler dumps |
+| Web model search | Search icon on the landing page | Yes | Dumps and artifact are retained | Add a Hugging Face model end to end |
+| Compiler Sandbox | **Open the Compiler Sandbox** | Yes | In-memory job and temporary files | Test compiler options and selected stages |
+| Command-line compilation | `scripts/compile_hf_model.py` | No | Dumps under `examples/` | Scriptable or offline compilation |
+
+### Repository layout
 
 ```text
 CompilerLens/
 ├── backend/
-│   ├── api/                 FastAPI server for search and Sandbox jobs
-│   ├── compiler/            PyTorch-to-IREE compilation pipeline
-│   └── measure/             Whole-model benchmarks and comparisons
-├── models/                  Hugging Face detection, loading, and wrappers
-├── ingest/                  Dumps → normalized artifact JSON
-│   └── workloads/           Hand-written and generated workload definitions
+│   ├── api/
+│   │   ├── app.py               Compilation, exploration, artifact, and benchmark endpoints
+│   │   └── run_server.py        API startup and toolchain validation
+│   ├── compiler/
+│   │   └── runner.py            Turbine export and multi-stage IREE compilation
+│   └── measure/                 Runtime benchmarking and controlled comparisons
+├── models/
+│   ├── detect.py                Hugging Face metadata and architecture detection
+│   ├── hf_wrapper.py            Traceable model wrapper and example inputs
+│   └── prefetch.py              Model caching for offline demonstrations
+├── ingest/
+│   ├── build.py                 Artifact and landing-page index generation
+│   ├── schema.py                Python definition of the artifact contract
+│   ├── lineage.py               Source-location-based operation lineage
+│   ├── mlir_parser.py           MLIR operation and dialect extraction
+│   ├── llvm_parser.py           LLVM IR and assembly summaries
+│   ├── pass_log.py              Per-pass snapshot extraction
+│   └── workloads/               Static and generated workload specifications
 ├── frontend/
-│   ├── src/                 React application and explorer panes
-│   ├── public/artifacts/    Generated artifacts served by Vite
-│   └── scripts/verify.mjs   Browser-level regression checks
+│   ├── src/
+│   │   ├── api/                 Artifact and live API clients
+│   │   ├── components/          Shared viewers, timelines, and controls
+│   │   └── panes/               Dockable workspace panes
+│   ├── public/artifacts/        Generated artifacts served by Vite
+│   ├── scripts/verify.mjs       Browser-level regression suite
+│   ├── package.json             Frontend commands and dependencies
+│   └── vite.config.ts           Development server configuration
 ├── scripts/
-│   └── compile_hf_model.py  Command-line Hugging Face compilation
-├── examples/                Source programs and compiler dump directories
-├── requirements.txt         Pinned Python environment
-└── README.md                Setup and usage guide
+│   └── compile_hf_model.py      Command-line Hugging Face compilation
+├── examples/                    Source programs and compiler dump directories
+├── requirements.txt             Pinned Python environment
+└── README.md                    Setup, usage, and contribution guide
 ```
 
-The normalized artifact is the boundary between the compiler and the frontend. Static examples,
-command-line compilations, and landing-page searches all feed the same ingest pipeline and UI.
-
-## Requirements
+## System Requirements
 
 - Linux x86-64
 - Python 3.10
@@ -69,7 +177,7 @@ command-line compilations, and landing-page searches all feed the same ingest pi
 The pinned Python dependencies include the IREE compiler/runtime tools and CPU-only PyTorch.
 No separate LLVM or IREE installation is required.
 
-## Install
+## Installation
 
 From the repository root:
 
@@ -88,7 +196,7 @@ cd ..
 `npm run artifact` converts the compiler dumps under `examples/` into the JSON artifacts used
 by the website. Run it again after changing ingest code or adding a model from the command line.
 
-## Run locally
+## Running CompilerLens Locally
 
 Start the API from the repository root:
 
@@ -112,7 +220,7 @@ pre-generated workload viewer only needs the frontend.
 If port 8000 is already in use, an API server is probably running in another terminal. Reuse
 that process or stop it before starting another one.
 
-## Compile a model from the website
+## Compiling Models from the Web Interface
 
 1. Open the landing page.
 2. Select the search icon beside the CompilerLens title.
@@ -135,7 +243,7 @@ The web flow currently accepts models below 100 million parameters. Compatibilit
 whether the installed PyTorch, Transformers, and IREE versions can export every operation in
 the model.
 
-## Supported model shapes
+## Supported Model Architectures
 
 The automatic wrapper currently supports:
 
@@ -147,7 +255,7 @@ Vision, audio, multimodal, and encoder-decoder models need additional input wrap
 rejected instead of being compiled with an incorrect signature. Sequence length is fixed at
 compile time; the website uses 16 tokens for a compact first run.
 
-## Command-line compilation
+## Command-Line Model Compilation
 
 To compile without the landing-page UI:
 
@@ -171,7 +279,7 @@ python -m models.prefetch MODEL_ID [MODEL_ID ...]
 `--full` disables dump trimming and can generate several GB of data. The default mode retains
 the stages needed by the UI while removing embedded weight payloads and redundant pass dumps.
 
-## Sandbox and benchmarking
+## Compiler Sandbox and Benchmarking
 
 Choose **Open the Compiler Sandbox** from the landing page to:
 
@@ -184,7 +292,7 @@ Sandbox jobs are stored in memory and disappear when the API restarts. Hugging F
 compiled through landing-page search are persisted under `examples/` and remain available after
 artifact regeneration.
 
-## Verification
+## Validation and Testing
 
 Run the backend syntax checks and frontend production build:
 
@@ -215,6 +323,34 @@ npm run verify
   the current IREE pipeline. The API terminal contains the detailed compiler traceback.
 - Frontend has no workloads: run `cd frontend && npm run artifact`.
 
+## Contributions
+
+Contributions are welcome. Create a focused branch, follow the installation instructions, and
+run the relevant validation before opening a pull request:
+
+```bash
+cd frontend
+npm run build
+npm run verify   # requires the Vite development server and Playwright Chromium
+```
+
+For compiler or backend changes, also run the Python syntax checks listed in
+[Validation and Testing](#validation-and-testing). Please include a concise description of the
+change, testing performed, and screenshots for visible UI changes.
+
+## Citation
+
+If CompilerLens is useful in your work, please cite:
+
+```bibtex
+@software{compilerlens2026,
+  author = {Varshney, Ananya and Banerjee, Soumya},
+  title = {CompilerLens: An Interactive AI Compiler Visualization Explorer},
+  year = {2026}
+}
+```
+
 ## License
 
-See [LICENSE](LICENSE).
+CompilerLens is available under the Apache License 2.0. See [LICENSE](LICENSE) for the complete
+terms.
