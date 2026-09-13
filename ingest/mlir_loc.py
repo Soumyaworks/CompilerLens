@@ -125,6 +125,25 @@ def parse_source_loc(line: str, aliases: dict[str, str]) -> str | None:
     return None
 
 
+def source_locations_by_line(text: str) -> dict[int, str]:
+    """Resolved operation locations keyed by their physical line in an MLIR file.
+
+    LLVM debug metadata names the generated dispatch MLIR file and line from which an
+    instruction was translated.  This index is the second half of that bridge: it turns
+    the generated line back into the original Torch-input ``loc(...)``.  Parse every line,
+    not only lines recognised by ``mlir_parser`` as operations, because LLVM may attach a
+    location to structural MLIR such as a return or region terminator.
+    """
+    aliases = collect_aliases(text)
+    locations: dict[int, str] = {}
+    for lineno, line in enumerate(text.splitlines(), start=1):
+        if _ALIAS_DEF.match(line.strip()):
+            continue
+        if source_loc := parse_source_loc(line, aliases):
+            locations[lineno] = source_loc
+    return locations
+
+
 def strip_locations(text: str) -> str:
     """Remove `loc(...)` suffixes and alias-definition lines, for readable display.
 

@@ -31,9 +31,9 @@ export interface Operation {
   types: string[];
   text: string;
   /**
-   * Resolved loc() metadata as "file:line:col" -- the Level-1 lineage anchor. Operations
-   * derived from the same source construct share this value. Null when the compiler gave
-   * loc(unknown) or the location could not be resolved; never guessed.
+   * Resolved compiler location as "file:line:col" -- direct loc() metadata for MLIR, or
+   * LLVM !dbg metadata bridged through generated dispatch MLIR. Operations derived from
+   * the same source construct share this value. Incomplete locations are never guessed.
    */
   source_loc: string | null;
   /** Populated by the lineage engine in Stage 2. */

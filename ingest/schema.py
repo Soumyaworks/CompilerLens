@@ -68,11 +68,11 @@ class Operation:
     types: list[str] = field(default_factory=list)  # ["tensor<128x128xf32>"]
     text: str = ""  # source line, trimmed
 
-    # Resolved loc(...) metadata as "file:line:col", when the compiler provided one. This is
-    # the Level-1 lineage anchor: operations derived from the same
-    # source construct carry the same value, so `torch.aten.matmul` at line 3 can be traced
-    # to everything it became. None for loc(unknown) and for locations we could not resolve
-    # -- reporting an unresolved location would corrupt the anchor.
+    # Resolved compiler location as "file:line:col": direct loc(...) metadata for MLIR, or
+    # LLVM !dbg metadata bridged through its generated dispatch-MLIR line. This is the
+    # Level-1 lineage anchor: operations derived from the same source construct carry the
+    # same value, so torch.aten.matmul at line 3 can be traced to everything it became.
+    # None for unknown/incomplete locations -- reporting one would corrupt the anchor.
     source_loc: str | None = None
 
     # Filled in by the lineage engine in Stage 2; always present so the frontend can rely
@@ -170,8 +170,8 @@ class Artifact:
     source: dict[str, Any] = field(default_factory=dict)  # original PyTorch program
     target: dict[str, Any] = field(default_factory=dict)  # backend, triple, cpu
     notes: list[str] = field(default_factory=list)  # honest caveats, shown in the UI
-    # Level-1 operation lineage (ingest/lineage.py): anchor-stage line number -> every operation
-    # derived from it, per stage. This is what powers hover-linked highlighting.
+    # Level-1 operation lineage (ingest/lineage.py): anchor-stage line number -> every
+    # compiler-located operation derived from it, per stage. This powers linked highlighting.
     lineage: dict[str, Any] = field(default_factory=dict)
     artifact_version: str = ARTIFACT_VERSION
 

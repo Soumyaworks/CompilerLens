@@ -32,7 +32,7 @@ stages in one navigable interface.
 - A searchable timeline of compiler stages and passes
 - Side-by-side textual and semantic diffs
 - Compiler evidence linked directly to the IR that produced it
-- Operation lineage from framework-level operations to lower-level representations
+- Metadata-backed operation lineage from framework-level operations through LLVM IR
 - A landing-page search flow that compiles a Hugging Face model and adds it as a workload
 - A Compiler Playground for changing selected compiler options and benchmarking the result
 
@@ -214,7 +214,7 @@ CompilerLens/
 │   ├── schema.py                Python definition of the artifact contract
 │   ├── lineage.py               Source-location-based operation lineage
 │   ├── mlir_parser.py           MLIR operation and dialect extraction
-│   ├── llvm_parser.py           LLVM IR and assembly summaries
+│   ├── llvm_parser.py           LLVM summaries and debug-metadata lineage
 │   ├── pass_log.py              Per-pass snapshot extraction
 │   └── workloads/               Static and generated workload specifications
 ├── frontend/
