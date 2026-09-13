@@ -23,9 +23,10 @@ import './styles/lineage.css';
 interface LineageExplorerPageProps {
   artifact: Artifact;
   onBack: () => void;
+  initialSourceLine?: string;
 }
 
-export function LineageExplorerPage({artifact, onBack}: LineageExplorerPageProps) {
+export function LineageExplorerPage({artifact, onBack, initialSourceLine}: LineageExplorerPageProps) {
   const anchorStage = useMemo(
     () => artifact.stages.find(s => s.name === artifact.lineage?.anchor_stage) ?? artifact.stages[0],
     [artifact],
@@ -33,8 +34,13 @@ export function LineageExplorerPage({artifact, onBack}: LineageExplorerPageProps
   const stageMap = useMemo(() => new Map(artifact.stages.map(s => [s.id, s])), [artifact]);
 
   const [selectedStageId, setSelectedStageId] = useState(anchorStage.id);
-  const [selectedLine, setSelectedLine] = useState<string | null>(null);
-  const [jumpHighlightLines, setJumpHighlightLines] = useState<number[] | undefined>(undefined);
+  const validInitialLine = initialSourceLine && artifact.lineage?.lines[initialSourceLine]
+    ? initialSourceLine
+    : null;
+  const [selectedLine, setSelectedLine] = useState<string | null>(validInitialLine);
+  const [jumpHighlightLines, setJumpHighlightLines] = useState<number[] | undefined>(
+    validInitialLine ? [Number(validInitialLine)] : undefined,
+  );
 
   const selectedStage = stageMap.get(selectedStageId) ?? anchorStage;
   const lineageEntry = selectedLine ? artifact.lineage?.lines[selectedLine] : undefined;

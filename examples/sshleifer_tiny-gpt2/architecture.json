@@ -1,0 +1,1782 @@
+{
+  "version": 1,
+  "root_id": "model",
+  "source": "torch-export",
+  "mapping_status": "exact",
+  "mapping_note": "Module ownership comes from torch.export nn_module_stack metadata. The ordered decomposed FX operation stream exactly matched the Torch MLIR operation stream.",
+  "model": {
+    "model_id": "sshleifer/tiny-gpt2",
+    "model_type": "gpt2",
+    "causal": true,
+    "parameter_count": 102714,
+    "sequence_length": 16,
+    "hidden_size": 2,
+    "layer_count": 2,
+    "attention_heads": 2,
+    "intermediate_size": null,
+    "vocab_size": 50257
+  },
+  "nodes": [
+    {
+      "id": "model",
+      "path": "model",
+      "label": "GPT2LMHeadModel",
+      "type": "GPT2LMHeadModel",
+      "kind": "model",
+      "parent_id": null,
+      "children": [
+        "transformer",
+        "lm_head"
+      ],
+      "depth": 0,
+      "direct_parameter_count": 0,
+      "parameter_count": 102714,
+      "direct_source_lines": [
+        360
+      ],
+      "source_lines": [
+        8,
+        14,
+        20,
+        23,
+        25,
+        31,
+        37,
+        39,
+        41,
+        48,
+        52,
+        54,
+        56,
+        59,
+        61,
+        66,
+        69,
+        76,
+        79,
+        85,
+        88,
+        94,
+        97,
+        102,
+        105,
+        110,
+        114,
+        116,
+        118,
+        121,
+        123,
+        128,
+        130,
+        132,
+        139,
+        143,
+        145,
+        147,
+        150,
+        152,
+        157,
+        159,
+        161,
+        163,
+        165,
+        167,
+        168,
+        171,
+        172,
+        176,
+        178,
+        180,
+        183,
+        185,
+        190,
+        192,
+        194,
+        201,
+        205,
+        207,
+        209,
+        212,
+        214,
+        219,
+        222,
+        229,
+        232,
+        238,
+        241,
+        247,
+        250,
+        255,
+        258,
+        263,
+        267,
+        269,
+        271,
+        274,
+        276,
+        281,
+        283,
+        285,
+        292,
+        296,
+        298,
+        300,
+        303,
+        305,
+        310,
+        312,
+        314,
+        316,
+        318,
+        320,
+        321,
+        324,
+        325,
+        329,
+        331,
+        333,
+        336,
+        338,
+        343,
+        345,
+        347,
+        354,
+        359,
+        360,
+        362
+      ],
+      "op_names": {
+        "torch.aten.view": 26,
+        "torch.aten.mul.Tensor": 24,
+        "torch.aten.add.Tensor": 18,
+        "torch.aten.transpose.int": 8,
+        "torch.aten.mm": 8,
+        "torch.aten.clone": 5,
+        "torch.aten.layer_norm": 5,
+        "torch.aten.embedding": 2,
+        "torch.aten.split.Tensor": 2,
+        "torch.aten.scaled_dot_product_attention": 2,
+        "torch.aten.pow.Tensor_Scalar": 2,
+        "torch.aten.tanh": 2
+      },
+      "output_shapes": [
+        "1\u00d716\u00d72 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 0
+    },
+    {
+      "id": "transformer",
+      "path": "transformer",
+      "label": "Transformer",
+      "type": "GPT2Model",
+      "kind": "container",
+      "parent_id": "model",
+      "children": [
+        "transformer.wte",
+        "transformer.wpe",
+        "transformer.drop",
+        "transformer.h",
+        "transformer.ln_f"
+      ],
+      "depth": 1,
+      "direct_parameter_count": 0,
+      "parameter_count": 102714,
+      "direct_source_lines": [
+        8,
+        20,
+        23,
+        25,
+        37,
+        39,
+        359
+      ],
+      "source_lines": [
+        8,
+        14,
+        20,
+        23,
+        25,
+        31,
+        37,
+        39,
+        41,
+        48,
+        52,
+        54,
+        56,
+        59,
+        61,
+        66,
+        69,
+        76,
+        79,
+        85,
+        88,
+        94,
+        97,
+        102,
+        105,
+        110,
+        114,
+        116,
+        118,
+        121,
+        123,
+        128,
+        130,
+        132,
+        139,
+        143,
+        145,
+        147,
+        150,
+        152,
+        157,
+        159,
+        161,
+        163,
+        165,
+        167,
+        168,
+        171,
+        172,
+        176,
+        178,
+        180,
+        183,
+        185,
+        190,
+        192,
+        194,
+        201,
+        205,
+        207,
+        209,
+        212,
+        214,
+        219,
+        222,
+        229,
+        232,
+        238,
+        241,
+        247,
+        250,
+        255,
+        258,
+        263,
+        267,
+        269,
+        271,
+        274,
+        276,
+        281,
+        283,
+        285,
+        292,
+        296,
+        298,
+        300,
+        303,
+        305,
+        310,
+        312,
+        314,
+        316,
+        318,
+        320,
+        321,
+        324,
+        325,
+        329,
+        331,
+        333,
+        336,
+        338,
+        343,
+        345,
+        347,
+        354,
+        359
+      ],
+      "op_names": {
+        "torch.aten.view": 26,
+        "torch.aten.mul.Tensor": 24,
+        "torch.aten.add.Tensor": 18,
+        "torch.aten.transpose.int": 8,
+        "torch.aten.mm": 8,
+        "torch.aten.clone": 5,
+        "torch.aten.layer_norm": 5,
+        "torch.aten.embedding": 2,
+        "torch.aten.split.Tensor": 2,
+        "torch.aten.scaled_dot_product_attention": 2,
+        "torch.aten.pow.Tensor_Scalar": 2,
+        "torch.aten.tanh": 2
+      },
+      "output_shapes": [
+        "1\u00d716 \u00b7 int64",
+        "16 \u00b7 int64",
+        "1\u00d716\u00d72 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 0
+    },
+    {
+      "id": "transformer.wte",
+      "path": "transformer.wte",
+      "label": "Token Embedding",
+      "type": "Embedding",
+      "kind": "embedding",
+      "parent_id": "transformer",
+      "children": [],
+      "depth": 2,
+      "direct_parameter_count": 100514,
+      "parameter_count": 100514,
+      "direct_source_lines": [
+        14
+      ],
+      "source_lines": [
+        14
+      ],
+      "op_names": {
+        "torch.aten.embedding": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d72 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 1
+    },
+    {
+      "id": "transformer.wpe",
+      "path": "transformer.wpe",
+      "label": "Position Embedding",
+      "type": "Embedding",
+      "kind": "embedding",
+      "parent_id": "transformer",
+      "children": [],
+      "depth": 2,
+      "direct_parameter_count": 2048,
+      "parameter_count": 2048,
+      "direct_source_lines": [
+        31
+      ],
+      "source_lines": [
+        31
+      ],
+      "op_names": {
+        "torch.aten.embedding": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d72 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 5
+    },
+    {
+      "id": "transformer.drop",
+      "path": "transformer.drop",
+      "label": "Drop",
+      "type": "Dropout",
+      "kind": "dropout",
+      "parent_id": "transformer",
+      "children": [],
+      "depth": 2,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        41
+      ],
+      "source_lines": [
+        41
+      ],
+      "op_names": {
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d72 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 8
+    },
+    {
+      "id": "transformer.h",
+      "path": "transformer.h",
+      "label": "Transformer Blocks",
+      "type": "ModuleList",
+      "kind": "container",
+      "parent_id": "transformer",
+      "children": [
+        "transformer.h.0",
+        "transformer.h.1"
+      ],
+      "depth": 2,
+      "direct_parameter_count": 0,
+      "parameter_count": 148,
+      "direct_source_lines": [],
+      "source_lines": [
+        48,
+        52,
+        54,
+        56,
+        59,
+        61,
+        66,
+        69,
+        76,
+        79,
+        85,
+        88,
+        94,
+        97,
+        102,
+        105,
+        110,
+        114,
+        116,
+        118,
+        121,
+        123,
+        128,
+        130,
+        132,
+        139,
+        143,
+        145,
+        147,
+        150,
+        152,
+        157,
+        159,
+        161,
+        163,
+        165,
+        167,
+        168,
+        171,
+        172,
+        176,
+        178,
+        180,
+        183,
+        185,
+        190,
+        192,
+        194,
+        201,
+        205,
+        207,
+        209,
+        212,
+        214,
+        219,
+        222,
+        229,
+        232,
+        238,
+        241,
+        247,
+        250,
+        255,
+        258,
+        263,
+        267,
+        269,
+        271,
+        274,
+        276,
+        281,
+        283,
+        285,
+        292,
+        296,
+        298,
+        300,
+        303,
+        305,
+        310,
+        312,
+        314,
+        316,
+        318,
+        320,
+        321,
+        324,
+        325,
+        329,
+        331,
+        333,
+        336,
+        338,
+        343,
+        345,
+        347
+      ],
+      "op_names": {
+        "torch.aten.view": 24,
+        "torch.aten.mul.Tensor": 24,
+        "torch.aten.add.Tensor": 16,
+        "torch.aten.transpose.int": 8,
+        "torch.aten.mm": 8,
+        "torch.aten.layer_norm": 4,
+        "torch.aten.clone": 4,
+        "torch.aten.split.Tensor": 2,
+        "torch.aten.scaled_dot_product_attention": 2,
+        "torch.aten.pow.Tensor_Scalar": 2,
+        "torch.aten.tanh": 2
+      },
+      "output_shapes": [],
+      "mapping": "exact",
+      "order": 9
+    },
+    {
+      "id": "transformer.h.0",
+      "path": "transformer.h.0",
+      "label": "Block 0",
+      "type": "GPT2Block",
+      "kind": "block",
+      "parent_id": "transformer.h",
+      "children": [
+        "transformer.h.0.ln_1",
+        "transformer.h.0.attn",
+        "transformer.h.0.ln_2",
+        "transformer.h.0.mlp"
+      ],
+      "depth": 3,
+      "direct_parameter_count": 0,
+      "parameter_count": 74,
+      "direct_source_lines": [
+        132,
+        194
+      ],
+      "source_lines": [
+        48,
+        52,
+        54,
+        56,
+        59,
+        61,
+        66,
+        69,
+        76,
+        79,
+        85,
+        88,
+        94,
+        97,
+        102,
+        105,
+        110,
+        114,
+        116,
+        118,
+        121,
+        123,
+        128,
+        130,
+        132,
+        139,
+        143,
+        145,
+        147,
+        150,
+        152,
+        157,
+        159,
+        161,
+        163,
+        165,
+        167,
+        168,
+        171,
+        172,
+        176,
+        178,
+        180,
+        183,
+        185,
+        190,
+        192,
+        194
+      ],
+      "op_names": {
+        "torch.aten.view": 12,
+        "torch.aten.mul.Tensor": 12,
+        "torch.aten.add.Tensor": 8,
+        "torch.aten.transpose.int": 4,
+        "torch.aten.mm": 4,
+        "torch.aten.layer_norm": 2,
+        "torch.aten.clone": 2,
+        "torch.aten.split.Tensor": 1,
+        "torch.aten.scaled_dot_product_attention": 1,
+        "torch.aten.pow.Tensor_Scalar": 1,
+        "torch.aten.tanh": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d72 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 9
+    },
+    {
+      "id": "transformer.h.0.ln_1",
+      "path": "transformer.h.0.ln_1",
+      "label": "Pre-attention LayerNorm",
+      "type": "LayerNorm",
+      "kind": "normalization",
+      "parent_id": "transformer.h.0",
+      "children": [],
+      "depth": 4,
+      "direct_parameter_count": 4,
+      "parameter_count": 4,
+      "direct_source_lines": [
+        48
+      ],
+      "source_lines": [
+        48
+      ],
+      "op_names": {
+        "torch.aten.layer_norm": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d72 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 9
+    },
+    {
+      "id": "transformer.h.0.attn",
+      "path": "transformer.h.0.attn",
+      "label": "Attn",
+      "type": "GPT2Attention",
+      "kind": "attention",
+      "parent_id": "transformer.h.0",
+      "children": [
+        "transformer.h.0.attn.c_attn",
+        "transformer.h.0.attn.c_proj",
+        "transformer.h.0.attn.resid_dropout"
+      ],
+      "depth": 4,
+      "direct_parameter_count": 0,
+      "parameter_count": 24,
+      "direct_source_lines": [
+        69,
+        76,
+        79,
+        85,
+        88,
+        94,
+        97,
+        102,
+        105,
+        110
+      ],
+      "source_lines": [
+        52,
+        54,
+        56,
+        59,
+        61,
+        66,
+        69,
+        76,
+        79,
+        85,
+        88,
+        94,
+        97,
+        102,
+        105,
+        110,
+        114,
+        116,
+        118,
+        121,
+        123,
+        128,
+        130
+      ],
+      "op_names": {
+        "torch.aten.view": 8,
+        "torch.aten.transpose.int": 4,
+        "torch.aten.mul.Tensor": 4,
+        "torch.aten.mm": 2,
+        "torch.aten.add.Tensor": 2,
+        "torch.aten.split.Tensor": 1,
+        "torch.aten.scaled_dot_product_attention": 1,
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d72 \u00b7 float32, 1\u00d716\u00d72 \u00b7 float32, 1\u00d716\u00d72 \u00b7 float32",
+        "1\u00d716\u00d72 \u00b7 float32",
+        "1\u00d716\u00d72\u00d71 \u00b7 float32",
+        "1\u00d72\u00d716\u00d71 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 10
+    },
+    {
+      "id": "transformer.h.0.attn.c_attn",
+      "path": "transformer.h.0.attn.c_attn",
+      "label": "QKV Projection",
+      "type": "Conv1D",
+      "kind": "attention",
+      "parent_id": "transformer.h.0.attn",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 18,
+      "parameter_count": 18,
+      "direct_source_lines": [
+        52,
+        54,
+        56,
+        59,
+        61,
+        66
+      ],
+      "source_lines": [
+        52,
+        54,
+        56,
+        59,
+        61,
+        66
+      ],
+      "op_names": {
+        "torch.aten.view": 2,
+        "torch.aten.mul.Tensor": 2,
+        "torch.aten.mm": 1,
+        "torch.aten.add.Tensor": 1
+      },
+      "output_shapes": [
+        "16\u00d72 \u00b7 float32",
+        "16\u00d76 \u00b7 float32",
+        "6 \u00b7 float32",
+        "1\u00d716\u00d76 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 10
+    },
+    {
+      "id": "transformer.h.0.attn.c_proj",
+      "path": "transformer.h.0.attn.c_proj",
+      "label": "Output Projection",
+      "type": "Conv1D",
+      "kind": "attention",
+      "parent_id": "transformer.h.0.attn",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 6,
+      "parameter_count": 6,
+      "direct_source_lines": [
+        114,
+        116,
+        118,
+        121,
+        123,
+        128
+      ],
+      "source_lines": [
+        114,
+        116,
+        118,
+        121,
+        123,
+        128
+      ],
+      "op_names": {
+        "torch.aten.view": 2,
+        "torch.aten.mul.Tensor": 2,
+        "torch.aten.mm": 1,
+        "torch.aten.add.Tensor": 1
+      },
+      "output_shapes": [
+        "16\u00d72 \u00b7 float32",
+        "2 \u00b7 float32",
+        "1\u00d716\u00d72 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 29
+    },
+    {
+      "id": "transformer.h.0.attn.resid_dropout",
+      "path": "transformer.h.0.attn.resid_dropout",
+      "label": "Resid Dropout",
+      "type": "Dropout",
+      "kind": "dropout",
+      "parent_id": "transformer.h.0.attn",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        130
+      ],
+      "source_lines": [
+        130
+      ],
+      "op_names": {
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d72 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 35
+    },
+    {
+      "id": "transformer.h.0.ln_2",
+      "path": "transformer.h.0.ln_2",
+      "label": "Pre-MLP LayerNorm",
+      "type": "LayerNorm",
+      "kind": "normalization",
+      "parent_id": "transformer.h.0",
+      "children": [],
+      "depth": 4,
+      "direct_parameter_count": 4,
+      "parameter_count": 4,
+      "direct_source_lines": [
+        139
+      ],
+      "source_lines": [
+        139
+      ],
+      "op_names": {
+        "torch.aten.layer_norm": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d72 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 37
+    },
+    {
+      "id": "transformer.h.0.mlp",
+      "path": "transformer.h.0.mlp",
+      "label": "MLP",
+      "type": "GPT2MLP",
+      "kind": "mlp",
+      "parent_id": "transformer.h.0",
+      "children": [
+        "transformer.h.0.mlp.c_fc",
+        "transformer.h.0.mlp.act",
+        "transformer.h.0.mlp.c_proj",
+        "transformer.h.0.mlp.dropout"
+      ],
+      "depth": 4,
+      "direct_parameter_count": 0,
+      "parameter_count": 42,
+      "direct_source_lines": [],
+      "source_lines": [
+        143,
+        145,
+        147,
+        150,
+        152,
+        157,
+        159,
+        161,
+        163,
+        165,
+        167,
+        168,
+        171,
+        172,
+        176,
+        178,
+        180,
+        183,
+        185,
+        190,
+        192
+      ],
+      "op_names": {
+        "torch.aten.mul.Tensor": 8,
+        "torch.aten.view": 4,
+        "torch.aten.add.Tensor": 4,
+        "torch.aten.mm": 2,
+        "torch.aten.pow.Tensor_Scalar": 1,
+        "torch.aten.tanh": 1,
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [],
+      "mapping": "exact",
+      "order": 38
+    },
+    {
+      "id": "transformer.h.0.mlp.c_fc",
+      "path": "transformer.h.0.mlp.c_fc",
+      "label": "Feed-forward Expansion",
+      "type": "Conv1D",
+      "kind": "mlp",
+      "parent_id": "transformer.h.0.mlp",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 24,
+      "parameter_count": 24,
+      "direct_source_lines": [
+        143,
+        145,
+        147,
+        150,
+        152,
+        157
+      ],
+      "source_lines": [
+        143,
+        145,
+        147,
+        150,
+        152,
+        157
+      ],
+      "op_names": {
+        "torch.aten.view": 2,
+        "torch.aten.mul.Tensor": 2,
+        "torch.aten.mm": 1,
+        "torch.aten.add.Tensor": 1
+      },
+      "output_shapes": [
+        "16\u00d72 \u00b7 float32",
+        "16\u00d78 \u00b7 float32",
+        "8 \u00b7 float32",
+        "1\u00d716\u00d78 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 38
+    },
+    {
+      "id": "transformer.h.0.mlp.act",
+      "path": "transformer.h.0.mlp.act",
+      "label": "Act",
+      "type": "NewGELUActivation",
+      "kind": "mlp",
+      "parent_id": "transformer.h.0.mlp",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        159,
+        161,
+        163,
+        165,
+        167,
+        168,
+        171,
+        172
+      ],
+      "source_lines": [
+        159,
+        161,
+        163,
+        165,
+        167,
+        168,
+        171,
+        172
+      ],
+      "op_names": {
+        "torch.aten.mul.Tensor": 4,
+        "torch.aten.add.Tensor": 2,
+        "torch.aten.pow.Tensor_Scalar": 1,
+        "torch.aten.tanh": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d78 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 44
+    },
+    {
+      "id": "transformer.h.0.mlp.c_proj",
+      "path": "transformer.h.0.mlp.c_proj",
+      "label": "Output Projection",
+      "type": "Conv1D",
+      "kind": "mlp",
+      "parent_id": "transformer.h.0.mlp",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 18,
+      "parameter_count": 18,
+      "direct_source_lines": [
+        176,
+        178,
+        180,
+        183,
+        185,
+        190
+      ],
+      "source_lines": [
+        176,
+        178,
+        180,
+        183,
+        185,
+        190
+      ],
+      "op_names": {
+        "torch.aten.view": 2,
+        "torch.aten.mul.Tensor": 2,
+        "torch.aten.mm": 1,
+        "torch.aten.add.Tensor": 1
+      },
+      "output_shapes": [
+        "16\u00d78 \u00b7 float32",
+        "16\u00d72 \u00b7 float32",
+        "2 \u00b7 float32",
+        "1\u00d716\u00d72 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 52
+    },
+    {
+      "id": "transformer.h.0.mlp.dropout",
+      "path": "transformer.h.0.mlp.dropout",
+      "label": "Dropout",
+      "type": "Dropout",
+      "kind": "dropout",
+      "parent_id": "transformer.h.0.mlp",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        192
+      ],
+      "source_lines": [
+        192
+      ],
+      "op_names": {
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d72 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 58
+    },
+    {
+      "id": "transformer.h.1",
+      "path": "transformer.h.1",
+      "label": "Block 1",
+      "type": "GPT2Block",
+      "kind": "block",
+      "parent_id": "transformer.h",
+      "children": [
+        "transformer.h.1.ln_1",
+        "transformer.h.1.attn",
+        "transformer.h.1.ln_2",
+        "transformer.h.1.mlp"
+      ],
+      "depth": 3,
+      "direct_parameter_count": 0,
+      "parameter_count": 74,
+      "direct_source_lines": [
+        285,
+        347
+      ],
+      "source_lines": [
+        201,
+        205,
+        207,
+        209,
+        212,
+        214,
+        219,
+        222,
+        229,
+        232,
+        238,
+        241,
+        247,
+        250,
+        255,
+        258,
+        263,
+        267,
+        269,
+        271,
+        274,
+        276,
+        281,
+        283,
+        285,
+        292,
+        296,
+        298,
+        300,
+        303,
+        305,
+        310,
+        312,
+        314,
+        316,
+        318,
+        320,
+        321,
+        324,
+        325,
+        329,
+        331,
+        333,
+        336,
+        338,
+        343,
+        345,
+        347
+      ],
+      "op_names": {
+        "torch.aten.view": 12,
+        "torch.aten.mul.Tensor": 12,
+        "torch.aten.add.Tensor": 8,
+        "torch.aten.transpose.int": 4,
+        "torch.aten.mm": 4,
+        "torch.aten.layer_norm": 2,
+        "torch.aten.clone": 2,
+        "torch.aten.split.Tensor": 1,
+        "torch.aten.scaled_dot_product_attention": 1,
+        "torch.aten.pow.Tensor_Scalar": 1,
+        "torch.aten.tanh": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d72 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 60
+    },
+    {
+      "id": "transformer.h.1.ln_1",
+      "path": "transformer.h.1.ln_1",
+      "label": "Pre-attention LayerNorm",
+      "type": "LayerNorm",
+      "kind": "normalization",
+      "parent_id": "transformer.h.1",
+      "children": [],
+      "depth": 4,
+      "direct_parameter_count": 4,
+      "parameter_count": 4,
+      "direct_source_lines": [
+        201
+      ],
+      "source_lines": [
+        201
+      ],
+      "op_names": {
+        "torch.aten.layer_norm": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d72 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 60
+    },
+    {
+      "id": "transformer.h.1.attn",
+      "path": "transformer.h.1.attn",
+      "label": "Attn",
+      "type": "GPT2Attention",
+      "kind": "attention",
+      "parent_id": "transformer.h.1",
+      "children": [
+        "transformer.h.1.attn.c_attn",
+        "transformer.h.1.attn.c_proj",
+        "transformer.h.1.attn.resid_dropout"
+      ],
+      "depth": 4,
+      "direct_parameter_count": 0,
+      "parameter_count": 24,
+      "direct_source_lines": [
+        222,
+        229,
+        232,
+        238,
+        241,
+        247,
+        250,
+        255,
+        258,
+        263
+      ],
+      "source_lines": [
+        205,
+        207,
+        209,
+        212,
+        214,
+        219,
+        222,
+        229,
+        232,
+        238,
+        241,
+        247,
+        250,
+        255,
+        258,
+        263,
+        267,
+        269,
+        271,
+        274,
+        276,
+        281,
+        283
+      ],
+      "op_names": {
+        "torch.aten.view": 8,
+        "torch.aten.transpose.int": 4,
+        "torch.aten.mul.Tensor": 4,
+        "torch.aten.mm": 2,
+        "torch.aten.add.Tensor": 2,
+        "torch.aten.split.Tensor": 1,
+        "torch.aten.scaled_dot_product_attention": 1,
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d72 \u00b7 float32, 1\u00d716\u00d72 \u00b7 float32, 1\u00d716\u00d72 \u00b7 float32",
+        "1\u00d716\u00d72 \u00b7 float32",
+        "1\u00d716\u00d72\u00d71 \u00b7 float32",
+        "1\u00d72\u00d716\u00d71 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 61
+    },
+    {
+      "id": "transformer.h.1.attn.c_attn",
+      "path": "transformer.h.1.attn.c_attn",
+      "label": "QKV Projection",
+      "type": "Conv1D",
+      "kind": "attention",
+      "parent_id": "transformer.h.1.attn",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 18,
+      "parameter_count": 18,
+      "direct_source_lines": [
+        205,
+        207,
+        209,
+        212,
+        214,
+        219
+      ],
+      "source_lines": [
+        205,
+        207,
+        209,
+        212,
+        214,
+        219
+      ],
+      "op_names": {
+        "torch.aten.view": 2,
+        "torch.aten.mul.Tensor": 2,
+        "torch.aten.mm": 1,
+        "torch.aten.add.Tensor": 1
+      },
+      "output_shapes": [
+        "16\u00d72 \u00b7 float32",
+        "16\u00d76 \u00b7 float32",
+        "6 \u00b7 float32",
+        "1\u00d716\u00d76 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 61
+    },
+    {
+      "id": "transformer.h.1.attn.c_proj",
+      "path": "transformer.h.1.attn.c_proj",
+      "label": "Output Projection",
+      "type": "Conv1D",
+      "kind": "attention",
+      "parent_id": "transformer.h.1.attn",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 6,
+      "parameter_count": 6,
+      "direct_source_lines": [
+        267,
+        269,
+        271,
+        274,
+        276,
+        281
+      ],
+      "source_lines": [
+        267,
+        269,
+        271,
+        274,
+        276,
+        281
+      ],
+      "op_names": {
+        "torch.aten.view": 2,
+        "torch.aten.mul.Tensor": 2,
+        "torch.aten.mm": 1,
+        "torch.aten.add.Tensor": 1
+      },
+      "output_shapes": [
+        "16\u00d72 \u00b7 float32",
+        "2 \u00b7 float32",
+        "1\u00d716\u00d72 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 80
+    },
+    {
+      "id": "transformer.h.1.attn.resid_dropout",
+      "path": "transformer.h.1.attn.resid_dropout",
+      "label": "Resid Dropout",
+      "type": "Dropout",
+      "kind": "dropout",
+      "parent_id": "transformer.h.1.attn",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        283
+      ],
+      "source_lines": [
+        283
+      ],
+      "op_names": {
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d72 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 86
+    },
+    {
+      "id": "transformer.h.1.ln_2",
+      "path": "transformer.h.1.ln_2",
+      "label": "Pre-MLP LayerNorm",
+      "type": "LayerNorm",
+      "kind": "normalization",
+      "parent_id": "transformer.h.1",
+      "children": [],
+      "depth": 4,
+      "direct_parameter_count": 4,
+      "parameter_count": 4,
+      "direct_source_lines": [
+        292
+      ],
+      "source_lines": [
+        292
+      ],
+      "op_names": {
+        "torch.aten.layer_norm": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d72 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 88
+    },
+    {
+      "id": "transformer.h.1.mlp",
+      "path": "transformer.h.1.mlp",
+      "label": "MLP",
+      "type": "GPT2MLP",
+      "kind": "mlp",
+      "parent_id": "transformer.h.1",
+      "children": [
+        "transformer.h.1.mlp.c_fc",
+        "transformer.h.1.mlp.act",
+        "transformer.h.1.mlp.c_proj",
+        "transformer.h.1.mlp.dropout"
+      ],
+      "depth": 4,
+      "direct_parameter_count": 0,
+      "parameter_count": 42,
+      "direct_source_lines": [],
+      "source_lines": [
+        296,
+        298,
+        300,
+        303,
+        305,
+        310,
+        312,
+        314,
+        316,
+        318,
+        320,
+        321,
+        324,
+        325,
+        329,
+        331,
+        333,
+        336,
+        338,
+        343,
+        345
+      ],
+      "op_names": {
+        "torch.aten.mul.Tensor": 8,
+        "torch.aten.view": 4,
+        "torch.aten.add.Tensor": 4,
+        "torch.aten.mm": 2,
+        "torch.aten.pow.Tensor_Scalar": 1,
+        "torch.aten.tanh": 1,
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [],
+      "mapping": "exact",
+      "order": 89
+    },
+    {
+      "id": "transformer.h.1.mlp.c_fc",
+      "path": "transformer.h.1.mlp.c_fc",
+      "label": "Feed-forward Expansion",
+      "type": "Conv1D",
+      "kind": "mlp",
+      "parent_id": "transformer.h.1.mlp",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 24,
+      "parameter_count": 24,
+      "direct_source_lines": [
+        296,
+        298,
+        300,
+        303,
+        305,
+        310
+      ],
+      "source_lines": [
+        296,
+        298,
+        300,
+        303,
+        305,
+        310
+      ],
+      "op_names": {
+        "torch.aten.view": 2,
+        "torch.aten.mul.Tensor": 2,
+        "torch.aten.mm": 1,
+        "torch.aten.add.Tensor": 1
+      },
+      "output_shapes": [
+        "16\u00d72 \u00b7 float32",
+        "16\u00d78 \u00b7 float32",
+        "8 \u00b7 float32",
+        "1\u00d716\u00d78 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 89
+    },
+    {
+      "id": "transformer.h.1.mlp.act",
+      "path": "transformer.h.1.mlp.act",
+      "label": "Act",
+      "type": "NewGELUActivation",
+      "kind": "mlp",
+      "parent_id": "transformer.h.1.mlp",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        312,
+        314,
+        316,
+        318,
+        320,
+        321,
+        324,
+        325
+      ],
+      "source_lines": [
+        312,
+        314,
+        316,
+        318,
+        320,
+        321,
+        324,
+        325
+      ],
+      "op_names": {
+        "torch.aten.mul.Tensor": 4,
+        "torch.aten.add.Tensor": 2,
+        "torch.aten.pow.Tensor_Scalar": 1,
+        "torch.aten.tanh": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d78 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 95
+    },
+    {
+      "id": "transformer.h.1.mlp.c_proj",
+      "path": "transformer.h.1.mlp.c_proj",
+      "label": "Output Projection",
+      "type": "Conv1D",
+      "kind": "mlp",
+      "parent_id": "transformer.h.1.mlp",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 18,
+      "parameter_count": 18,
+      "direct_source_lines": [
+        329,
+        331,
+        333,
+        336,
+        338,
+        343
+      ],
+      "source_lines": [
+        329,
+        331,
+        333,
+        336,
+        338,
+        343
+      ],
+      "op_names": {
+        "torch.aten.view": 2,
+        "torch.aten.mul.Tensor": 2,
+        "torch.aten.mm": 1,
+        "torch.aten.add.Tensor": 1
+      },
+      "output_shapes": [
+        "16\u00d78 \u00b7 float32",
+        "16\u00d72 \u00b7 float32",
+        "2 \u00b7 float32",
+        "1\u00d716\u00d72 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 103
+    },
+    {
+      "id": "transformer.h.1.mlp.dropout",
+      "path": "transformer.h.1.mlp.dropout",
+      "label": "Dropout",
+      "type": "Dropout",
+      "kind": "dropout",
+      "parent_id": "transformer.h.1.mlp",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        345
+      ],
+      "source_lines": [
+        345
+      ],
+      "op_names": {
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d72 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 109
+    },
+    {
+      "id": "transformer.ln_f",
+      "path": "transformer.ln_f",
+      "label": "Final LayerNorm",
+      "type": "LayerNorm",
+      "kind": "normalization",
+      "parent_id": "transformer",
+      "children": [],
+      "depth": 2,
+      "direct_parameter_count": 4,
+      "parameter_count": 4,
+      "direct_source_lines": [
+        354
+      ],
+      "source_lines": [
+        354
+      ],
+      "op_names": {
+        "torch.aten.layer_norm": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d72 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 111
+    },
+    {
+      "id": "lm_head",
+      "path": "lm_head",
+      "label": "Language Model Head",
+      "type": "Linear",
+      "kind": "head",
+      "parent_id": "model",
+      "children": [],
+      "depth": 1,
+      "direct_parameter_count": 100514,
+      "parameter_count": 100514,
+      "direct_source_lines": [
+        362
+      ],
+      "source_lines": [
+        362
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d750257 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 114
+    }
+  ],
+  "edges": [
+    {
+      "source": "model",
+      "target": "lm_head"
+    },
+    {
+      "source": "transformer",
+      "target": "model"
+    },
+    {
+      "source": "transformer",
+      "target": "transformer.drop"
+    },
+    {
+      "source": "transformer",
+      "target": "transformer.wpe"
+    },
+    {
+      "source": "transformer",
+      "target": "transformer.wte"
+    },
+    {
+      "source": "transformer.drop",
+      "target": "transformer.h.0"
+    },
+    {
+      "source": "transformer.drop",
+      "target": "transformer.h.0.ln_1"
+    },
+    {
+      "source": "transformer.h.0",
+      "target": "transformer.h.0.ln_2"
+    },
+    {
+      "source": "transformer.h.0",
+      "target": "transformer.h.1"
+    },
+    {
+      "source": "transformer.h.0",
+      "target": "transformer.h.1.ln_1"
+    },
+    {
+      "source": "transformer.h.0.attn",
+      "target": "transformer.h.0.attn.c_proj"
+    },
+    {
+      "source": "transformer.h.0.attn.c_attn",
+      "target": "transformer.h.0.attn"
+    },
+    {
+      "source": "transformer.h.0.attn.c_proj",
+      "target": "transformer.h.0.attn.resid_dropout"
+    },
+    {
+      "source": "transformer.h.0.attn.resid_dropout",
+      "target": "transformer.h.0"
+    },
+    {
+      "source": "transformer.h.0.ln_1",
+      "target": "transformer.h.0.attn.c_attn"
+    },
+    {
+      "source": "transformer.h.0.ln_2",
+      "target": "transformer.h.0.mlp.c_fc"
+    },
+    {
+      "source": "transformer.h.0.mlp.act",
+      "target": "transformer.h.0.mlp.c_proj"
+    },
+    {
+      "source": "transformer.h.0.mlp.c_fc",
+      "target": "transformer.h.0.mlp.act"
+    },
+    {
+      "source": "transformer.h.0.mlp.c_proj",
+      "target": "transformer.h.0.mlp.dropout"
+    },
+    {
+      "source": "transformer.h.0.mlp.dropout",
+      "target": "transformer.h.0"
+    },
+    {
+      "source": "transformer.h.1",
+      "target": "transformer.h.1.ln_2"
+    },
+    {
+      "source": "transformer.h.1",
+      "target": "transformer.ln_f"
+    },
+    {
+      "source": "transformer.h.1.attn",
+      "target": "transformer.h.1.attn.c_proj"
+    },
+    {
+      "source": "transformer.h.1.attn.c_attn",
+      "target": "transformer.h.1.attn"
+    },
+    {
+      "source": "transformer.h.1.attn.c_proj",
+      "target": "transformer.h.1.attn.resid_dropout"
+    },
+    {
+      "source": "transformer.h.1.attn.resid_dropout",
+      "target": "transformer.h.1"
+    },
+    {
+      "source": "transformer.h.1.ln_1",
+      "target": "transformer.h.1.attn.c_attn"
+    },
+    {
+      "source": "transformer.h.1.ln_2",
+      "target": "transformer.h.1.mlp.c_fc"
+    },
+    {
+      "source": "transformer.h.1.mlp.act",
+      "target": "transformer.h.1.mlp.c_proj"
+    },
+    {
+      "source": "transformer.h.1.mlp.c_fc",
+      "target": "transformer.h.1.mlp.act"
+    },
+    {
+      "source": "transformer.h.1.mlp.c_proj",
+      "target": "transformer.h.1.mlp.dropout"
+    },
+    {
+      "source": "transformer.h.1.mlp.dropout",
+      "target": "transformer.h.1"
+    },
+    {
+      "source": "transformer.ln_f",
+      "target": "transformer"
+    },
+    {
+      "source": "transformer.wpe",
+      "target": "transformer"
+    },
+    {
+      "source": "transformer.wte",
+      "target": "transformer"
+    }
+  ]
+}

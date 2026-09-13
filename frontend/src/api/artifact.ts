@@ -145,6 +145,65 @@ export interface Lineage {
   notes: string[];
 }
 
+export type ArchitectureMapping = 'exact' | 'derived' | 'unavailable';
+
+export interface ArchitectureStageCoverage {
+  stage_id: string;
+  operation_count: number;
+}
+
+export interface ArchitectureNode {
+  id: string;
+  path: string;
+  label: string;
+  type: string;
+  kind: string;
+  parent_id: string | null;
+  children: string[];
+  depth: number;
+  direct_parameter_count: number;
+  parameter_count: number;
+  direct_source_lines: number[];
+  source_lines: number[];
+  op_names: Record<string, number>;
+  output_shapes: string[];
+  mapping: ArchitectureMapping;
+  order: number;
+  stage_lines: Record<string, number[]>;
+  stage_coverage: ArchitectureStageCoverage[];
+  compiler_stage_count: number;
+  compiler_operation_count: number;
+}
+
+export interface ArchitectureEdge {
+  source: string;
+  target: string;
+}
+
+export interface ArchitectureModelFacts {
+  model_id?: string;
+  model_type?: string | null;
+  causal?: boolean;
+  parameter_count?: number;
+  sequence_length?: number | null;
+  hidden_size?: number | null;
+  layer_count?: number | null;
+  attention_heads?: number | null;
+  intermediate_size?: number | null;
+  vocab_size?: number | null;
+}
+
+export interface Architecture {
+  version: number;
+  root_id: string;
+  source: 'torch-export' | 'compiler-ir';
+  mapping_status: ArchitectureMapping;
+  mapping_note: string;
+  model: ArchitectureModelFacts;
+  nodes: ArchitectureNode[];
+  edges: ArchitectureEdge[];
+}
+
 export interface Artifact {
   compilation_id: string;
   stages: Stage[];
@@ -156,6 +215,8 @@ export interface Artifact {
   notes: string[];
   /** Level-1 operation lineage: source line -> operations across all stages. */
   lineage?: Lineage;
+  /** Interactive model hierarchy connected to source lines and compiler stages. */
+  architecture?: Architecture;
   artifact_version: string;
 }
 
