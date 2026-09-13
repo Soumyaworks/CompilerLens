@@ -18,6 +18,7 @@ from pathlib import Path
 
 from . import llvm_parser, mlir_parser, pass_log
 from .lineage import build_lineage
+from .mlir_loc import source_locations_by_line
 from .schema import Artifact, Evidence, Operation, Stage, StageDiff
 from .workloads import WORKLOADS
 from .workloads.base import PassTrackSpec, WorkloadSpec
@@ -81,13 +82,14 @@ def _make_stage(
     pass_arg: str | None = None,
     parent_stage: str | None = None,
     gap_note: str | None = None,
+    dispatch_sources: dict[str, dict[int, str]] | None = None,
 ) -> Stage:
     """Assemble a Stage, parsing its text according to its language."""
     if language == "mlir":
         raw_ops = mlir_parser.parse_operations(text, stage_id)
         histogram_label = "Dialects"
     elif language == "llvm":
-        raw_ops = llvm_parser.parse_llvm_ir(text, stage_id)
+        raw_ops = llvm_parser.parse_llvm_ir(text, stage_id, dispatch_sources)
         histogram_label = "Instruction classes"
     elif language == "asm":
         raw_ops = llvm_parser.parse_asm(text, stage_id)
@@ -176,6 +178,7 @@ def _build_stages(workload: WorkloadSpec, root: Path, repo_relative: str) -> tup
     for spec in workload.pass_tracks:
         tracks_by_anchor.setdefault(spec.insert_after, []).append(spec)
 
+    dispatch_sources = _build_dispatch_source_maps(root)
     stages: list[Stage] = []
     notes: list[str] = []
 
@@ -198,6 +201,7 @@ def _build_stages(workload: WorkloadSpec, root: Path, repo_relative: str) -> tup
                 description=spec.description,
                 track=spec.track,
                 gap_note=spec.gap_note,
+                dispatch_sources=dispatch_sources,
             )
         )
 
@@ -210,6 +214,29 @@ def _build_stages(workload: WorkloadSpec, root: Path, repo_relative: str) -> tup
                 notes.append(note)
 
     return stages, notes
+
+
+def _build_dispatch_source_maps(root: Path) -> dict[str, dict[int, str]]:
+    """Index generated dispatch MLIR lines back to their original Torch locations."""
+    llvm_dir = root / "llvm"
+    if not llvm_dir.is_dir():
+        return {}
+
+    maps: dict[str, dict[int, str]] = {}
+    dispatch_aliases: dict[str, list[dict[int, str]]] = {}
+    for path in sorted(llvm_dir.glob("*dispatch_*.mlir")):
+        if not path.is_file():
+            continue
+        line_map = source_locations_by_line(path.read_text(errors="replace"))
+        if line_map:
+            maps[path.name] = line_map
+            maps[str(path)] = line_map
+            if match := re.search(r"(dispatch_\d+)\.mlir$", path.name):
+                dispatch_aliases.setdefault(match.group(1), []).append(line_map)
+    for alias, candidates in dispatch_aliases.items():
+        if len(candidates) == 1:
+            maps[alias] = candidates[0]
+    return maps
 
 
 def _build_diffs(stages: list[Stage]) -> list[StageDiff]:
@@ -271,11 +298,11 @@ def _find_stage(stages: list[Stage], name: str) -> Stage | None:
     return next((s for s in stages if s.name == name), None)
 
 
-# The per-operation index is by far the largest part of the artifact. It is retained only
-# where something downstream actually consumes it: the lineage engine (Stage 2) matches on
-# operations in the whole-module *phase* dumps. LLVM and assembly operations are consumed
-# here at build time to derive evidence, and per-pass snapshots are read as IR rather than
-# as an op index, so neither needs to ship. Counts and histograms survive in both cases.
+# The per-operation index is by far the largest part of the artifact. MLIR and LLVM
+# operations are all available while evidence and lineage are derived, but the finished
+# lineage already contains the line numbers the frontend needs. Only whole-module MLIR phase
+# ops remain useful to other consumers after that point; LLVM, assembly, and per-pass op
+# lists can be dropped while their counts, histograms, full text, and lineage links survive.
 _OPS_RETAINED_LANGUAGES = frozenset({"mlir"})
 
 
@@ -465,10 +492,10 @@ def build_artifact(workload: WorkloadSpec, root: Path | None = None) -> Artifact
         notes.append(trim_note)
     if located:
         notes.append(
-            f"{located} operations carry resolved loc() metadata pointing back to the Torch "
-            f"input, which is the anchor the lineage engine will use. Operations showing no "
-            f"location had loc(unknown) or a location we could not resolve to a single "
-            f"source position; none are guessed."
+            f"{located} operations carry compiler-provided locations resolved back to the "
+            f"Torch input: directly through MLIR loc() metadata, or for LLVM instructions "
+            f"through !dbg and the generated dispatch MLIR. Operations with missing or "
+            f"ambiguous metadata remain unlinked; none are guessed."
         )
 
     artifact = Artifact(

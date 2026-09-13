@@ -7,11 +7,11 @@ operation came from, that operation is absent from the index.
 That restraint is the feature. A lineage that silently guessed would produce a highlight that
 looks authoritative and points at the wrong line, which is worse than no highlight.
 
-What makes it possible: `--mlir-print-debuginfo` puts a `loc()` on every operation through
-every stage, and `mlir_loc.py` resolves those (including `#loc` aliases and fused locations)
-into a `source_loc` on each parsed operation. Measured on prajjwal1/bert-tiny: 7,798 operations
-carry a resolved location, covering 98 distinct source lines, and the busiest single line
-(`torch.aten.scaled_dot_product_attention`) has 2,035 descendants across 12 stages.
+What makes it possible: `--mlir-print-debuginfo` puts a `loc()` on MLIR operations, and
+`mlir_loc.py` resolves those (including `#loc` aliases and fused locations) into a
+`source_loc`. LLVM instructions preserve a second exact chain:
+`!dbg -> DILocation -> generated dispatch MLIR line -> original loc()`, resolved by
+`llvm_parser.py`. No structural resemblance is used as evidence.
 
 On top of that raw index, `_hops_for_line` walks consecutive *phase* checkpoints and reports
 the operation-name/count aggregate this line has at each one. It used to also classify each
@@ -328,11 +328,12 @@ def build_lineage(stages: list) -> dict:
             "total_anchored_ops": sum(v["total_ops"] for v in lines.values()),
         },
         "notes": [
-            "Level 1 lineage: grouped by the loc() metadata the compiler "
-            "attached, with no structural matching and no inference. Operations the compiler did "
-            "not locate are absent rather than guessed at.",
+            "Level 1 lineage: grouped by compiler-provided locations -- MLIR loc() metadata "
+            "directly, and LLVM !dbg metadata resolved through generated dispatch MLIR -- "
+            "with no structural matching or inference. Unresolved operations are absent "
+            "rather than guessed at.",
             f"Line numbers are positions in the '{_ANCHOR_STAGE}' stage, which is the anchor "
-            f"every later stage's loc() points back to.",
+            f"all resolved compiler locations ultimately point back to.",
             "`hops` reports the operation-name/count aggregate at this line, phase by phase -- "
             "still Level 1, not per-instance def/use tracking. Each hop is only ever `carried` "
             "(exact same name-set and count as the previous phase) or `changed` (it wasn't); "
