@@ -125,7 +125,10 @@ async function responseMessage(response: Response): Promise<string> {
 }
 
 export function fetchOptions() {
-  return call<{options: Record<string, OptionSpec>; stages: string[]}>('/options');
+  return call<{options: Record<string, OptionSpec>; stages: string[]; models?: string[]}>(
+    '/options',
+    {cache: 'no-store'},
+  );
 }
 
 export function startCompile(body: {

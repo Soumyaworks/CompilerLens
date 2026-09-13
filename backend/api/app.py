@@ -39,6 +39,16 @@ _PUBLIC_ERROR_LIMIT = 500
 # turn one click into multi-GB files. The lower-level CLI remains available for deliberate runs.
 _MAX_EXPLORE_PARAMETERS = 100_000_000
 
+# Keep the Sandbox useful in a fresh checkout before the user has compiled any additional
+# models. Successful landing-page and CLI compilations are discovered dynamically from their
+# model_info.json files and appended to this list by _sandbox_models().
+_DEFAULT_SANDBOX_MODELS = (
+    "hf-internal-testing/tiny-random-BertModel",
+    "prajjwal1/bert-tiny",
+    "sshleifer/tiny-gpt2",
+    "distilgpt2",
+)
+
 
 class ExploreModelTooLargeError(RuntimeError):
     pass
@@ -151,7 +161,34 @@ def _flags_from_options(options: dict) -> list:
 @app.get("/options")
 def options():
     """The knobs the Sandbox may offer, and why each matters."""
-    return {"options": ALLOWED_FLAGS, "stages": list(STAGE_INDEX)}
+    return {
+        "options": ALLOWED_FLAGS,
+        "stages": list(STAGE_INDEX),
+        "models": _sandbox_models(),
+    }
+
+
+def _sandbox_models() -> list[str]:
+    """Return baseline models plus every successfully persisted Hugging Face model.
+
+    A generated workload writes model_info.json only after compilation succeeds. Scanning on
+    each /options request means the Sandbox sees newly explored models immediately after it is
+    opened, without restarting the API or maintaining a second model registry.
+    """
+    models = list(_DEFAULT_SANDBOX_MODELS)
+    seen = set(models)
+    examples_dir = REPO_ROOT / "examples"
+
+    for path in sorted(examples_dir.glob("*/model_info.json")):
+        try:
+            model_id = str(json.loads(path.read_text()).get("model_id") or "").strip()
+        except (OSError, ValueError, TypeError):
+            continue
+        if model_id and _MODEL_ID.fullmatch(model_id) and model_id not in seen:
+            models.append(model_id)
+            seen.add(model_id)
+
+    return models
 
 
 @app.post("/compile")

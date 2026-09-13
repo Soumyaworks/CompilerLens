@@ -288,6 +288,10 @@ Choose **Open the Compiler Sandbox** from the landing page to:
 - Inspect the resulting IR and compiler signals
 - Run an explicit whole-model benchmark
 
+The model selector combines a small set of baseline models with every successful persisted
+compilation found under `examples/*/model_info.json`. Reopening the Sandbox refreshes this list,
+so models added through landing-page search or the command-line compiler appear automatically.
+
 Sandbox jobs are stored in memory and disappear when the API restarts. Hugging Face models
 compiled through landing-page search are persisted under `examples/` and remain available after
 artifact regeneration.

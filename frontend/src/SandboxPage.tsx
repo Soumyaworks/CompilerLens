@@ -25,7 +25,7 @@ import {THEME_NAME, monacoLanguage} from './monaco/setup';
  * on every flag change would make the UI feel broken.
  */
 
-const MODELS = [
+const FALLBACK_MODELS = [
   'hf-internal-testing/tiny-random-BertModel',
   'prajjwal1/bert-tiny',
   'sshleifer/tiny-gpt2',
@@ -38,7 +38,8 @@ export function SandboxPage({onBack}: {onBack: () => void}) {
   const [options, setOptions] = useState<Record<string, OptionSpec> | null>(null);
   const [unavailable, setUnavailable] = useState<string | null>(null);
 
-  const [modelId, setModelId] = useState(MODELS[0]);
+  const [models, setModels] = useState(FALLBACK_MODELS);
+  const [modelId, setModelId] = useState(FALLBACK_MODELS[0]);
   const [seqLen, setSeqLen] = useState(16);
   const [stage, setStage] = useState(STAGES[0]);
   const [choices, setChoices] = useState<Record<string, string>>({});
@@ -57,6 +58,9 @@ export function SandboxPage({onBack}: {onBack: () => void}) {
     fetchOptions()
       .then((payload) => {
         setOptions(payload.options);
+        const availableModels = payload.models?.length ? payload.models : FALLBACK_MODELS;
+        setModels(availableModels);
+        setModelId((current) => availableModels.includes(current) ? current : availableModels[0]);
         setChoices(
           Object.fromEntries(Object.entries(payload.options).map(([key, spec]) => [key, spec.default])),
         );
@@ -175,10 +179,13 @@ export function SandboxPage({onBack}: {onBack: () => void}) {
           <label className="control">
             <span>Model</span>
             <select value={modelId} onChange={(e) => setModelId(e.target.value)}>
-              {MODELS.map((m) => (
+              {models.map((m) => (
                 <option key={m} value={m}>{m}</option>
               ))}
             </select>
+            <small className="control-why">
+              Defaults plus models from successful persisted compilations.
+            </small>
           </label>
 
           <label className="control">
