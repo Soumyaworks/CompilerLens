@@ -12,6 +12,7 @@ import shutil
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Callable
 
 import iree.turbine.aot as aot
 import torch
@@ -166,7 +167,15 @@ class CompilerRunner:
             f"(full log was {len(log) / 1e6:.0f} MB). Later passes are not captured.\n"
         )
 
-    def run(self, module: torch.nn.Module, example_input_args: tuple, name: str, output_dir: Path, model_info: dict = None) -> RunResult:
+    def run(
+        self,
+        module: torch.nn.Module,
+        example_input_args: tuple,
+        name: str,
+        output_dir: Path,
+        model_info: dict = None,
+        on_progress: Callable[[str, int, int], None] = None,
+    ) -> RunResult:
         output_dir = Path(output_dir)
         ingest_layout = self.config.layout == "ingest"
 
@@ -181,12 +190,28 @@ class CompilerRunner:
         if model_info is not None:
             manifest["model_info"] = model_info
 
+        # One real checkpoint per stage `_dump_named_stages` actually compiles, plus the five
+        # other phases below -- a true count of what `run()` does, not a guessed one, so a
+        # caller can show honest progress instead of an animated bar with no real meaning.
+        total_steps = 5 + len(self.config.stages)
+        progress = {"done": 0}
+
+        def report(label: str) -> None:
+            progress["done"] += 1
+            if on_progress:
+                on_progress(label, progress["done"], total_steps)
+
         torch_input_path = self._export_torch_input(module, example_input_args, mlir_dir, manifest)
-        self._dump_named_stages(torch_input_path, mlir_dir, manifest)
+        report("Exporting to Torch dialect")
+        self._dump_named_stages(torch_input_path, mlir_dir, manifest, report)
         self._dump_llvm_intermediates(torch_input_path, output_dir, dumps_dir, manifest)
+        report("Capturing LLVM intermediates")
         self._dump_full_pass_traces(torch_input_path, mlir_dir, passes_dir, manifest)
+        report("Capturing per-pass traces")
         self._summarize_operators(mlir_dir, manifest)
+        report("Summarizing operators")
         self._summarize_dispatches(mlir_dir, manifest)
+        report("Summarizing dispatches")
 
         manifest_path = output_dir / "manifest.json"
         manifest_path.write_text(json.dumps(manifest, indent=2))
@@ -227,7 +252,7 @@ class CompilerRunner:
         torch_input_path.write_text(_strip_dialect_resources(text))
         return compile_input
 
-    def _dump_named_stages(self, torch_input_path: Path, mlir_dir: Path, manifest: dict) -> None:
+    def _dump_named_stages(self, torch_input_path: Path, mlir_dir: Path, manifest: dict, report: Callable[[str], None]) -> None:
         for i, stage in enumerate(self.config.stages, start=1):
             stage_path = mlir_dir / f"ir_{i:02d}_{stage}.mlir"
             cmd = [
@@ -248,6 +273,7 @@ class CompilerRunner:
             else:
                 manifest["errors"].append({"stage": stage_path.name, "returncode": result.returncode, "stderr": result.stderr})
                 break
+            report(f"Compiling: {stage}")
 
     def _dump_llvm_intermediates(self, torch_input_path: Path, output_dir: Path, dumps_dir: Path, manifest: dict) -> None:
         vmfb_path = output_dir / f"{output_dir.name}_compiled_host.vmfb"

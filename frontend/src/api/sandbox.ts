@@ -75,6 +75,9 @@ export interface Job {
   bench: Bench | null;
   error: string | null;
   artifact_id?: string | null;
+  /** Real progress through the `/explore` pipeline -- null for the Sandbox's `/compile`,
+   *  which only ever does one stage and doesn't report this. */
+  progress?: {label: string; done: number; total: number} | null;
 }
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
