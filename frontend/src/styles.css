@@ -1830,7 +1830,9 @@ body {
   font-size: 11px;
 }
 
-.ts-wrapper.single .ts-control {
+.ts-wrapper.single .ts-control,
+.ts-wrapper.single.input-active .ts-control,
+.ts-wrapper.single.dropdown-active .ts-control {
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -1839,13 +1841,19 @@ body {
   box-shadow: none;
 }
 
-.ts-wrapper.focus .ts-control {
+.ts-wrapper.focus .ts-control,
+.ts-wrapper.input-active .ts-control {
+  background: var(--surface-2);
   border-color: var(--series-1);
-  box-shadow: none;
+  box-shadow: 0 0 0 1px var(--series-1-wash);
 }
 
-.ts-control input {
+.ts-control input,
+.ts-control input:focus {
   color: var(--text-primary);
+  caret-color: var(--series-1);
+  background: transparent !important;
+  -webkit-text-fill-color: var(--text-primary);
 }
 
 .ts-dropdown {
