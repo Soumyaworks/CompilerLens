@@ -969,6 +969,36 @@ body {
   overflow-wrap: anywhere;
 }
 
+.compile-progress {
+  position: relative;
+  height: 22px;
+  margin-top: 10px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.compile-progress-fill {
+  position: absolute;
+  inset: 0;
+  right: auto;
+  background: var(--series-1);
+  transition: width 0.4s ease;
+}
+.compile-progress-label {
+  position: relative;
+  z-index: 1;
+  display: block;
+  text-align: center;
+  font-size: 11px;
+  line-height: 22px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 8px;
+}
+
 .landing-header .tagline {
   font-size: 14px;
 }

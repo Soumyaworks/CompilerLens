@@ -197,6 +197,7 @@ def explore_model(request: ExploreRequest, background: BackgroundTasks):
         "status": "running", "model_id": model_id, "seq_len": request.seq_len,
         "options": {}, "flags": [], "stages": {}, "bench": None,
         "error": None, "compile_seconds": None, "work_dir": None, "artifact_id": None,
+        "progress": None,
     }
     background.add_task(_run_explore, job_id, model_id, request.seq_len)
     return {"job_id": job_id, "status": "running"}
@@ -208,15 +209,36 @@ def _run_explore(job_id: str, model_id: str, seq_len: int) -> None:
     started = time.monotonic()
     phase = "looking up the model"
     try:
-        from backend.compiler.runner import CompilerRunner, RunConfig, TRIM_CODEGEN_PASSES, TRIM_ELIDE_ATTRS
+        from backend.compiler.runner import (
+            DEFAULT_STAGES,
+            CompilerRunner,
+            RunConfig,
+            TRIM_CODEGEN_PASSES,
+            TRIM_ELIDE_ATTRS,
+        )
         from ingest.build import build_artifact, build_index
         from ingest.workloads.generated import spec_from_dump_dir
         from models.detect import detect
         from models.hf_wrapper import wrap, wrapper_source
 
+        # Detect/load/build-artifact/publish, plus `CompilerRunner.run()`'s own real
+        # checkpoint count (export + one per compiled stage + 4 more phases -- see
+        # runner.py). Known up front since `_run_explore` never overrides `stages`, so the
+        # progress bar's denominator never has to guess or change mid-run.
+        outer_steps = 4
+        grand_total = outer_steps + (5 + len(DEFAULT_STAGES))
+        done = 0
+
+        def report(label: str) -> None:
+            nonlocal done
+            done += 1
+            job["progress"] = {"label": label, "done": done, "total": grand_total}
+
         detected = detect(model_id, seq_len=seq_len)
+        report("Detected model architecture")
         phase = "loading the model"
         module, example_inputs, model_info = wrap(detected)
+        report("Loaded and exported the model")
         param_count = int(model_info.get("param_count") or 0)
         if param_count > _MAX_EXPLORE_PARAMETERS:
             raise ExploreModelTooLargeError(
@@ -228,12 +250,16 @@ def _run_explore(job_id: str, model_id: str, seq_len: int) -> None:
             layout="ingest", elide_attrs_larger_than=TRIM_ELIDE_ATTRS,
             pass_log_after=TRIM_CODEGEN_PASSES,
         ))
-        result = runner.run(module, example_inputs, name=detected.slug, output_dir=output_dir, model_info=model_info)
+        result = runner.run(
+            module, example_inputs, name=detected.slug, output_dir=output_dir, model_info=model_info,
+            on_progress=lambda label, _done, _total: report(label),
+        )
         manifest = json.loads(result.manifest_path.read_text())
         if manifest.get("errors"):
             raise RuntimeError(_compiler_failure_message(manifest["errors"]))
 
         phase = "building the CompilerLens artifact"
+        report("Building the CompilerLens artifact")
         (output_dir / "source.py").write_text(wrapper_source(detected))
         (output_dir / "model_info.json").write_text(json.dumps(model_info, indent=2))
         spec = spec_from_dump_dir(output_dir, model_info)
@@ -243,6 +269,7 @@ def _run_explore(job_id: str, model_id: str, seq_len: int) -> None:
         artifact_path = artifacts_dir / f"{spec.id}.json"
         artifact_path.write_text(artifact.to_json())
 
+        report("Publishing")
         index_path = artifacts_dir / "index.json"
         existing = json.loads(index_path.read_text()) if index_path.is_file() else {"workloads": []}
         entry = build_index({spec.id: spec}, {spec.id: artifact})["workloads"][0]
@@ -446,6 +473,7 @@ def get_job(job_id: str):
         "bench": job["bench"],
         "error": job["error"],
         "artifact_id": job.get("artifact_id"),
+        "progress": job.get("progress"),
     }
 
 

@@ -84,6 +84,9 @@ export function LandingPage({onSelect, onOpenSandbox}: LandingPageProps) {
   const [modelId, setModelId] = useState('');
   const [searchStatus, setSearchStatus] = useState('');
   const [searching, setSearching] = useState(false);
+  const [searchProgress, setSearchProgress] = useState<{label: string; done: number; total: number} | null>(
+    null,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -117,10 +120,12 @@ export function LandingPage({onSelect, onOpenSandbox}: LandingPageProps) {
       return;
     }
     setSearching(true);
+    setSearchProgress(null);
     setSearchStatus('Preparing full compiler pipeline… this can take a minute for a new model.');
     try {
       const {job_id} = await startExplore(trimmed);
       const result = await waitForJob(job_id, (job) => {
+        if (job.progress) setSearchProgress(job.progress);
         if (job.compile_seconds) setSearchStatus(`Compiling… ${job.compile_seconds}s elapsed`);
       }, 900);
       if (result.status === 'failed' || !result.artifact_id) {
@@ -136,6 +141,7 @@ export function LandingPage({onSelect, onOpenSandbox}: LandingPageProps) {
       setSearchStatus(message);
     } finally {
       setSearching(false);
+      setSearchProgress(null);
     }
   }
 
@@ -168,6 +174,17 @@ export function LandingPage({onSelect, onOpenSandbox}: LandingPageProps) {
           </div>
           <p className="model-search-hint">Try <code>hf-internal-testing/tiny-random-BertModel</code> for a small first run.</p>
           {searchStatus && <p className="model-search-status" role="status">{searchStatus}</p>}
+          {searchProgress && (
+            <div className="compile-progress" role="progressbar" aria-valuenow={searchProgress.done} aria-valuemin={0} aria-valuemax={searchProgress.total}>
+              <div
+                className="compile-progress-fill"
+                style={{width: `${Math.min(100, (searchProgress.done / searchProgress.total) * 100)}%`}}
+              />
+              <span className="compile-progress-label">
+                {searchProgress.label} ({searchProgress.done}/{searchProgress.total})
+              </span>
+            </div>
+          )}
         </section>
       )}
       <div className="workload-grid">
