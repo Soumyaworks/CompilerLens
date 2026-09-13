@@ -27,6 +27,8 @@ import {PipelineRail} from './PipelineRail';
 interface WorkspaceProps {
   workloadId: string;
   onBack: () => void;
+  onOpenArchitecture: () => void;
+  initialLineageLine?: number;
 }
 
 function Loading() {
@@ -106,7 +108,7 @@ function defaultLayoutConfig(artifact: Artifact) {
   };
 }
 
-export function Workspace({workloadId, onBack}: WorkspaceProps) {
+export function Workspace({workloadId, onBack, onOpenArchitecture, initialLineageLine}: WorkspaceProps) {
   const [artifact, setArtifact] = useState<Artifact | null>(null);
   const [error, setError] = useState<{missing: boolean; message: string} | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -116,7 +118,7 @@ export function Workspace({workloadId, onBack}: WorkspaceProps) {
   // golden-layout workspace. The workspace's container div and PipelineRail stay mounted
   // (just hidden) rather than unmounted, so golden-layout's instance -- tied to that DOM
   // node -- survives toggling back and forth.
-  const [lineageExplorerOpen, setLineageExplorerOpen] = useState(false);
+  const [lineageExplorerOpen, setLineageExplorerOpen] = useState(initialLineageLine != null);
   // Which stage each currently-open stage pane is showing, keyed by its own container --
   // purely for the pipeline rail's "you are here" markers. Panes register themselves
   // (StagePane's onSelectStage) rather than this being lifted, controlled state, since
@@ -325,6 +327,13 @@ export function Workspace({workloadId, onBack}: WorkspaceProps) {
           </div>
           <button
             type="button"
+            className="lineage-explorer-button architecture-topbar-button"
+            onClick={onOpenArchitecture}
+          >
+            Model Architecture
+          </button>
+          <button
+            type="button"
             className="lineage-explorer-button"
             disabled={!artifact.lineage?.lines || Object.keys(artifact.lineage.lines).length === 0}
             onClick={() => setLineageExplorerOpen(true)}
@@ -354,7 +363,11 @@ export function Workspace({workloadId, onBack}: WorkspaceProps) {
       />
       {lineageExplorerOpen && (
         <div className="lineage-explorer-overlay">
-          <LineageExplorerPage artifact={artifact} onBack={() => setLineageExplorerOpen(false)} />
+          <LineageExplorerPage
+            artifact={artifact}
+            initialSourceLine={initialLineageLine != null ? String(initialLineageLine) : undefined}
+            onBack={() => setLineageExplorerOpen(false)}
+          />
         </div>
       )}
     </div>

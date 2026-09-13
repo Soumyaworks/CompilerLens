@@ -1,0 +1,3806 @@
+{
+  "version": 1,
+  "root_id": "model",
+  "source": "torch-export",
+  "mapping_status": "exact",
+  "mapping_note": "Module ownership comes from torch.export nn_module_stack metadata. The ordered decomposed FX operation stream exactly matched the Torch MLIR operation stream.",
+  "model": {
+    "model_id": "hf-internal-testing/tiny-random-RobertaModel",
+    "model_type": "roberta",
+    "causal": false,
+    "parameter_count": 84729,
+    "sequence_length": 16,
+    "hidden_size": 32,
+    "layer_count": 5,
+    "attention_heads": 4,
+    "intermediate_size": 37,
+    "vocab_size": 1024
+  },
+  "nodes": [
+    {
+      "id": "model",
+      "path": "model",
+      "label": "RobertaModel",
+      "type": "RobertaModel",
+      "kind": "model",
+      "parent_id": null,
+      "children": [
+        "embeddings",
+        "encoder",
+        "pooler"
+      ],
+      "depth": 0,
+      "direct_parameter_count": 0,
+      "parameter_count": 84729,
+      "direct_source_lines": [],
+      "source_lines": [
+        16,
+        22,
+        24,
+        27,
+        28,
+        31,
+        32,
+        38,
+        40,
+        43,
+        50,
+        55,
+        58,
+        63,
+        69,
+        74,
+        76,
+        82,
+        84,
+        91,
+        93,
+        96,
+        102,
+        105,
+        108,
+        114,
+        117,
+        120,
+        126,
+        129,
+        134,
+        137,
+        142,
+        145,
+        147,
+        149,
+        156,
+        160,
+        162,
+        166,
+        168,
+        170,
+        177,
+        180,
+        186,
+        189,
+        192,
+        198,
+        201,
+        204,
+        210,
+        213,
+        218,
+        221,
+        226,
+        229,
+        231,
+        233,
+        240,
+        244,
+        246,
+        250,
+        252,
+        254,
+        261,
+        264,
+        270,
+        273,
+        276,
+        282,
+        285,
+        288,
+        294,
+        297,
+        302,
+        305,
+        310,
+        313,
+        315,
+        317,
+        324,
+        328,
+        330,
+        334,
+        336,
+        338,
+        345,
+        348,
+        354,
+        357,
+        360,
+        366,
+        369,
+        372,
+        378,
+        381,
+        386,
+        389,
+        394,
+        397,
+        399,
+        401,
+        408,
+        412,
+        414,
+        418,
+        420,
+        422,
+        429,
+        432,
+        438,
+        441,
+        444,
+        450,
+        453,
+        456,
+        462,
+        465,
+        470,
+        473,
+        478,
+        481,
+        483,
+        485,
+        492,
+        496,
+        498,
+        502,
+        504,
+        506,
+        513
+      ],
+      "op_names": {
+        "torch.aten.linear": 30,
+        "torch.aten.view": 20,
+        "torch.aten.transpose.int": 20,
+        "torch.aten.add.Tensor": 14,
+        "torch.aten.layer_norm": 11,
+        "torch.aten.clone": 11,
+        "torch.aten.scaled_dot_product_attention": 5,
+        "torch.aten.gelu": 5,
+        "torch.aten._assert_tensor_metadata": 3,
+        "torch.aten.embedding": 3,
+        "torch.prims.convert_element_type": 2,
+        "torch.aten.expand": 2
+      },
+      "output_shapes": [],
+      "mapping": "exact",
+      "order": 0
+    },
+    {
+      "id": "embeddings",
+      "path": "embeddings",
+      "label": "Embeddings",
+      "type": "RobertaEmbeddings",
+      "kind": "embedding",
+      "parent_id": "model",
+      "children": [
+        "embeddings.word_embeddings",
+        "embeddings.token_type_embeddings",
+        "embeddings.position_embeddings",
+        "embeddings.LayerNorm",
+        "embeddings.dropout"
+      ],
+      "depth": 1,
+      "direct_parameter_count": 0,
+      "parameter_count": 49728,
+      "direct_source_lines": [
+        16,
+        22,
+        24,
+        27,
+        28,
+        31,
+        32,
+        38,
+        40,
+        43,
+        50,
+        55,
+        58,
+        63,
+        76,
+        84
+      ],
+      "source_lines": [
+        16,
+        22,
+        24,
+        27,
+        28,
+        31,
+        32,
+        38,
+        40,
+        43,
+        50,
+        55,
+        58,
+        63,
+        69,
+        74,
+        76,
+        82,
+        84,
+        91,
+        93
+      ],
+      "op_names": {
+        "torch.aten.add.Tensor": 4,
+        "torch.aten._assert_tensor_metadata": 3,
+        "torch.aten.embedding": 3,
+        "torch.prims.convert_element_type": 2,
+        "torch.aten.expand": 2,
+        "torch.aten.ne.Scalar": 1,
+        "torch.aten.cumsum": 1,
+        "torch.aten.type_as": 1,
+        "torch.aten.mul.Tensor": 1,
+        "torch.aten.gather": 1,
+        "torch.aten.layer_norm": 1,
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716 \u00b7 bool",
+        "1\u00d716 \u00b7 int32",
+        "1\u00d716 \u00b7 int64",
+        "1\u00d7512 \u00b7 int64"
+      ],
+      "mapping": "exact",
+      "order": 0
+    },
+    {
+      "id": "embeddings.word_embeddings",
+      "path": "embeddings.word_embeddings",
+      "label": "Word Embeddings",
+      "type": "Embedding",
+      "kind": "embedding",
+      "parent_id": "embeddings",
+      "children": [],
+      "depth": 2,
+      "direct_parameter_count": 32768,
+      "parameter_count": 32768,
+      "direct_source_lines": [
+        69
+      ],
+      "source_lines": [
+        69
+      ],
+      "op_names": {
+        "torch.aten.embedding": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 14
+    },
+    {
+      "id": "embeddings.token_type_embeddings",
+      "path": "embeddings.token_type_embeddings",
+      "label": "Token Type Embeddings",
+      "type": "Embedding",
+      "kind": "embedding",
+      "parent_id": "embeddings",
+      "children": [],
+      "depth": 2,
+      "direct_parameter_count": 512,
+      "parameter_count": 512,
+      "direct_source_lines": [
+        74
+      ],
+      "source_lines": [
+        74
+      ],
+      "op_names": {
+        "torch.aten.embedding": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 15
+    },
+    {
+      "id": "embeddings.position_embeddings",
+      "path": "embeddings.position_embeddings",
+      "label": "Position Embeddings",
+      "type": "Embedding",
+      "kind": "embedding",
+      "parent_id": "embeddings",
+      "children": [],
+      "depth": 2,
+      "direct_parameter_count": 16384,
+      "parameter_count": 16384,
+      "direct_source_lines": [
+        82
+      ],
+      "source_lines": [
+        82
+      ],
+      "op_names": {
+        "torch.aten.embedding": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 17
+    },
+    {
+      "id": "embeddings.LayerNorm",
+      "path": "embeddings.LayerNorm",
+      "label": "Layernorm",
+      "type": "LayerNorm",
+      "kind": "embedding",
+      "parent_id": "embeddings",
+      "children": [],
+      "depth": 2,
+      "direct_parameter_count": 64,
+      "parameter_count": 64,
+      "direct_source_lines": [
+        91
+      ],
+      "source_lines": [
+        91
+      ],
+      "op_names": {
+        "torch.aten.layer_norm": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 19
+    },
+    {
+      "id": "embeddings.dropout",
+      "path": "embeddings.dropout",
+      "label": "Dropout",
+      "type": "Dropout",
+      "kind": "embedding",
+      "parent_id": "embeddings",
+      "children": [],
+      "depth": 2,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        93
+      ],
+      "source_lines": [
+        93
+      ],
+      "op_names": {
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 20
+    },
+    {
+      "id": "encoder",
+      "path": "encoder",
+      "label": "Encoder",
+      "type": "RobertaEncoder",
+      "kind": "container",
+      "parent_id": "model",
+      "children": [
+        "encoder.layer"
+      ],
+      "depth": 1,
+      "direct_parameter_count": 0,
+      "parameter_count": 33945,
+      "direct_source_lines": [],
+      "source_lines": [
+        96,
+        102,
+        105,
+        108,
+        114,
+        117,
+        120,
+        126,
+        129,
+        134,
+        137,
+        142,
+        145,
+        147,
+        149,
+        156,
+        160,
+        162,
+        166,
+        168,
+        170,
+        177,
+        180,
+        186,
+        189,
+        192,
+        198,
+        201,
+        204,
+        210,
+        213,
+        218,
+        221,
+        226,
+        229,
+        231,
+        233,
+        240,
+        244,
+        246,
+        250,
+        252,
+        254,
+        261,
+        264,
+        270,
+        273,
+        276,
+        282,
+        285,
+        288,
+        294,
+        297,
+        302,
+        305,
+        310,
+        313,
+        315,
+        317,
+        324,
+        328,
+        330,
+        334,
+        336,
+        338,
+        345,
+        348,
+        354,
+        357,
+        360,
+        366,
+        369,
+        372,
+        378,
+        381,
+        386,
+        389,
+        394,
+        397,
+        399,
+        401,
+        408,
+        412,
+        414,
+        418,
+        420,
+        422,
+        429,
+        432,
+        438,
+        441,
+        444,
+        450,
+        453,
+        456,
+        462,
+        465,
+        470,
+        473,
+        478,
+        481,
+        483,
+        485,
+        492,
+        496,
+        498,
+        502,
+        504,
+        506,
+        513
+      ],
+      "op_names": {
+        "torch.aten.linear": 30,
+        "torch.aten.view": 20,
+        "torch.aten.transpose.int": 20,
+        "torch.aten.add.Tensor": 10,
+        "torch.aten.layer_norm": 10,
+        "torch.aten.clone": 10,
+        "torch.aten.scaled_dot_product_attention": 5,
+        "torch.aten.gelu": 5
+      },
+      "output_shapes": [],
+      "mapping": "exact",
+      "order": 21
+    },
+    {
+      "id": "encoder.layer",
+      "path": "encoder.layer",
+      "label": "Layer",
+      "type": "ModuleList",
+      "kind": "container",
+      "parent_id": "encoder",
+      "children": [
+        "encoder.layer.0",
+        "encoder.layer.1",
+        "encoder.layer.2",
+        "encoder.layer.3",
+        "encoder.layer.4"
+      ],
+      "depth": 2,
+      "direct_parameter_count": 0,
+      "parameter_count": 33945,
+      "direct_source_lines": [],
+      "source_lines": [
+        96,
+        102,
+        105,
+        108,
+        114,
+        117,
+        120,
+        126,
+        129,
+        134,
+        137,
+        142,
+        145,
+        147,
+        149,
+        156,
+        160,
+        162,
+        166,
+        168,
+        170,
+        177,
+        180,
+        186,
+        189,
+        192,
+        198,
+        201,
+        204,
+        210,
+        213,
+        218,
+        221,
+        226,
+        229,
+        231,
+        233,
+        240,
+        244,
+        246,
+        250,
+        252,
+        254,
+        261,
+        264,
+        270,
+        273,
+        276,
+        282,
+        285,
+        288,
+        294,
+        297,
+        302,
+        305,
+        310,
+        313,
+        315,
+        317,
+        324,
+        328,
+        330,
+        334,
+        336,
+        338,
+        345,
+        348,
+        354,
+        357,
+        360,
+        366,
+        369,
+        372,
+        378,
+        381,
+        386,
+        389,
+        394,
+        397,
+        399,
+        401,
+        408,
+        412,
+        414,
+        418,
+        420,
+        422,
+        429,
+        432,
+        438,
+        441,
+        444,
+        450,
+        453,
+        456,
+        462,
+        465,
+        470,
+        473,
+        478,
+        481,
+        483,
+        485,
+        492,
+        496,
+        498,
+        502,
+        504,
+        506,
+        513
+      ],
+      "op_names": {
+        "torch.aten.linear": 30,
+        "torch.aten.view": 20,
+        "torch.aten.transpose.int": 20,
+        "torch.aten.add.Tensor": 10,
+        "torch.aten.layer_norm": 10,
+        "torch.aten.clone": 10,
+        "torch.aten.scaled_dot_product_attention": 5,
+        "torch.aten.gelu": 5
+      },
+      "output_shapes": [],
+      "mapping": "exact",
+      "order": 21
+    },
+    {
+      "id": "encoder.layer.0",
+      "path": "encoder.layer.0",
+      "label": "Block 0",
+      "type": "RobertaLayer",
+      "kind": "block",
+      "parent_id": "encoder.layer",
+      "children": [
+        "encoder.layer.0.attention",
+        "encoder.layer.0.intermediate",
+        "encoder.layer.0.output"
+      ],
+      "depth": 3,
+      "direct_parameter_count": 0,
+      "parameter_count": 6789,
+      "direct_source_lines": [],
+      "source_lines": [
+        96,
+        102,
+        105,
+        108,
+        114,
+        117,
+        120,
+        126,
+        129,
+        134,
+        137,
+        142,
+        145,
+        147,
+        149,
+        156,
+        160,
+        162,
+        166,
+        168,
+        170,
+        177
+      ],
+      "op_names": {
+        "torch.aten.linear": 6,
+        "torch.aten.view": 4,
+        "torch.aten.transpose.int": 4,
+        "torch.aten.add.Tensor": 2,
+        "torch.aten.layer_norm": 2,
+        "torch.aten.clone": 2,
+        "torch.aten.scaled_dot_product_attention": 1,
+        "torch.aten.gelu": 1
+      },
+      "output_shapes": [],
+      "mapping": "exact",
+      "order": 21
+    },
+    {
+      "id": "encoder.layer.0.attention",
+      "path": "encoder.layer.0.attention",
+      "label": "Attention",
+      "type": "RobertaAttention",
+      "kind": "attention",
+      "parent_id": "encoder.layer.0",
+      "children": [
+        "encoder.layer.0.attention.self",
+        "encoder.layer.0.attention.output"
+      ],
+      "depth": 4,
+      "direct_parameter_count": 0,
+      "parameter_count": 4288,
+      "direct_source_lines": [],
+      "source_lines": [
+        96,
+        102,
+        105,
+        108,
+        114,
+        117,
+        120,
+        126,
+        129,
+        134,
+        137,
+        142,
+        145,
+        147,
+        149,
+        156
+      ],
+      "op_names": {
+        "torch.aten.view": 4,
+        "torch.aten.transpose.int": 4,
+        "torch.aten.linear": 4,
+        "torch.aten.scaled_dot_product_attention": 1,
+        "torch.aten.add.Tensor": 1,
+        "torch.aten.layer_norm": 1,
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [],
+      "mapping": "exact",
+      "order": 21
+    },
+    {
+      "id": "encoder.layer.0.attention.self",
+      "path": "encoder.layer.0.attention.self",
+      "label": "Self",
+      "type": "RobertaSelfAttention",
+      "kind": "attention",
+      "parent_id": "encoder.layer.0.attention",
+      "children": [
+        "encoder.layer.0.attention.self.query",
+        "encoder.layer.0.attention.self.key",
+        "encoder.layer.0.attention.self.value"
+      ],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 3168,
+      "direct_source_lines": [
+        102,
+        105,
+        114,
+        117,
+        126,
+        129,
+        134,
+        137,
+        142
+      ],
+      "source_lines": [
+        96,
+        102,
+        105,
+        108,
+        114,
+        117,
+        120,
+        126,
+        129,
+        134,
+        137,
+        142
+      ],
+      "op_names": {
+        "torch.aten.view": 4,
+        "torch.aten.transpose.int": 4,
+        "torch.aten.linear": 3,
+        "torch.aten.scaled_dot_product_attention": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d74\u00d78 \u00b7 float32",
+        "1\u00d74\u00d716\u00d78 \u00b7 float32",
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 21
+    },
+    {
+      "id": "encoder.layer.0.attention.self.query",
+      "path": "encoder.layer.0.attention.self.query",
+      "label": "Query",
+      "type": "Linear",
+      "kind": "attention",
+      "parent_id": "encoder.layer.0.attention.self",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 1056,
+      "parameter_count": 1056,
+      "direct_source_lines": [
+        96
+      ],
+      "source_lines": [
+        96
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 21
+    },
+    {
+      "id": "encoder.layer.0.attention.self.key",
+      "path": "encoder.layer.0.attention.self.key",
+      "label": "Key",
+      "type": "Linear",
+      "kind": "attention",
+      "parent_id": "encoder.layer.0.attention.self",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 1056,
+      "parameter_count": 1056,
+      "direct_source_lines": [
+        108
+      ],
+      "source_lines": [
+        108
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 24
+    },
+    {
+      "id": "encoder.layer.0.attention.self.value",
+      "path": "encoder.layer.0.attention.self.value",
+      "label": "Value",
+      "type": "Linear",
+      "kind": "attention",
+      "parent_id": "encoder.layer.0.attention.self",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 1056,
+      "parameter_count": 1056,
+      "direct_source_lines": [
+        120
+      ],
+      "source_lines": [
+        120
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 27
+    },
+    {
+      "id": "encoder.layer.0.attention.output",
+      "path": "encoder.layer.0.attention.output",
+      "label": "Output",
+      "type": "RobertaSelfOutput",
+      "kind": "attention",
+      "parent_id": "encoder.layer.0.attention",
+      "children": [
+        "encoder.layer.0.attention.output.dense",
+        "encoder.layer.0.attention.output.dropout",
+        "encoder.layer.0.attention.output.LayerNorm"
+      ],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 1120,
+      "direct_source_lines": [
+        149
+      ],
+      "source_lines": [
+        145,
+        147,
+        149,
+        156
+      ],
+      "op_names": {
+        "torch.aten.add.Tensor": 1,
+        "torch.aten.linear": 1,
+        "torch.aten.layer_norm": 1,
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 33
+    },
+    {
+      "id": "encoder.layer.0.attention.output.dense",
+      "path": "encoder.layer.0.attention.output.dense",
+      "label": "Dense",
+      "type": "Linear",
+      "kind": "attention",
+      "parent_id": "encoder.layer.0.attention.output",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 1056,
+      "parameter_count": 1056,
+      "direct_source_lines": [
+        145
+      ],
+      "source_lines": [
+        145
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 33
+    },
+    {
+      "id": "encoder.layer.0.attention.output.dropout",
+      "path": "encoder.layer.0.attention.output.dropout",
+      "label": "Dropout",
+      "type": "Dropout",
+      "kind": "dropout",
+      "parent_id": "encoder.layer.0.attention.output",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        147
+      ],
+      "source_lines": [
+        147
+      ],
+      "op_names": {
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 34
+    },
+    {
+      "id": "encoder.layer.0.attention.output.LayerNorm",
+      "path": "encoder.layer.0.attention.output.LayerNorm",
+      "label": "Layernorm",
+      "type": "LayerNorm",
+      "kind": "attention",
+      "parent_id": "encoder.layer.0.attention.output",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 64,
+      "parameter_count": 64,
+      "direct_source_lines": [
+        156
+      ],
+      "source_lines": [
+        156
+      ],
+      "op_names": {
+        "torch.aten.layer_norm": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 36
+    },
+    {
+      "id": "encoder.layer.0.intermediate",
+      "path": "encoder.layer.0.intermediate",
+      "label": "Intermediate",
+      "type": "RobertaIntermediate",
+      "kind": "mlp",
+      "parent_id": "encoder.layer.0",
+      "children": [
+        "encoder.layer.0.intermediate.dense",
+        "encoder.layer.0.intermediate.intermediate_act_fn"
+      ],
+      "depth": 4,
+      "direct_parameter_count": 0,
+      "parameter_count": 1221,
+      "direct_source_lines": [],
+      "source_lines": [
+        160,
+        162
+      ],
+      "op_names": {
+        "torch.aten.linear": 1,
+        "torch.aten.gelu": 1
+      },
+      "output_shapes": [],
+      "mapping": "exact",
+      "order": 37
+    },
+    {
+      "id": "encoder.layer.0.intermediate.dense",
+      "path": "encoder.layer.0.intermediate.dense",
+      "label": "Dense",
+      "type": "Linear",
+      "kind": "mlp",
+      "parent_id": "encoder.layer.0.intermediate",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 1221,
+      "parameter_count": 1221,
+      "direct_source_lines": [
+        160
+      ],
+      "source_lines": [
+        160
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d737 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 37
+    },
+    {
+      "id": "encoder.layer.0.intermediate.intermediate_act_fn",
+      "path": "encoder.layer.0.intermediate.intermediate_act_fn",
+      "label": "Intermediate Act Fn",
+      "type": "GELUActivation",
+      "kind": "mlp",
+      "parent_id": "encoder.layer.0.intermediate",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        162
+      ],
+      "source_lines": [
+        162
+      ],
+      "op_names": {
+        "torch.aten.gelu": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d737 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 38
+    },
+    {
+      "id": "encoder.layer.0.output",
+      "path": "encoder.layer.0.output",
+      "label": "Output",
+      "type": "RobertaOutput",
+      "kind": "container",
+      "parent_id": "encoder.layer.0",
+      "children": [
+        "encoder.layer.0.output.dense",
+        "encoder.layer.0.output.dropout",
+        "encoder.layer.0.output.LayerNorm"
+      ],
+      "depth": 4,
+      "direct_parameter_count": 0,
+      "parameter_count": 1280,
+      "direct_source_lines": [
+        170
+      ],
+      "source_lines": [
+        166,
+        168,
+        170,
+        177
+      ],
+      "op_names": {
+        "torch.aten.add.Tensor": 1,
+        "torch.aten.linear": 1,
+        "torch.aten.layer_norm": 1,
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 39
+    },
+    {
+      "id": "encoder.layer.0.output.dense",
+      "path": "encoder.layer.0.output.dense",
+      "label": "Dense",
+      "type": "Linear",
+      "kind": "projection",
+      "parent_id": "encoder.layer.0.output",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 1216,
+      "parameter_count": 1216,
+      "direct_source_lines": [
+        166
+      ],
+      "source_lines": [
+        166
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 39
+    },
+    {
+      "id": "encoder.layer.0.output.dropout",
+      "path": "encoder.layer.0.output.dropout",
+      "label": "Dropout",
+      "type": "Dropout",
+      "kind": "dropout",
+      "parent_id": "encoder.layer.0.output",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        168
+      ],
+      "source_lines": [
+        168
+      ],
+      "op_names": {
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 40
+    },
+    {
+      "id": "encoder.layer.0.output.LayerNorm",
+      "path": "encoder.layer.0.output.LayerNorm",
+      "label": "Layernorm",
+      "type": "LayerNorm",
+      "kind": "normalization",
+      "parent_id": "encoder.layer.0.output",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 64,
+      "parameter_count": 64,
+      "direct_source_lines": [
+        177
+      ],
+      "source_lines": [
+        177
+      ],
+      "op_names": {
+        "torch.aten.layer_norm": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 42
+    },
+    {
+      "id": "encoder.layer.1",
+      "path": "encoder.layer.1",
+      "label": "Block 1",
+      "type": "RobertaLayer",
+      "kind": "block",
+      "parent_id": "encoder.layer",
+      "children": [
+        "encoder.layer.1.attention",
+        "encoder.layer.1.intermediate",
+        "encoder.layer.1.output"
+      ],
+      "depth": 3,
+      "direct_parameter_count": 0,
+      "parameter_count": 6789,
+      "direct_source_lines": [],
+      "source_lines": [
+        180,
+        186,
+        189,
+        192,
+        198,
+        201,
+        204,
+        210,
+        213,
+        218,
+        221,
+        226,
+        229,
+        231,
+        233,
+        240,
+        244,
+        246,
+        250,
+        252,
+        254,
+        261
+      ],
+      "op_names": {
+        "torch.aten.linear": 6,
+        "torch.aten.view": 4,
+        "torch.aten.transpose.int": 4,
+        "torch.aten.add.Tensor": 2,
+        "torch.aten.layer_norm": 2,
+        "torch.aten.clone": 2,
+        "torch.aten.scaled_dot_product_attention": 1,
+        "torch.aten.gelu": 1
+      },
+      "output_shapes": [],
+      "mapping": "exact",
+      "order": 43
+    },
+    {
+      "id": "encoder.layer.1.attention",
+      "path": "encoder.layer.1.attention",
+      "label": "Attention",
+      "type": "RobertaAttention",
+      "kind": "attention",
+      "parent_id": "encoder.layer.1",
+      "children": [
+        "encoder.layer.1.attention.self",
+        "encoder.layer.1.attention.output"
+      ],
+      "depth": 4,
+      "direct_parameter_count": 0,
+      "parameter_count": 4288,
+      "direct_source_lines": [],
+      "source_lines": [
+        180,
+        186,
+        189,
+        192,
+        198,
+        201,
+        204,
+        210,
+        213,
+        218,
+        221,
+        226,
+        229,
+        231,
+        233,
+        240
+      ],
+      "op_names": {
+        "torch.aten.view": 4,
+        "torch.aten.transpose.int": 4,
+        "torch.aten.linear": 4,
+        "torch.aten.scaled_dot_product_attention": 1,
+        "torch.aten.add.Tensor": 1,
+        "torch.aten.layer_norm": 1,
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [],
+      "mapping": "exact",
+      "order": 43
+    },
+    {
+      "id": "encoder.layer.1.attention.self",
+      "path": "encoder.layer.1.attention.self",
+      "label": "Self",
+      "type": "RobertaSelfAttention",
+      "kind": "attention",
+      "parent_id": "encoder.layer.1.attention",
+      "children": [
+        "encoder.layer.1.attention.self.query",
+        "encoder.layer.1.attention.self.key",
+        "encoder.layer.1.attention.self.value"
+      ],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 3168,
+      "direct_source_lines": [
+        186,
+        189,
+        198,
+        201,
+        210,
+        213,
+        218,
+        221,
+        226
+      ],
+      "source_lines": [
+        180,
+        186,
+        189,
+        192,
+        198,
+        201,
+        204,
+        210,
+        213,
+        218,
+        221,
+        226
+      ],
+      "op_names": {
+        "torch.aten.view": 4,
+        "torch.aten.transpose.int": 4,
+        "torch.aten.linear": 3,
+        "torch.aten.scaled_dot_product_attention": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d74\u00d78 \u00b7 float32",
+        "1\u00d74\u00d716\u00d78 \u00b7 float32",
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 43
+    },
+    {
+      "id": "encoder.layer.1.attention.self.query",
+      "path": "encoder.layer.1.attention.self.query",
+      "label": "Query",
+      "type": "Linear",
+      "kind": "attention",
+      "parent_id": "encoder.layer.1.attention.self",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 1056,
+      "parameter_count": 1056,
+      "direct_source_lines": [
+        180
+      ],
+      "source_lines": [
+        180
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 43
+    },
+    {
+      "id": "encoder.layer.1.attention.self.key",
+      "path": "encoder.layer.1.attention.self.key",
+      "label": "Key",
+      "type": "Linear",
+      "kind": "attention",
+      "parent_id": "encoder.layer.1.attention.self",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 1056,
+      "parameter_count": 1056,
+      "direct_source_lines": [
+        192
+      ],
+      "source_lines": [
+        192
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 46
+    },
+    {
+      "id": "encoder.layer.1.attention.self.value",
+      "path": "encoder.layer.1.attention.self.value",
+      "label": "Value",
+      "type": "Linear",
+      "kind": "attention",
+      "parent_id": "encoder.layer.1.attention.self",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 1056,
+      "parameter_count": 1056,
+      "direct_source_lines": [
+        204
+      ],
+      "source_lines": [
+        204
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 49
+    },
+    {
+      "id": "encoder.layer.1.attention.output",
+      "path": "encoder.layer.1.attention.output",
+      "label": "Output",
+      "type": "RobertaSelfOutput",
+      "kind": "attention",
+      "parent_id": "encoder.layer.1.attention",
+      "children": [
+        "encoder.layer.1.attention.output.dense",
+        "encoder.layer.1.attention.output.dropout",
+        "encoder.layer.1.attention.output.LayerNorm"
+      ],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 1120,
+      "direct_source_lines": [
+        233
+      ],
+      "source_lines": [
+        229,
+        231,
+        233,
+        240
+      ],
+      "op_names": {
+        "torch.aten.add.Tensor": 1,
+        "torch.aten.linear": 1,
+        "torch.aten.layer_norm": 1,
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 55
+    },
+    {
+      "id": "encoder.layer.1.attention.output.dense",
+      "path": "encoder.layer.1.attention.output.dense",
+      "label": "Dense",
+      "type": "Linear",
+      "kind": "attention",
+      "parent_id": "encoder.layer.1.attention.output",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 1056,
+      "parameter_count": 1056,
+      "direct_source_lines": [
+        229
+      ],
+      "source_lines": [
+        229
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 55
+    },
+    {
+      "id": "encoder.layer.1.attention.output.dropout",
+      "path": "encoder.layer.1.attention.output.dropout",
+      "label": "Dropout",
+      "type": "Dropout",
+      "kind": "dropout",
+      "parent_id": "encoder.layer.1.attention.output",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        231
+      ],
+      "source_lines": [
+        231
+      ],
+      "op_names": {
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 56
+    },
+    {
+      "id": "encoder.layer.1.attention.output.LayerNorm",
+      "path": "encoder.layer.1.attention.output.LayerNorm",
+      "label": "Layernorm",
+      "type": "LayerNorm",
+      "kind": "attention",
+      "parent_id": "encoder.layer.1.attention.output",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 64,
+      "parameter_count": 64,
+      "direct_source_lines": [
+        240
+      ],
+      "source_lines": [
+        240
+      ],
+      "op_names": {
+        "torch.aten.layer_norm": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 58
+    },
+    {
+      "id": "encoder.layer.1.intermediate",
+      "path": "encoder.layer.1.intermediate",
+      "label": "Intermediate",
+      "type": "RobertaIntermediate",
+      "kind": "mlp",
+      "parent_id": "encoder.layer.1",
+      "children": [
+        "encoder.layer.1.intermediate.dense",
+        "encoder.layer.1.intermediate.intermediate_act_fn"
+      ],
+      "depth": 4,
+      "direct_parameter_count": 0,
+      "parameter_count": 1221,
+      "direct_source_lines": [],
+      "source_lines": [
+        244,
+        246
+      ],
+      "op_names": {
+        "torch.aten.linear": 1,
+        "torch.aten.gelu": 1
+      },
+      "output_shapes": [],
+      "mapping": "exact",
+      "order": 59
+    },
+    {
+      "id": "encoder.layer.1.intermediate.dense",
+      "path": "encoder.layer.1.intermediate.dense",
+      "label": "Dense",
+      "type": "Linear",
+      "kind": "mlp",
+      "parent_id": "encoder.layer.1.intermediate",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 1221,
+      "parameter_count": 1221,
+      "direct_source_lines": [
+        244
+      ],
+      "source_lines": [
+        244
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d737 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 59
+    },
+    {
+      "id": "encoder.layer.1.intermediate.intermediate_act_fn",
+      "path": "encoder.layer.1.intermediate.intermediate_act_fn",
+      "label": "Intermediate Act Fn",
+      "type": "GELUActivation",
+      "kind": "mlp",
+      "parent_id": "encoder.layer.1.intermediate",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        246
+      ],
+      "source_lines": [
+        246
+      ],
+      "op_names": {
+        "torch.aten.gelu": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d737 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 60
+    },
+    {
+      "id": "encoder.layer.1.output",
+      "path": "encoder.layer.1.output",
+      "label": "Output",
+      "type": "RobertaOutput",
+      "kind": "container",
+      "parent_id": "encoder.layer.1",
+      "children": [
+        "encoder.layer.1.output.dense",
+        "encoder.layer.1.output.dropout",
+        "encoder.layer.1.output.LayerNorm"
+      ],
+      "depth": 4,
+      "direct_parameter_count": 0,
+      "parameter_count": 1280,
+      "direct_source_lines": [
+        254
+      ],
+      "source_lines": [
+        250,
+        252,
+        254,
+        261
+      ],
+      "op_names": {
+        "torch.aten.add.Tensor": 1,
+        "torch.aten.linear": 1,
+        "torch.aten.layer_norm": 1,
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 61
+    },
+    {
+      "id": "encoder.layer.1.output.dense",
+      "path": "encoder.layer.1.output.dense",
+      "label": "Dense",
+      "type": "Linear",
+      "kind": "projection",
+      "parent_id": "encoder.layer.1.output",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 1216,
+      "parameter_count": 1216,
+      "direct_source_lines": [
+        250
+      ],
+      "source_lines": [
+        250
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 61
+    },
+    {
+      "id": "encoder.layer.1.output.dropout",
+      "path": "encoder.layer.1.output.dropout",
+      "label": "Dropout",
+      "type": "Dropout",
+      "kind": "dropout",
+      "parent_id": "encoder.layer.1.output",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        252
+      ],
+      "source_lines": [
+        252
+      ],
+      "op_names": {
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 62
+    },
+    {
+      "id": "encoder.layer.1.output.LayerNorm",
+      "path": "encoder.layer.1.output.LayerNorm",
+      "label": "Layernorm",
+      "type": "LayerNorm",
+      "kind": "normalization",
+      "parent_id": "encoder.layer.1.output",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 64,
+      "parameter_count": 64,
+      "direct_source_lines": [
+        261
+      ],
+      "source_lines": [
+        261
+      ],
+      "op_names": {
+        "torch.aten.layer_norm": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 64
+    },
+    {
+      "id": "encoder.layer.2",
+      "path": "encoder.layer.2",
+      "label": "Block 2",
+      "type": "RobertaLayer",
+      "kind": "block",
+      "parent_id": "encoder.layer",
+      "children": [
+        "encoder.layer.2.attention",
+        "encoder.layer.2.intermediate",
+        "encoder.layer.2.output"
+      ],
+      "depth": 3,
+      "direct_parameter_count": 0,
+      "parameter_count": 6789,
+      "direct_source_lines": [],
+      "source_lines": [
+        264,
+        270,
+        273,
+        276,
+        282,
+        285,
+        288,
+        294,
+        297,
+        302,
+        305,
+        310,
+        313,
+        315,
+        317,
+        324,
+        328,
+        330,
+        334,
+        336,
+        338,
+        345
+      ],
+      "op_names": {
+        "torch.aten.linear": 6,
+        "torch.aten.view": 4,
+        "torch.aten.transpose.int": 4,
+        "torch.aten.add.Tensor": 2,
+        "torch.aten.layer_norm": 2,
+        "torch.aten.clone": 2,
+        "torch.aten.scaled_dot_product_attention": 1,
+        "torch.aten.gelu": 1
+      },
+      "output_shapes": [],
+      "mapping": "exact",
+      "order": 65
+    },
+    {
+      "id": "encoder.layer.2.attention",
+      "path": "encoder.layer.2.attention",
+      "label": "Attention",
+      "type": "RobertaAttention",
+      "kind": "attention",
+      "parent_id": "encoder.layer.2",
+      "children": [
+        "encoder.layer.2.attention.self",
+        "encoder.layer.2.attention.output"
+      ],
+      "depth": 4,
+      "direct_parameter_count": 0,
+      "parameter_count": 4288,
+      "direct_source_lines": [],
+      "source_lines": [
+        264,
+        270,
+        273,
+        276,
+        282,
+        285,
+        288,
+        294,
+        297,
+        302,
+        305,
+        310,
+        313,
+        315,
+        317,
+        324
+      ],
+      "op_names": {
+        "torch.aten.view": 4,
+        "torch.aten.transpose.int": 4,
+        "torch.aten.linear": 4,
+        "torch.aten.scaled_dot_product_attention": 1,
+        "torch.aten.add.Tensor": 1,
+        "torch.aten.layer_norm": 1,
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [],
+      "mapping": "exact",
+      "order": 65
+    },
+    {
+      "id": "encoder.layer.2.attention.self",
+      "path": "encoder.layer.2.attention.self",
+      "label": "Self",
+      "type": "RobertaSelfAttention",
+      "kind": "attention",
+      "parent_id": "encoder.layer.2.attention",
+      "children": [
+        "encoder.layer.2.attention.self.query",
+        "encoder.layer.2.attention.self.key",
+        "encoder.layer.2.attention.self.value"
+      ],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 3168,
+      "direct_source_lines": [
+        270,
+        273,
+        282,
+        285,
+        294,
+        297,
+        302,
+        305,
+        310
+      ],
+      "source_lines": [
+        264,
+        270,
+        273,
+        276,
+        282,
+        285,
+        288,
+        294,
+        297,
+        302,
+        305,
+        310
+      ],
+      "op_names": {
+        "torch.aten.view": 4,
+        "torch.aten.transpose.int": 4,
+        "torch.aten.linear": 3,
+        "torch.aten.scaled_dot_product_attention": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d74\u00d78 \u00b7 float32",
+        "1\u00d74\u00d716\u00d78 \u00b7 float32",
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 65
+    },
+    {
+      "id": "encoder.layer.2.attention.self.query",
+      "path": "encoder.layer.2.attention.self.query",
+      "label": "Query",
+      "type": "Linear",
+      "kind": "attention",
+      "parent_id": "encoder.layer.2.attention.self",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 1056,
+      "parameter_count": 1056,
+      "direct_source_lines": [
+        264
+      ],
+      "source_lines": [
+        264
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 65
+    },
+    {
+      "id": "encoder.layer.2.attention.self.key",
+      "path": "encoder.layer.2.attention.self.key",
+      "label": "Key",
+      "type": "Linear",
+      "kind": "attention",
+      "parent_id": "encoder.layer.2.attention.self",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 1056,
+      "parameter_count": 1056,
+      "direct_source_lines": [
+        276
+      ],
+      "source_lines": [
+        276
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 68
+    },
+    {
+      "id": "encoder.layer.2.attention.self.value",
+      "path": "encoder.layer.2.attention.self.value",
+      "label": "Value",
+      "type": "Linear",
+      "kind": "attention",
+      "parent_id": "encoder.layer.2.attention.self",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 1056,
+      "parameter_count": 1056,
+      "direct_source_lines": [
+        288
+      ],
+      "source_lines": [
+        288
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 71
+    },
+    {
+      "id": "encoder.layer.2.attention.output",
+      "path": "encoder.layer.2.attention.output",
+      "label": "Output",
+      "type": "RobertaSelfOutput",
+      "kind": "attention",
+      "parent_id": "encoder.layer.2.attention",
+      "children": [
+        "encoder.layer.2.attention.output.dense",
+        "encoder.layer.2.attention.output.dropout",
+        "encoder.layer.2.attention.output.LayerNorm"
+      ],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 1120,
+      "direct_source_lines": [
+        317
+      ],
+      "source_lines": [
+        313,
+        315,
+        317,
+        324
+      ],
+      "op_names": {
+        "torch.aten.add.Tensor": 1,
+        "torch.aten.linear": 1,
+        "torch.aten.layer_norm": 1,
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 77
+    },
+    {
+      "id": "encoder.layer.2.attention.output.dense",
+      "path": "encoder.layer.2.attention.output.dense",
+      "label": "Dense",
+      "type": "Linear",
+      "kind": "attention",
+      "parent_id": "encoder.layer.2.attention.output",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 1056,
+      "parameter_count": 1056,
+      "direct_source_lines": [
+        313
+      ],
+      "source_lines": [
+        313
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 77
+    },
+    {
+      "id": "encoder.layer.2.attention.output.dropout",
+      "path": "encoder.layer.2.attention.output.dropout",
+      "label": "Dropout",
+      "type": "Dropout",
+      "kind": "dropout",
+      "parent_id": "encoder.layer.2.attention.output",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        315
+      ],
+      "source_lines": [
+        315
+      ],
+      "op_names": {
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 78
+    },
+    {
+      "id": "encoder.layer.2.attention.output.LayerNorm",
+      "path": "encoder.layer.2.attention.output.LayerNorm",
+      "label": "Layernorm",
+      "type": "LayerNorm",
+      "kind": "attention",
+      "parent_id": "encoder.layer.2.attention.output",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 64,
+      "parameter_count": 64,
+      "direct_source_lines": [
+        324
+      ],
+      "source_lines": [
+        324
+      ],
+      "op_names": {
+        "torch.aten.layer_norm": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 80
+    },
+    {
+      "id": "encoder.layer.2.intermediate",
+      "path": "encoder.layer.2.intermediate",
+      "label": "Intermediate",
+      "type": "RobertaIntermediate",
+      "kind": "mlp",
+      "parent_id": "encoder.layer.2",
+      "children": [
+        "encoder.layer.2.intermediate.dense",
+        "encoder.layer.2.intermediate.intermediate_act_fn"
+      ],
+      "depth": 4,
+      "direct_parameter_count": 0,
+      "parameter_count": 1221,
+      "direct_source_lines": [],
+      "source_lines": [
+        328,
+        330
+      ],
+      "op_names": {
+        "torch.aten.linear": 1,
+        "torch.aten.gelu": 1
+      },
+      "output_shapes": [],
+      "mapping": "exact",
+      "order": 81
+    },
+    {
+      "id": "encoder.layer.2.intermediate.dense",
+      "path": "encoder.layer.2.intermediate.dense",
+      "label": "Dense",
+      "type": "Linear",
+      "kind": "mlp",
+      "parent_id": "encoder.layer.2.intermediate",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 1221,
+      "parameter_count": 1221,
+      "direct_source_lines": [
+        328
+      ],
+      "source_lines": [
+        328
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d737 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 81
+    },
+    {
+      "id": "encoder.layer.2.intermediate.intermediate_act_fn",
+      "path": "encoder.layer.2.intermediate.intermediate_act_fn",
+      "label": "Intermediate Act Fn",
+      "type": "GELUActivation",
+      "kind": "mlp",
+      "parent_id": "encoder.layer.2.intermediate",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        330
+      ],
+      "source_lines": [
+        330
+      ],
+      "op_names": {
+        "torch.aten.gelu": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d737 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 82
+    },
+    {
+      "id": "encoder.layer.2.output",
+      "path": "encoder.layer.2.output",
+      "label": "Output",
+      "type": "RobertaOutput",
+      "kind": "container",
+      "parent_id": "encoder.layer.2",
+      "children": [
+        "encoder.layer.2.output.dense",
+        "encoder.layer.2.output.dropout",
+        "encoder.layer.2.output.LayerNorm"
+      ],
+      "depth": 4,
+      "direct_parameter_count": 0,
+      "parameter_count": 1280,
+      "direct_source_lines": [
+        338
+      ],
+      "source_lines": [
+        334,
+        336,
+        338,
+        345
+      ],
+      "op_names": {
+        "torch.aten.add.Tensor": 1,
+        "torch.aten.linear": 1,
+        "torch.aten.layer_norm": 1,
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 83
+    },
+    {
+      "id": "encoder.layer.2.output.dense",
+      "path": "encoder.layer.2.output.dense",
+      "label": "Dense",
+      "type": "Linear",
+      "kind": "projection",
+      "parent_id": "encoder.layer.2.output",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 1216,
+      "parameter_count": 1216,
+      "direct_source_lines": [
+        334
+      ],
+      "source_lines": [
+        334
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 83
+    },
+    {
+      "id": "encoder.layer.2.output.dropout",
+      "path": "encoder.layer.2.output.dropout",
+      "label": "Dropout",
+      "type": "Dropout",
+      "kind": "dropout",
+      "parent_id": "encoder.layer.2.output",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        336
+      ],
+      "source_lines": [
+        336
+      ],
+      "op_names": {
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 84
+    },
+    {
+      "id": "encoder.layer.2.output.LayerNorm",
+      "path": "encoder.layer.2.output.LayerNorm",
+      "label": "Layernorm",
+      "type": "LayerNorm",
+      "kind": "normalization",
+      "parent_id": "encoder.layer.2.output",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 64,
+      "parameter_count": 64,
+      "direct_source_lines": [
+        345
+      ],
+      "source_lines": [
+        345
+      ],
+      "op_names": {
+        "torch.aten.layer_norm": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 86
+    },
+    {
+      "id": "encoder.layer.3",
+      "path": "encoder.layer.3",
+      "label": "Block 3",
+      "type": "RobertaLayer",
+      "kind": "block",
+      "parent_id": "encoder.layer",
+      "children": [
+        "encoder.layer.3.attention",
+        "encoder.layer.3.intermediate",
+        "encoder.layer.3.output"
+      ],
+      "depth": 3,
+      "direct_parameter_count": 0,
+      "parameter_count": 6789,
+      "direct_source_lines": [],
+      "source_lines": [
+        348,
+        354,
+        357,
+        360,
+        366,
+        369,
+        372,
+        378,
+        381,
+        386,
+        389,
+        394,
+        397,
+        399,
+        401,
+        408,
+        412,
+        414,
+        418,
+        420,
+        422,
+        429
+      ],
+      "op_names": {
+        "torch.aten.linear": 6,
+        "torch.aten.view": 4,
+        "torch.aten.transpose.int": 4,
+        "torch.aten.add.Tensor": 2,
+        "torch.aten.layer_norm": 2,
+        "torch.aten.clone": 2,
+        "torch.aten.scaled_dot_product_attention": 1,
+        "torch.aten.gelu": 1
+      },
+      "output_shapes": [],
+      "mapping": "exact",
+      "order": 87
+    },
+    {
+      "id": "encoder.layer.3.attention",
+      "path": "encoder.layer.3.attention",
+      "label": "Attention",
+      "type": "RobertaAttention",
+      "kind": "attention",
+      "parent_id": "encoder.layer.3",
+      "children": [
+        "encoder.layer.3.attention.self",
+        "encoder.layer.3.attention.output"
+      ],
+      "depth": 4,
+      "direct_parameter_count": 0,
+      "parameter_count": 4288,
+      "direct_source_lines": [],
+      "source_lines": [
+        348,
+        354,
+        357,
+        360,
+        366,
+        369,
+        372,
+        378,
+        381,
+        386,
+        389,
+        394,
+        397,
+        399,
+        401,
+        408
+      ],
+      "op_names": {
+        "torch.aten.view": 4,
+        "torch.aten.transpose.int": 4,
+        "torch.aten.linear": 4,
+        "torch.aten.scaled_dot_product_attention": 1,
+        "torch.aten.add.Tensor": 1,
+        "torch.aten.layer_norm": 1,
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [],
+      "mapping": "exact",
+      "order": 87
+    },
+    {
+      "id": "encoder.layer.3.attention.self",
+      "path": "encoder.layer.3.attention.self",
+      "label": "Self",
+      "type": "RobertaSelfAttention",
+      "kind": "attention",
+      "parent_id": "encoder.layer.3.attention",
+      "children": [
+        "encoder.layer.3.attention.self.query",
+        "encoder.layer.3.attention.self.key",
+        "encoder.layer.3.attention.self.value"
+      ],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 3168,
+      "direct_source_lines": [
+        354,
+        357,
+        366,
+        369,
+        378,
+        381,
+        386,
+        389,
+        394
+      ],
+      "source_lines": [
+        348,
+        354,
+        357,
+        360,
+        366,
+        369,
+        372,
+        378,
+        381,
+        386,
+        389,
+        394
+      ],
+      "op_names": {
+        "torch.aten.view": 4,
+        "torch.aten.transpose.int": 4,
+        "torch.aten.linear": 3,
+        "torch.aten.scaled_dot_product_attention": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d74\u00d78 \u00b7 float32",
+        "1\u00d74\u00d716\u00d78 \u00b7 float32",
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 87
+    },
+    {
+      "id": "encoder.layer.3.attention.self.query",
+      "path": "encoder.layer.3.attention.self.query",
+      "label": "Query",
+      "type": "Linear",
+      "kind": "attention",
+      "parent_id": "encoder.layer.3.attention.self",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 1056,
+      "parameter_count": 1056,
+      "direct_source_lines": [
+        348
+      ],
+      "source_lines": [
+        348
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 87
+    },
+    {
+      "id": "encoder.layer.3.attention.self.key",
+      "path": "encoder.layer.3.attention.self.key",
+      "label": "Key",
+      "type": "Linear",
+      "kind": "attention",
+      "parent_id": "encoder.layer.3.attention.self",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 1056,
+      "parameter_count": 1056,
+      "direct_source_lines": [
+        360
+      ],
+      "source_lines": [
+        360
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 90
+    },
+    {
+      "id": "encoder.layer.3.attention.self.value",
+      "path": "encoder.layer.3.attention.self.value",
+      "label": "Value",
+      "type": "Linear",
+      "kind": "attention",
+      "parent_id": "encoder.layer.3.attention.self",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 1056,
+      "parameter_count": 1056,
+      "direct_source_lines": [
+        372
+      ],
+      "source_lines": [
+        372
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 93
+    },
+    {
+      "id": "encoder.layer.3.attention.output",
+      "path": "encoder.layer.3.attention.output",
+      "label": "Output",
+      "type": "RobertaSelfOutput",
+      "kind": "attention",
+      "parent_id": "encoder.layer.3.attention",
+      "children": [
+        "encoder.layer.3.attention.output.dense",
+        "encoder.layer.3.attention.output.dropout",
+        "encoder.layer.3.attention.output.LayerNorm"
+      ],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 1120,
+      "direct_source_lines": [
+        401
+      ],
+      "source_lines": [
+        397,
+        399,
+        401,
+        408
+      ],
+      "op_names": {
+        "torch.aten.add.Tensor": 1,
+        "torch.aten.linear": 1,
+        "torch.aten.layer_norm": 1,
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 99
+    },
+    {
+      "id": "encoder.layer.3.attention.output.dense",
+      "path": "encoder.layer.3.attention.output.dense",
+      "label": "Dense",
+      "type": "Linear",
+      "kind": "attention",
+      "parent_id": "encoder.layer.3.attention.output",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 1056,
+      "parameter_count": 1056,
+      "direct_source_lines": [
+        397
+      ],
+      "source_lines": [
+        397
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 99
+    },
+    {
+      "id": "encoder.layer.3.attention.output.dropout",
+      "path": "encoder.layer.3.attention.output.dropout",
+      "label": "Dropout",
+      "type": "Dropout",
+      "kind": "dropout",
+      "parent_id": "encoder.layer.3.attention.output",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        399
+      ],
+      "source_lines": [
+        399
+      ],
+      "op_names": {
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 100
+    },
+    {
+      "id": "encoder.layer.3.attention.output.LayerNorm",
+      "path": "encoder.layer.3.attention.output.LayerNorm",
+      "label": "Layernorm",
+      "type": "LayerNorm",
+      "kind": "attention",
+      "parent_id": "encoder.layer.3.attention.output",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 64,
+      "parameter_count": 64,
+      "direct_source_lines": [
+        408
+      ],
+      "source_lines": [
+        408
+      ],
+      "op_names": {
+        "torch.aten.layer_norm": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 102
+    },
+    {
+      "id": "encoder.layer.3.intermediate",
+      "path": "encoder.layer.3.intermediate",
+      "label": "Intermediate",
+      "type": "RobertaIntermediate",
+      "kind": "mlp",
+      "parent_id": "encoder.layer.3",
+      "children": [
+        "encoder.layer.3.intermediate.dense",
+        "encoder.layer.3.intermediate.intermediate_act_fn"
+      ],
+      "depth": 4,
+      "direct_parameter_count": 0,
+      "parameter_count": 1221,
+      "direct_source_lines": [],
+      "source_lines": [
+        412,
+        414
+      ],
+      "op_names": {
+        "torch.aten.linear": 1,
+        "torch.aten.gelu": 1
+      },
+      "output_shapes": [],
+      "mapping": "exact",
+      "order": 103
+    },
+    {
+      "id": "encoder.layer.3.intermediate.dense",
+      "path": "encoder.layer.3.intermediate.dense",
+      "label": "Dense",
+      "type": "Linear",
+      "kind": "mlp",
+      "parent_id": "encoder.layer.3.intermediate",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 1221,
+      "parameter_count": 1221,
+      "direct_source_lines": [
+        412
+      ],
+      "source_lines": [
+        412
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d737 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 103
+    },
+    {
+      "id": "encoder.layer.3.intermediate.intermediate_act_fn",
+      "path": "encoder.layer.3.intermediate.intermediate_act_fn",
+      "label": "Intermediate Act Fn",
+      "type": "GELUActivation",
+      "kind": "mlp",
+      "parent_id": "encoder.layer.3.intermediate",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        414
+      ],
+      "source_lines": [
+        414
+      ],
+      "op_names": {
+        "torch.aten.gelu": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d737 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 104
+    },
+    {
+      "id": "encoder.layer.3.output",
+      "path": "encoder.layer.3.output",
+      "label": "Output",
+      "type": "RobertaOutput",
+      "kind": "container",
+      "parent_id": "encoder.layer.3",
+      "children": [
+        "encoder.layer.3.output.dense",
+        "encoder.layer.3.output.dropout",
+        "encoder.layer.3.output.LayerNorm"
+      ],
+      "depth": 4,
+      "direct_parameter_count": 0,
+      "parameter_count": 1280,
+      "direct_source_lines": [
+        422
+      ],
+      "source_lines": [
+        418,
+        420,
+        422,
+        429
+      ],
+      "op_names": {
+        "torch.aten.add.Tensor": 1,
+        "torch.aten.linear": 1,
+        "torch.aten.layer_norm": 1,
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 105
+    },
+    {
+      "id": "encoder.layer.3.output.dense",
+      "path": "encoder.layer.3.output.dense",
+      "label": "Dense",
+      "type": "Linear",
+      "kind": "projection",
+      "parent_id": "encoder.layer.3.output",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 1216,
+      "parameter_count": 1216,
+      "direct_source_lines": [
+        418
+      ],
+      "source_lines": [
+        418
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 105
+    },
+    {
+      "id": "encoder.layer.3.output.dropout",
+      "path": "encoder.layer.3.output.dropout",
+      "label": "Dropout",
+      "type": "Dropout",
+      "kind": "dropout",
+      "parent_id": "encoder.layer.3.output",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        420
+      ],
+      "source_lines": [
+        420
+      ],
+      "op_names": {
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 106
+    },
+    {
+      "id": "encoder.layer.3.output.LayerNorm",
+      "path": "encoder.layer.3.output.LayerNorm",
+      "label": "Layernorm",
+      "type": "LayerNorm",
+      "kind": "normalization",
+      "parent_id": "encoder.layer.3.output",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 64,
+      "parameter_count": 64,
+      "direct_source_lines": [
+        429
+      ],
+      "source_lines": [
+        429
+      ],
+      "op_names": {
+        "torch.aten.layer_norm": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 108
+    },
+    {
+      "id": "encoder.layer.4",
+      "path": "encoder.layer.4",
+      "label": "Block 4",
+      "type": "RobertaLayer",
+      "kind": "block",
+      "parent_id": "encoder.layer",
+      "children": [
+        "encoder.layer.4.attention",
+        "encoder.layer.4.intermediate",
+        "encoder.layer.4.output"
+      ],
+      "depth": 3,
+      "direct_parameter_count": 0,
+      "parameter_count": 6789,
+      "direct_source_lines": [],
+      "source_lines": [
+        432,
+        438,
+        441,
+        444,
+        450,
+        453,
+        456,
+        462,
+        465,
+        470,
+        473,
+        478,
+        481,
+        483,
+        485,
+        492,
+        496,
+        498,
+        502,
+        504,
+        506,
+        513
+      ],
+      "op_names": {
+        "torch.aten.linear": 6,
+        "torch.aten.view": 4,
+        "torch.aten.transpose.int": 4,
+        "torch.aten.add.Tensor": 2,
+        "torch.aten.layer_norm": 2,
+        "torch.aten.clone": 2,
+        "torch.aten.scaled_dot_product_attention": 1,
+        "torch.aten.gelu": 1
+      },
+      "output_shapes": [],
+      "mapping": "exact",
+      "order": 109
+    },
+    {
+      "id": "encoder.layer.4.attention",
+      "path": "encoder.layer.4.attention",
+      "label": "Attention",
+      "type": "RobertaAttention",
+      "kind": "attention",
+      "parent_id": "encoder.layer.4",
+      "children": [
+        "encoder.layer.4.attention.self",
+        "encoder.layer.4.attention.output"
+      ],
+      "depth": 4,
+      "direct_parameter_count": 0,
+      "parameter_count": 4288,
+      "direct_source_lines": [],
+      "source_lines": [
+        432,
+        438,
+        441,
+        444,
+        450,
+        453,
+        456,
+        462,
+        465,
+        470,
+        473,
+        478,
+        481,
+        483,
+        485,
+        492
+      ],
+      "op_names": {
+        "torch.aten.view": 4,
+        "torch.aten.transpose.int": 4,
+        "torch.aten.linear": 4,
+        "torch.aten.scaled_dot_product_attention": 1,
+        "torch.aten.add.Tensor": 1,
+        "torch.aten.layer_norm": 1,
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [],
+      "mapping": "exact",
+      "order": 109
+    },
+    {
+      "id": "encoder.layer.4.attention.self",
+      "path": "encoder.layer.4.attention.self",
+      "label": "Self",
+      "type": "RobertaSelfAttention",
+      "kind": "attention",
+      "parent_id": "encoder.layer.4.attention",
+      "children": [
+        "encoder.layer.4.attention.self.query",
+        "encoder.layer.4.attention.self.key",
+        "encoder.layer.4.attention.self.value"
+      ],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 3168,
+      "direct_source_lines": [
+        438,
+        441,
+        450,
+        453,
+        462,
+        465,
+        470,
+        473,
+        478
+      ],
+      "source_lines": [
+        432,
+        438,
+        441,
+        444,
+        450,
+        453,
+        456,
+        462,
+        465,
+        470,
+        473,
+        478
+      ],
+      "op_names": {
+        "torch.aten.view": 4,
+        "torch.aten.transpose.int": 4,
+        "torch.aten.linear": 3,
+        "torch.aten.scaled_dot_product_attention": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d74\u00d78 \u00b7 float32",
+        "1\u00d74\u00d716\u00d78 \u00b7 float32",
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 109
+    },
+    {
+      "id": "encoder.layer.4.attention.self.query",
+      "path": "encoder.layer.4.attention.self.query",
+      "label": "Query",
+      "type": "Linear",
+      "kind": "attention",
+      "parent_id": "encoder.layer.4.attention.self",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 1056,
+      "parameter_count": 1056,
+      "direct_source_lines": [
+        432
+      ],
+      "source_lines": [
+        432
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 109
+    },
+    {
+      "id": "encoder.layer.4.attention.self.key",
+      "path": "encoder.layer.4.attention.self.key",
+      "label": "Key",
+      "type": "Linear",
+      "kind": "attention",
+      "parent_id": "encoder.layer.4.attention.self",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 1056,
+      "parameter_count": 1056,
+      "direct_source_lines": [
+        444
+      ],
+      "source_lines": [
+        444
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 112
+    },
+    {
+      "id": "encoder.layer.4.attention.self.value",
+      "path": "encoder.layer.4.attention.self.value",
+      "label": "Value",
+      "type": "Linear",
+      "kind": "attention",
+      "parent_id": "encoder.layer.4.attention.self",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 1056,
+      "parameter_count": 1056,
+      "direct_source_lines": [
+        456
+      ],
+      "source_lines": [
+        456
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 115
+    },
+    {
+      "id": "encoder.layer.4.attention.output",
+      "path": "encoder.layer.4.attention.output",
+      "label": "Output",
+      "type": "RobertaSelfOutput",
+      "kind": "attention",
+      "parent_id": "encoder.layer.4.attention",
+      "children": [
+        "encoder.layer.4.attention.output.dense",
+        "encoder.layer.4.attention.output.dropout",
+        "encoder.layer.4.attention.output.LayerNorm"
+      ],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 1120,
+      "direct_source_lines": [
+        485
+      ],
+      "source_lines": [
+        481,
+        483,
+        485,
+        492
+      ],
+      "op_names": {
+        "torch.aten.add.Tensor": 1,
+        "torch.aten.linear": 1,
+        "torch.aten.layer_norm": 1,
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 121
+    },
+    {
+      "id": "encoder.layer.4.attention.output.dense",
+      "path": "encoder.layer.4.attention.output.dense",
+      "label": "Dense",
+      "type": "Linear",
+      "kind": "attention",
+      "parent_id": "encoder.layer.4.attention.output",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 1056,
+      "parameter_count": 1056,
+      "direct_source_lines": [
+        481
+      ],
+      "source_lines": [
+        481
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 121
+    },
+    {
+      "id": "encoder.layer.4.attention.output.dropout",
+      "path": "encoder.layer.4.attention.output.dropout",
+      "label": "Dropout",
+      "type": "Dropout",
+      "kind": "dropout",
+      "parent_id": "encoder.layer.4.attention.output",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        483
+      ],
+      "source_lines": [
+        483
+      ],
+      "op_names": {
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 122
+    },
+    {
+      "id": "encoder.layer.4.attention.output.LayerNorm",
+      "path": "encoder.layer.4.attention.output.LayerNorm",
+      "label": "Layernorm",
+      "type": "LayerNorm",
+      "kind": "attention",
+      "parent_id": "encoder.layer.4.attention.output",
+      "children": [],
+      "depth": 6,
+      "direct_parameter_count": 64,
+      "parameter_count": 64,
+      "direct_source_lines": [
+        492
+      ],
+      "source_lines": [
+        492
+      ],
+      "op_names": {
+        "torch.aten.layer_norm": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 124
+    },
+    {
+      "id": "encoder.layer.4.intermediate",
+      "path": "encoder.layer.4.intermediate",
+      "label": "Intermediate",
+      "type": "RobertaIntermediate",
+      "kind": "mlp",
+      "parent_id": "encoder.layer.4",
+      "children": [
+        "encoder.layer.4.intermediate.dense",
+        "encoder.layer.4.intermediate.intermediate_act_fn"
+      ],
+      "depth": 4,
+      "direct_parameter_count": 0,
+      "parameter_count": 1221,
+      "direct_source_lines": [],
+      "source_lines": [
+        496,
+        498
+      ],
+      "op_names": {
+        "torch.aten.linear": 1,
+        "torch.aten.gelu": 1
+      },
+      "output_shapes": [],
+      "mapping": "exact",
+      "order": 125
+    },
+    {
+      "id": "encoder.layer.4.intermediate.dense",
+      "path": "encoder.layer.4.intermediate.dense",
+      "label": "Dense",
+      "type": "Linear",
+      "kind": "mlp",
+      "parent_id": "encoder.layer.4.intermediate",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 1221,
+      "parameter_count": 1221,
+      "direct_source_lines": [
+        496
+      ],
+      "source_lines": [
+        496
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d737 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 125
+    },
+    {
+      "id": "encoder.layer.4.intermediate.intermediate_act_fn",
+      "path": "encoder.layer.4.intermediate.intermediate_act_fn",
+      "label": "Intermediate Act Fn",
+      "type": "GELUActivation",
+      "kind": "mlp",
+      "parent_id": "encoder.layer.4.intermediate",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        498
+      ],
+      "source_lines": [
+        498
+      ],
+      "op_names": {
+        "torch.aten.gelu": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d737 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 126
+    },
+    {
+      "id": "encoder.layer.4.output",
+      "path": "encoder.layer.4.output",
+      "label": "Output",
+      "type": "RobertaOutput",
+      "kind": "container",
+      "parent_id": "encoder.layer.4",
+      "children": [
+        "encoder.layer.4.output.dense",
+        "encoder.layer.4.output.dropout",
+        "encoder.layer.4.output.LayerNorm"
+      ],
+      "depth": 4,
+      "direct_parameter_count": 0,
+      "parameter_count": 1280,
+      "direct_source_lines": [
+        506
+      ],
+      "source_lines": [
+        502,
+        504,
+        506,
+        513
+      ],
+      "op_names": {
+        "torch.aten.add.Tensor": 1,
+        "torch.aten.linear": 1,
+        "torch.aten.layer_norm": 1,
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 127
+    },
+    {
+      "id": "encoder.layer.4.output.dense",
+      "path": "encoder.layer.4.output.dense",
+      "label": "Dense",
+      "type": "Linear",
+      "kind": "projection",
+      "parent_id": "encoder.layer.4.output",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 1216,
+      "parameter_count": 1216,
+      "direct_source_lines": [
+        502
+      ],
+      "source_lines": [
+        502
+      ],
+      "op_names": {
+        "torch.aten.linear": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 127
+    },
+    {
+      "id": "encoder.layer.4.output.dropout",
+      "path": "encoder.layer.4.output.dropout",
+      "label": "Dropout",
+      "type": "Dropout",
+      "kind": "dropout",
+      "parent_id": "encoder.layer.4.output",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 0,
+      "parameter_count": 0,
+      "direct_source_lines": [
+        504
+      ],
+      "source_lines": [
+        504
+      ],
+      "op_names": {
+        "torch.aten.clone": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 128
+    },
+    {
+      "id": "encoder.layer.4.output.LayerNorm",
+      "path": "encoder.layer.4.output.LayerNorm",
+      "label": "Layernorm",
+      "type": "LayerNorm",
+      "kind": "normalization",
+      "parent_id": "encoder.layer.4.output",
+      "children": [],
+      "depth": 5,
+      "direct_parameter_count": 64,
+      "parameter_count": 64,
+      "direct_source_lines": [
+        513
+      ],
+      "source_lines": [
+        513
+      ],
+      "op_names": {
+        "torch.aten.layer_norm": 1
+      },
+      "output_shapes": [
+        "1\u00d716\u00d732 \u00b7 float32"
+      ],
+      "mapping": "exact",
+      "order": 130
+    },
+    {
+      "id": "pooler",
+      "path": "pooler",
+      "label": "Pooler",
+      "type": "RobertaPooler",
+      "kind": "head",
+      "parent_id": "model",
+      "children": [
+        "pooler.dense"
+      ],
+      "depth": 1,
+      "direct_parameter_count": 0,
+      "parameter_count": 1056,
+      "direct_source_lines": [],
+      "source_lines": [],
+      "op_names": {},
+      "output_shapes": [],
+      "mapping": "unavailable",
+      "order": 1000000
+    },
+    {
+      "id": "pooler.dense",
+      "path": "pooler.dense",
+      "label": "Dense",
+      "type": "Linear",
+      "kind": "projection",
+      "parent_id": "pooler",
+      "children": [],
+      "depth": 2,
+      "direct_parameter_count": 1056,
+      "parameter_count": 1056,
+      "direct_source_lines": [],
+      "source_lines": [],
+      "op_names": {},
+      "output_shapes": [],
+      "mapping": "unavailable",
+      "order": 1000000
+    }
+  ],
+  "edges": [
+    {
+      "source": "embeddings",
+      "target": "embeddings.LayerNorm"
+    },
+    {
+      "source": "embeddings",
+      "target": "embeddings.position_embeddings"
+    },
+    {
+      "source": "embeddings",
+      "target": "embeddings.token_type_embeddings"
+    },
+    {
+      "source": "embeddings.LayerNorm",
+      "target": "embeddings.dropout"
+    },
+    {
+      "source": "embeddings.dropout",
+      "target": "encoder.layer.0.attention.output"
+    },
+    {
+      "source": "embeddings.dropout",
+      "target": "encoder.layer.0.attention.self.key"
+    },
+    {
+      "source": "embeddings.dropout",
+      "target": "encoder.layer.0.attention.self.query"
+    },
+    {
+      "source": "embeddings.dropout",
+      "target": "encoder.layer.0.attention.self.value"
+    },
+    {
+      "source": "embeddings.position_embeddings",
+      "target": "embeddings"
+    },
+    {
+      "source": "embeddings.token_type_embeddings",
+      "target": "embeddings"
+    },
+    {
+      "source": "embeddings.word_embeddings",
+      "target": "embeddings"
+    },
+    {
+      "source": "encoder.layer.0.attention.output",
+      "target": "encoder.layer.0.attention.output.LayerNorm"
+    },
+    {
+      "source": "encoder.layer.0.attention.output.LayerNorm",
+      "target": "encoder.layer.0.intermediate.dense"
+    },
+    {
+      "source": "encoder.layer.0.attention.output.LayerNorm",
+      "target": "encoder.layer.0.output"
+    },
+    {
+      "source": "encoder.layer.0.attention.output.dense",
+      "target": "encoder.layer.0.attention.output.dropout"
+    },
+    {
+      "source": "encoder.layer.0.attention.output.dropout",
+      "target": "encoder.layer.0.attention.output"
+    },
+    {
+      "source": "encoder.layer.0.attention.self",
+      "target": "encoder.layer.0.attention.output.dense"
+    },
+    {
+      "source": "encoder.layer.0.attention.self.key",
+      "target": "encoder.layer.0.attention.self"
+    },
+    {
+      "source": "encoder.layer.0.attention.self.query",
+      "target": "encoder.layer.0.attention.self"
+    },
+    {
+      "source": "encoder.layer.0.attention.self.value",
+      "target": "encoder.layer.0.attention.self"
+    },
+    {
+      "source": "encoder.layer.0.intermediate.dense",
+      "target": "encoder.layer.0.intermediate.intermediate_act_fn"
+    },
+    {
+      "source": "encoder.layer.0.intermediate.intermediate_act_fn",
+      "target": "encoder.layer.0.output.dense"
+    },
+    {
+      "source": "encoder.layer.0.output",
+      "target": "encoder.layer.0.output.LayerNorm"
+    },
+    {
+      "source": "encoder.layer.0.output.LayerNorm",
+      "target": "encoder.layer.1.attention.output"
+    },
+    {
+      "source": "encoder.layer.0.output.LayerNorm",
+      "target": "encoder.layer.1.attention.self.key"
+    },
+    {
+      "source": "encoder.layer.0.output.LayerNorm",
+      "target": "encoder.layer.1.attention.self.query"
+    },
+    {
+      "source": "encoder.layer.0.output.LayerNorm",
+      "target": "encoder.layer.1.attention.self.value"
+    },
+    {
+      "source": "encoder.layer.0.output.dense",
+      "target": "encoder.layer.0.output.dropout"
+    },
+    {
+      "source": "encoder.layer.0.output.dropout",
+      "target": "encoder.layer.0.output"
+    },
+    {
+      "source": "encoder.layer.1.attention.output",
+      "target": "encoder.layer.1.attention.output.LayerNorm"
+    },
+    {
+      "source": "encoder.layer.1.attention.output.LayerNorm",
+      "target": "encoder.layer.1.intermediate.dense"
+    },
+    {
+      "source": "encoder.layer.1.attention.output.LayerNorm",
+      "target": "encoder.layer.1.output"
+    },
+    {
+      "source": "encoder.layer.1.attention.output.dense",
+      "target": "encoder.layer.1.attention.output.dropout"
+    },
+    {
+      "source": "encoder.layer.1.attention.output.dropout",
+      "target": "encoder.layer.1.attention.output"
+    },
+    {
+      "source": "encoder.layer.1.attention.self",
+      "target": "encoder.layer.1.attention.output.dense"
+    },
+    {
+      "source": "encoder.layer.1.attention.self.key",
+      "target": "encoder.layer.1.attention.self"
+    },
+    {
+      "source": "encoder.layer.1.attention.self.query",
+      "target": "encoder.layer.1.attention.self"
+    },
+    {
+      "source": "encoder.layer.1.attention.self.value",
+      "target": "encoder.layer.1.attention.self"
+    },
+    {
+      "source": "encoder.layer.1.intermediate.dense",
+      "target": "encoder.layer.1.intermediate.intermediate_act_fn"
+    },
+    {
+      "source": "encoder.layer.1.intermediate.intermediate_act_fn",
+      "target": "encoder.layer.1.output.dense"
+    },
+    {
+      "source": "encoder.layer.1.output",
+      "target": "encoder.layer.1.output.LayerNorm"
+    },
+    {
+      "source": "encoder.layer.1.output.LayerNorm",
+      "target": "encoder.layer.2.attention.output"
+    },
+    {
+      "source": "encoder.layer.1.output.LayerNorm",
+      "target": "encoder.layer.2.attention.self.key"
+    },
+    {
+      "source": "encoder.layer.1.output.LayerNorm",
+      "target": "encoder.layer.2.attention.self.query"
+    },
+    {
+      "source": "encoder.layer.1.output.LayerNorm",
+      "target": "encoder.layer.2.attention.self.value"
+    },
+    {
+      "source": "encoder.layer.1.output.dense",
+      "target": "encoder.layer.1.output.dropout"
+    },
+    {
+      "source": "encoder.layer.1.output.dropout",
+      "target": "encoder.layer.1.output"
+    },
+    {
+      "source": "encoder.layer.2.attention.output",
+      "target": "encoder.layer.2.attention.output.LayerNorm"
+    },
+    {
+      "source": "encoder.layer.2.attention.output.LayerNorm",
+      "target": "encoder.layer.2.intermediate.dense"
+    },
+    {
+      "source": "encoder.layer.2.attention.output.LayerNorm",
+      "target": "encoder.layer.2.output"
+    },
+    {
+      "source": "encoder.layer.2.attention.output.dense",
+      "target": "encoder.layer.2.attention.output.dropout"
+    },
+    {
+      "source": "encoder.layer.2.attention.output.dropout",
+      "target": "encoder.layer.2.attention.output"
+    },
+    {
+      "source": "encoder.layer.2.attention.self",
+      "target": "encoder.layer.2.attention.output.dense"
+    },
+    {
+      "source": "encoder.layer.2.attention.self.key",
+      "target": "encoder.layer.2.attention.self"
+    },
+    {
+      "source": "encoder.layer.2.attention.self.query",
+      "target": "encoder.layer.2.attention.self"
+    },
+    {
+      "source": "encoder.layer.2.attention.self.value",
+      "target": "encoder.layer.2.attention.self"
+    },
+    {
+      "source": "encoder.layer.2.intermediate.dense",
+      "target": "encoder.layer.2.intermediate.intermediate_act_fn"
+    },
+    {
+      "source": "encoder.layer.2.intermediate.intermediate_act_fn",
+      "target": "encoder.layer.2.output.dense"
+    },
+    {
+      "source": "encoder.layer.2.output",
+      "target": "encoder.layer.2.output.LayerNorm"
+    },
+    {
+      "source": "encoder.layer.2.output.LayerNorm",
+      "target": "encoder.layer.3.attention.output"
+    },
+    {
+      "source": "encoder.layer.2.output.LayerNorm",
+      "target": "encoder.layer.3.attention.self.key"
+    },
+    {
+      "source": "encoder.layer.2.output.LayerNorm",
+      "target": "encoder.layer.3.attention.self.query"
+    },
+    {
+      "source": "encoder.layer.2.output.LayerNorm",
+      "target": "encoder.layer.3.attention.self.value"
+    },
+    {
+      "source": "encoder.layer.2.output.dense",
+      "target": "encoder.layer.2.output.dropout"
+    },
+    {
+      "source": "encoder.layer.2.output.dropout",
+      "target": "encoder.layer.2.output"
+    },
+    {
+      "source": "encoder.layer.3.attention.output",
+      "target": "encoder.layer.3.attention.output.LayerNorm"
+    },
+    {
+      "source": "encoder.layer.3.attention.output.LayerNorm",
+      "target": "encoder.layer.3.intermediate.dense"
+    },
+    {
+      "source": "encoder.layer.3.attention.output.LayerNorm",
+      "target": "encoder.layer.3.output"
+    },
+    {
+      "source": "encoder.layer.3.attention.output.dense",
+      "target": "encoder.layer.3.attention.output.dropout"
+    },
+    {
+      "source": "encoder.layer.3.attention.output.dropout",
+      "target": "encoder.layer.3.attention.output"
+    },
+    {
+      "source": "encoder.layer.3.attention.self",
+      "target": "encoder.layer.3.attention.output.dense"
+    },
+    {
+      "source": "encoder.layer.3.attention.self.key",
+      "target": "encoder.layer.3.attention.self"
+    },
+    {
+      "source": "encoder.layer.3.attention.self.query",
+      "target": "encoder.layer.3.attention.self"
+    },
+    {
+      "source": "encoder.layer.3.attention.self.value",
+      "target": "encoder.layer.3.attention.self"
+    },
+    {
+      "source": "encoder.layer.3.intermediate.dense",
+      "target": "encoder.layer.3.intermediate.intermediate_act_fn"
+    },
+    {
+      "source": "encoder.layer.3.intermediate.intermediate_act_fn",
+      "target": "encoder.layer.3.output.dense"
+    },
+    {
+      "source": "encoder.layer.3.output",
+      "target": "encoder.layer.3.output.LayerNorm"
+    },
+    {
+      "source": "encoder.layer.3.output.LayerNorm",
+      "target": "encoder.layer.4.attention.output"
+    },
+    {
+      "source": "encoder.layer.3.output.LayerNorm",
+      "target": "encoder.layer.4.attention.self.key"
+    },
+    {
+      "source": "encoder.layer.3.output.LayerNorm",
+      "target": "encoder.layer.4.attention.self.query"
+    },
+    {
+      "source": "encoder.layer.3.output.LayerNorm",
+      "target": "encoder.layer.4.attention.self.value"
+    },
+    {
+      "source": "encoder.layer.3.output.dense",
+      "target": "encoder.layer.3.output.dropout"
+    },
+    {
+      "source": "encoder.layer.3.output.dropout",
+      "target": "encoder.layer.3.output"
+    },
+    {
+      "source": "encoder.layer.4.attention.output",
+      "target": "encoder.layer.4.attention.output.LayerNorm"
+    },
+    {
+      "source": "encoder.layer.4.attention.output.LayerNorm",
+      "target": "encoder.layer.4.intermediate.dense"
+    },
+    {
+      "source": "encoder.layer.4.attention.output.LayerNorm",
+      "target": "encoder.layer.4.output"
+    },
+    {
+      "source": "encoder.layer.4.attention.output.dense",
+      "target": "encoder.layer.4.attention.output.dropout"
+    },
+    {
+      "source": "encoder.layer.4.attention.output.dropout",
+      "target": "encoder.layer.4.attention.output"
+    },
+    {
+      "source": "encoder.layer.4.attention.self",
+      "target": "encoder.layer.4.attention.output.dense"
+    },
+    {
+      "source": "encoder.layer.4.attention.self.key",
+      "target": "encoder.layer.4.attention.self"
+    },
+    {
+      "source": "encoder.layer.4.attention.self.query",
+      "target": "encoder.layer.4.attention.self"
+    },
+    {
+      "source": "encoder.layer.4.attention.self.value",
+      "target": "encoder.layer.4.attention.self"
+    },
+    {
+      "source": "encoder.layer.4.intermediate.dense",
+      "target": "encoder.layer.4.intermediate.intermediate_act_fn"
+    },
+    {
+      "source": "encoder.layer.4.intermediate.intermediate_act_fn",
+      "target": "encoder.layer.4.output.dense"
+    },
+    {
+      "source": "encoder.layer.4.output",
+      "target": "encoder.layer.4.output.LayerNorm"
+    },
+    {
+      "source": "encoder.layer.4.output.dense",
+      "target": "encoder.layer.4.output.dropout"
+    },
+    {
+      "source": "encoder.layer.4.output.dropout",
+      "target": "encoder.layer.4.output"
+    }
+  ]
+}

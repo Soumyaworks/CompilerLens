@@ -120,7 +120,7 @@ function WorkloadCard({workload, onSelect}: {workload: WorkloadSummary; onSelect
       className="workload-card"
       role="button"
       tabIndex={0}
-      aria-label={`Open ${workload.title} compiler pipeline`}
+      aria-label={`Explore ${workload.title} architecture`}
       onClick={onSelect}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {
@@ -153,7 +153,7 @@ function WorkloadCard({workload, onSelect}: {workload: WorkloadSummary; onSelect
           <span><strong>{workload.op_count.toLocaleString()}</strong> ops</span>
           <span><strong>{workload.evidence_count}</strong> insights</span>
         </div>
-        <span className="workload-card-open">Explore pipeline</span>
+        <span className="workload-card-open">Explore architecture</span>
       </div>
     </article>
   );
@@ -211,7 +211,7 @@ export function LandingPage({onSelect, onOpenSandbox}: LandingPageProps) {
         setSearchStatus(`Compilation failed: ${userFacingError(result.error, 'No artifact was produced.')}`);
         return;
       }
-      setSearchStatus('Compiled. Opening the new pipeline…');
+      setSearchStatus('Compiled. Mapping the model architecture…');
       onSelect(result.artifact_id);
     } catch (cause) {
       const message = cause instanceof SandboxUnavailableError ? cause.message : userFacingError(cause);

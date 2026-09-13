@@ -16,6 +16,7 @@ import re
 import sys
 from pathlib import Path
 
+from . import architecture as architecture_builder
 from . import llvm_parser, mlir_parser, pass_log
 from .lineage import build_lineage
 from .mlir_loc import source_locations_by_line
@@ -478,6 +479,7 @@ def build_artifact(workload: WorkloadSpec, root: Path | None = None) -> Artifact
     evidence, target = _build_evidence(stages)
     diffs = _build_diffs(stages)
     lineage = build_lineage(stages)
+    architecture = architecture_builder.build_architecture(dump_root, workload, stages, lineage)
     located = sum(1 for s in stages for op in s.ops if op.source_loc)
     trim_note = _trim_op_index(stages)
 
@@ -512,6 +514,7 @@ def build_artifact(workload: WorkloadSpec, root: Path | None = None) -> Artifact
         notes=notes,
         # Built above, before _trim_op_index cleared the op lists it depends on.
         lineage=lineage,
+        architecture=architecture,
     )
 
     return artifact

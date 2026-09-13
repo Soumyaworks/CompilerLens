@@ -201,7 +201,9 @@ class CompilerRunner:
             if on_progress:
                 on_progress(label, progress["done"], total_steps)
 
-        torch_input_path = self._export_torch_input(module, example_input_args, mlir_dir, manifest)
+        torch_input_path = self._export_torch_input(
+            module, example_input_args, output_dir, mlir_dir, manifest, model_info
+        )
         report("Exporting to Torch dialect")
         self._dump_named_stages(torch_input_path, mlir_dir, manifest, report)
         self._dump_llvm_intermediates(torch_input_path, output_dir, dumps_dir, manifest)
@@ -223,7 +225,15 @@ class CompilerRunner:
             files=sorted(manifest["files"].keys()),
         )
 
-    def _export_torch_input(self, module: torch.nn.Module, example_input_args: tuple, mlir_dir: Path, manifest: dict) -> Path:
+    def _export_torch_input(
+        self,
+        module: torch.nn.Module,
+        example_input_args: tuple,
+        output_dir: Path,
+        mlir_dir: Path,
+        manifest: dict,
+        model_info: dict | None,
+    ) -> Path:
         """Export to the Torch dialect.
 
         Returns the path the *compiler* should read. For a real model that is not the same
@@ -233,12 +243,44 @@ class CompilerRunner:
         module in `_full/` for compilation and write a display copy with the blob replaced by
         a note.
         """
-        export_output = aot.export(module, *example_input_args)
+        # Export exactly once and pass that same decomposed program into Turbine. Besides
+        # avoiding duplicate tracing, this preserves nn_module_stack metadata long enough
+        # to establish an exact module-to-Torch-MLIR mapping.
+        from models.architecture import capture_architecture, export_program
+
+        exported_program = None
+        if model_info is not None:
+            try:
+                exported_program = export_program(module, example_input_args)
+                export_output = aot.export(exported_program)
+            except Exception as exc:
+                # Architecture capture must never make a model less compilable. Preserve the
+                # established Turbine path when explicit torch.export cannot be retained.
+                manifest["architecture_error"] = f"{type(exc).__name__}: {exc}"
+                export_output = aot.export(module, *example_input_args)
+        else:
+            export_output = aot.export(module, *example_input_args)
         text = str(export_output.mlir_module)
 
         torch_input_path = mlir_dir / "ir_00_torch_input.mlir"
-        manifest["commands"].append("iree.turbine.aot.export(module, *example_inputs)")
+        manifest["commands"].append(
+            "torch.export.export(module) -> run Turbine decompositions -> "
+            "iree.turbine.aot.export(exported_program)"
+            if exported_program is not None else
+            "iree.turbine.aot.export(module, *example_inputs)"
+        )
         manifest["files"]["ir_00_torch_input.mlir"] = str(torch_input_path)
+
+        if model_info is not None and exported_program is not None:
+            try:
+                architecture = capture_architecture(
+                    module, exported_program, text, model_info
+                )
+                architecture_path = output_dir / "architecture.json"
+                architecture_path.write_text(json.dumps(architecture, indent=2))
+                manifest["files"]["architecture.json"] = str(architecture_path)
+            except Exception as exc:  # Architecture is additive; compilation must still work.
+                manifest["architecture_error"] = f"{type(exc).__name__}: {exc}"
 
         if self.config.elide_attrs_larger_than is None:
             torch_input_path.write_text(text)

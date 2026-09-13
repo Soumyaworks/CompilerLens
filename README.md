@@ -30,6 +30,7 @@ stages in one navigable interface.
 ## Key Capabilities
 
 - A searchable timeline of compiler stages and passes
+- An interactive model architecture map linked to the operations each module exports
 - Side-by-side textual and semantic diffs
 - Compiler evidence linked directly to the IR that produced it
 - Metadata-backed operation lineage from framework-level operations through LLVM IR
@@ -63,7 +64,7 @@ flowchart TB
         direction TB
         Resolve["Hugging Face Hub or local cache<br/>Resolve revision and architecture"]
         Wrap["PyTorch model adapter<br/>Load float32 weights · wrap output · build inputs"]
-        Export["IREE Turbine AOT<br/>Export the model to Torch MLIR"]
+        Export["PyTorch export + IREE Turbine AOT<br/>Capture module ownership · emit Torch MLIR"]
         Mode{"Compilation mode"}
 
         Resolve --> Wrap --> Export --> Mode
@@ -76,9 +77,9 @@ flowchart TB
             direction TB
             Capture["Full IREE pipeline capture<br/>iree-compile + iree-opt"]
             Dumps[("Compiler dump directory<br/>examples/{model}/<br/>MLIR · pass logs · LLVM IR · assembly")]
-            Analyze["Artifact construction<br/>Parse · normalize · diff · evidence · lineage"]
+            Analyze["Artifact construction<br/>Parse · normalize · architecture · lineage · diff"]
             Artifacts[("Static artifact store<br/>frontend/public/artifacts/<br/>model JSON · index.json")]
-            Explorer["Exploration interface<br/>Artifact library · Workspace · Lineage"]
+            Explorer["Exploration interface<br/>Architecture map · Pipeline · Lineage"]
 
             Capture --> Dumps --> Analyze --> Artifacts --> Explorer
         end
@@ -140,21 +141,40 @@ The persistent landing-page flow performs the following steps:
    signature.
 2. `models/hf_wrapper.py` loads the model, normalizes its inputs, and exposes a traceable tensor
    output.
-3. `backend/compiler/runner.py` exports the PyTorch module through Turbine and invokes
-   `iree-compile` and `iree-opt` to capture the lowering pipeline.
+3. `backend/compiler/runner.py` exports the PyTorch module once, records exact module ownership
+   from `torch.export` metadata, and invokes `iree-compile` and `iree-opt` to capture the
+   lowering pipeline.
 4. The raw stage, pass, LLVM IR, and assembly dumps are written under `examples/<model>/` for
    persisted compilations.
-5. `ingest/` parses those dumps and derives stage metadata, diffs, compiler evidence, and
-   operation lineage.
+5. `ingest/` parses those dumps and joins model modules to Torch operations, stage metadata,
+   diffs, compiler evidence, and operation lineage.
 6. The resulting artifact and workload index are written to `frontend/public/artifacts/`.
-7. The React frontend loads that artifact and renders it through Monaco Editor and Golden
-   Layout.
+7. The React frontend first renders the model architecture, then lets each mapped module open
+   its compiler lineage or the complete Monaco and Golden Layout workspace.
 
 The Compiler Playground deliberately stops short of artifact construction. It exports the same
 wrapped model, compiles only the requested stage into a temporary directory, retains a VMFB for
 optional benchmarking, and exposes status, signals, IR paths, and timing through in-memory job
 state. These Playground jobs disappear when the API process restarts; persisted exploration
 artifacts do not.
+
+### Model architecture to compiler bridge
+
+Each workload first opens an interactive module hierarchy. The explorer shows model facts,
+parameter counts, observed tensor shapes, exported Torch operations, and compiler-stage
+coverage. Selecting a module reveals where its operations survive across the lowering phases;
+**Trace through compiler** opens that module's source operation directly in Operation Lineage.
+
+<p align="center">
+  <img src="docs/images/model_architecture.png" alt="CompilerLens model architecture explorer showing the six transformer blocks of EleutherAI Pythia 70M, module details, and compiler-stage coverage" width="100%">
+</p>
+
+<p align="center"><em>Pythia 70M's transformer structure connected directly to its compiler-stage lineage.</em></p>
+
+For newly compiled Hugging Face models, module ownership comes from `torch.export`'s
+`nn_module_stack` metadata and is accepted only when the complete decomposed FX operation stream
+matches the Torch MLIR stream. Older workloads without this sidecar receive a clearly labelled,
+compiler-derived operation topology; CompilerLens does not invent layer ownership.
 
 ### Interactive pipeline workspace
 
@@ -179,6 +199,7 @@ Each workload is represented by one normalized JSON document containing:
 - Track-aware stage diffs
 - Compiler evidence with source-stage references
 - Source-to-stage operation lineage
+- Model hierarchy, tensor shapes, parameter counts, and module-to-compiler mappings
 - Explicit notes for incomplete or unavailable compiler data
 
 The Python schema is defined in `ingest/schema.py` and mirrored by
@@ -207,10 +228,12 @@ CompilerLens/
 │   └── measure/                 Runtime benchmarking and controlled comparisons
 ├── models/
 │   ├── detect.py                Hugging Face metadata and architecture detection
+│   ├── architecture.py          Exact torch.export module and operation capture
 │   ├── hf_wrapper.py            Traceable model wrapper and example inputs
 │   └── prefetch.py              Model caching for offline demonstrations
 ├── ingest/
 │   ├── build.py                 Artifact and landing-page index generation
+│   ├── architecture.py          Sidecar loading, fallback topology, and lineage enrichment
 │   ├── schema.py                Python definition of the artifact contract
 │   ├── lineage.py               Source-location-based operation lineage
 │   ├── mlir_parser.py           MLIR operation and dialect extraction
@@ -221,7 +244,8 @@ CompilerLens/
 │   ├── src/
 │   │   ├── api/                 Artifact and live API clients
 │   │   ├── components/          Shared viewers, timelines, and controls
-│   │   └── panes/               Dockable workspace panes
+│   │   ├── panes/               Dockable workspace panes
+│   │   └── ArchitectureExplorerPage.tsx  Interactive model-to-compiler map
 │   ├── public/artifacts/        Generated artifacts served by Vite
 │   ├── scripts/verify.mjs       Browser-level regression suite
 │   ├── package.json             Frontend commands and dependencies
@@ -294,8 +318,10 @@ that process or stop it before starting another one.
 2. Enter a Hugging Face repository ID in the prominent model search field.
 3. Select **Compile & explore** or press Enter.
 
-The API downloads the model, exports it through Turbine, captures the compiler stages, creates
-the normalized artifact, updates the landing-page index, and opens the new workload.
+The API downloads the model, exports it through Turbine, captures the model hierarchy and
+compiler stages, creates the normalized artifact, updates the landing-page index, and opens the
+new architecture explorer. From there, select a module to inspect its compiler coverage, trace
+one of its operations, or open the complete pipeline.
 
 Successful compilations are added to the artifact library, where every card summarizes the
 model family, architecture type, stage count, operation count, and available compiler insights.
@@ -378,7 +404,8 @@ Run the backend syntax checks and frontend production build:
 
 ```bash
 source .venv/bin/activate
-python -m py_compile backend/api/app.py backend/api/run_server.py ingest/build.py ingest/schema.py
+python -m py_compile backend/api/app.py backend/api/run_server.py ingest/build.py ingest/schema.py models/architecture.py ingest/architecture.py
+python -m unittest discover -s tests -v
 
 cd frontend
 npm run build

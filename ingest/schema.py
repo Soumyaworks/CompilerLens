@@ -24,7 +24,9 @@ from typing import Any
 #     opaque-compilation event as "fusion"; see ingest/lineage.py). `hops[].change` is now
 #     only `created` / `carried` / `changed` / `track-change` / `untraceable`; the op-name/
 #     count aggregates themselves (`op_names`, `from_count`, `to_count`) are unchanged.
-ARTIFACT_VERSION = "0.6"
+# 0.7 adds an architecture graph whose exact layer ownership comes from torch.export
+#     metadata and whose source lines join the existing lineage index.
+ARTIFACT_VERSION = "0.7"
 
 # Coarse groupings for the pipeline sidebar. A stage's phase decides where it is drawn and
 # what colour it gets, so the user can see at a glance which level of abstraction they are
@@ -173,6 +175,8 @@ class Artifact:
     # Level-1 operation lineage (ingest/lineage.py): anchor-stage line number -> every
     # compiler-located operation derived from it, per stage. This powers linked highlighting.
     lineage: dict[str, Any] = field(default_factory=dict)
+    # Model/module hierarchy and its exact or explicitly-derived links into source lineage.
+    architecture: dict[str, Any] = field(default_factory=dict)
     artifact_version: str = ARTIFACT_VERSION
 
     def to_json(self, indent: int | None = None) -> str:
