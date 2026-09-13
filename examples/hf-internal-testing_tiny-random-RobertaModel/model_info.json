@@ -1,0 +1,11 @@
+{
+  "model_id": "hf-internal-testing/tiny-random-RobertaModel",
+  "revision": "5f1d755e93e9fe46b9bb90404f1e810515b2410a",
+  "model_type": "roberta",
+  "causal": false,
+  "seq_len": 16,
+  "vocab_size": 1024,
+  "param_count": 84729,
+  "compile_dtype": "float32",
+  "detected_via": "autoconfig"
+}

@@ -4,6 +4,12 @@ CompilerLens is an interactive explorer for AI compiler pipelines. It compiles a
 Hugging Face model through IREE and presents the resulting Torch, MLIR, LLVM IR, and x86-64
 stages in one navigable interface.
 
+<p align="center">
+  <img src="docs/images/landing-page.png" alt="CompilerLens landing page with Hugging Face model search, the MLIR lowering pipeline, and Compiler Playground" width="100%">
+</p>
+
+<p align="center"><em>Search and compile Hugging Face models, follow the lowering path, or experiment in the Compiler Playground.</em></p>
+
 ## Table of Contents
 
 - [Key Capabilities](#key-capabilities)
@@ -39,54 +45,96 @@ the TypeScript frontend.
 ### End-to-end data flow
 
 ```mermaid
+%%{init: {"theme":"base","themeVariables":{"background":"#080c12","primaryTextColor":"#e5e7eb","lineColor":"#64748b","fontFamily":"ui-monospace, SFMono-Regular, Menlo, monospace","clusterBkg":"#0b111b","clusterBorder":"#334155","edgeLabelBackground":"#111827"},"flowchart":{"curve":"linear","nodeSpacing":36,"rankSpacing":48}}}%%
 flowchart TB
-    subgraph Browser[React frontend]
-        Landing[Landing page and model search]
-        Workspace[Pipeline workspace]
-        Lineage[Operation lineage explorer]
-        Playground[Compiler Playground]
+    subgraph Entry["1 · User entry points"]
+        direction LR
+        Search["Landing page<br/>Search and compile a model"]
+        Controls["Compiler Playground<br/>Choose model, stage, and flags"]
     end
 
-    subgraph Service[FastAPI service]
-        ExploreAPI[Persistent exploration job]
-        CompileAPI[Temporary Playground job]
-        Jobs[In-memory job state]
-        Benchmark[Whole-model benchmark]
+    subgraph Service["2 · FastAPI orchestration"]
+        direction LR
+        Explore["Persistent exploration job<br/>POST /explore · poll GET /compile/{id}"]
+        Compile["Temporary compilation job<br/>POST /compile · poll GET /compile/{id}"]
     end
 
-    subgraph ModelLayer[Model acquisition]
-        Detect[Resolve revision and architecture]
-        Hub[Hugging Face cache or Hub]
-        Wrapper[Traceable PyTorch wrapper and inputs]
+    subgraph Preparation["3 · Shared model preparation and export"]
+        direction TB
+        Resolve["Hugging Face Hub or local cache<br/>Resolve revision and architecture"]
+        Wrap["PyTorch model adapter<br/>Load float32 weights · wrap output · build inputs"]
+        Export["IREE Turbine AOT<br/>Export the model to Torch MLIR"]
+        Mode{"Compilation mode"}
+
+        Resolve --> Wrap --> Export --> Mode
     end
 
-    subgraph CompilerLayer[Compilation]
-        Export[Turbine AOT export]
-        IREE[iree-compile and iree-opt]
-        Dumps[Stage, pass, LLVM IR and assembly dumps]
+    subgraph Compilation["4 · Compilation, storage, and visualization"]
+        direction LR
+
+        subgraph Persistent["Persistent exploration path"]
+            direction TB
+            Capture["Full IREE pipeline capture<br/>iree-compile + iree-opt"]
+            Dumps[("Compiler dump directory<br/>examples/{model}/<br/>MLIR · pass logs · LLVM IR · assembly")]
+            Analyze["Artifact construction<br/>Parse · normalize · diff · evidence · lineage"]
+            Artifacts[("Static artifact store<br/>frontend/public/artifacts/<br/>model JSON · index.json")]
+            Explorer["Exploration interface<br/>Artifact library · Workspace · Lineage"]
+
+            Capture --> Dumps --> Analyze --> Artifacts --> Explorer
+        end
+
+        subgraph TemporaryPath["Compiler Playground path"]
+            direction TB
+            Selected["Focused IREE compilation<br/>Compile only the requested stage"]
+            Temporary[("Temporary work directory<br/>Selected MLIR + executable VMFB")]
+            JobState[("In-memory job state<br/>Status · signals · output paths")]
+            Benchmark["Optional runtime benchmark<br/>iree-benchmark-module"]
+            Results["Playground interface<br/>Generated IR · signals · timing"]
+
+            Selected --> Temporary --> JobState --> Results
+            Temporary -.-> Benchmark -.-> JobState
+        end
     end
 
-    subgraph ArtifactLayer[Artifact construction]
-        Ingest[Parse and normalize dumps]
-        Analysis[Diffs, evidence and operation lineage]
-        Artifacts[Artifact JSON and workload index]
-    end
+    Search --> Explore
+    Controls --> Compile
+    Explore --> Resolve
+    Compile --> Resolve
+    Mode -->|Full pipeline| Capture
+    Mode -->|Selected stage| Selected
 
-    Landing -->|POST /explore| ExploreAPI
-    Playground -->|POST /compile| CompileAPI
-    ExploreAPI --> Detect
-    CompileAPI --> Detect
-    Detect --> Hub --> Wrapper --> Export --> IREE --> Dumps
+    class Search,Controls,Explorer,Results ui
+    class Explore,Compile api
+    class Resolve,Wrap model
+    class Export,Capture,Selected,Benchmark compiler
+    class Mode decision
+    class Dumps,Artifacts persistent
+    class Temporary,JobState transient
+    class Analyze analysis
 
-    Dumps -->|persistent model| Ingest --> Analysis --> Artifacts
-    Artifacts --> Landing
-    Artifacts --> Workspace --> Lineage
+    classDef ui fill:#10243e,stroke:#4f9cf9,color:#edf6ff,stroke-width:2px
+    classDef api fill:#24183d,stroke:#9b87f5,color:#f4f0ff,stroke-width:2px
+    classDef model fill:#332315,stroke:#f59e0b,color:#fff7ed,stroke-width:2px
+    classDef compiler fill:#321827,stroke:#ec6fa5,color:#fff1f7,stroke-width:2px
+    classDef decision fill:#202938,stroke:#94a3b8,color:#f8fafc,stroke-width:2px
+    classDef persistent fill:#0f2b24,stroke:#34d399,color:#ecfdf5,stroke-width:2px
+    classDef transient fill:#2c230e,stroke:#eabf4f,color:#fffbeb,stroke-width:2px
+    classDef analysis fill:#0d2931,stroke:#35b9c9,color:#ecfeff,stroke-width:2px
 
-    Dumps -->|selected temporary stages| Jobs --> Playground
-    Jobs --> Benchmark --> Playground
+    style Entry fill:#0b172a,stroke:#27496f,stroke-width:1px,color:#bfdbfe
+    style Service fill:#17122b,stroke:#4c3b78,stroke-width:1px,color:#ddd6fe
+    style Preparation fill:#24170f,stroke:#70451d,stroke-width:1px,color:#fed7aa
+    style Compilation fill:#090e16,stroke:#334155,stroke-width:1px,color:#cbd5e1
+    style Persistent fill:#0a1e1a,stroke:#1f6f58,stroke-width:1px,color:#a7f3d0
+    style TemporaryPath fill:#1d180b,stroke:#735d16,stroke-width:1px,color:#fde68a
 ```
 
-The pipeline performs the following steps:
+Blue nodes are browser surfaces, violet nodes are API orchestration, orange nodes are shared
+model preparation, pink nodes are compiler execution, green nodes are durable files, and amber
+nodes are temporary state. Both API routes converge on the same model preparation code before
+branching into either complete artifact capture or fast selected-stage compilation.
+
+The persistent landing-page flow performs the following steps:
 
 1. `models/detect.py` resolves the Hugging Face revision and determines the supported model
    signature.
@@ -101,6 +149,25 @@ The pipeline performs the following steps:
 6. The resulting artifact and workload index are written to `frontend/public/artifacts/`.
 7. The React frontend loads that artifact and renders it through Monaco Editor and Golden
    Layout.
+
+The Compiler Playground deliberately stops short of artifact construction. It exports the same
+wrapped model, compiles only the requested stage into a temporary directory, retains a VMFB for
+optional benchmarking, and exposes status, signals, IR paths, and timing through in-memory job
+state. These Playground jobs disappear when the API process restarts; persisted exploration
+artifacts do not.
+
+### Interactive pipeline workspace
+
+Each compiled workload opens as a configurable workspace. Developers can inspect the original
+PyTorch source beside any captured IR stage, follow the phase rail from frontend lowering to
+binary output, compare representations, and trace compiler evidence back to the stage that
+produced it.
+
+<p align="center">
+  <img src="docs/images/pipeline-explorer.png" alt="CompilerLens pipeline workspace for EleutherAI Pythia 70M showing PyTorch source, Torch MLIR, target assembly, and compiler evidence" width="100%">
+</p>
+
+<p align="center"><em>The Pythia 70M pipeline viewed across framework source, compiler IR, target assembly, and evidence.</em></p>
 
 ### Artifact contract
 
@@ -161,6 +228,7 @@ CompilerLens/
 │   └── vite.config.ts           Development server configuration
 ├── scripts/
 │   └── compile_hf_model.py      Command-line Hugging Face compilation
+├── docs/images/                 Screenshots used by this documentation
 ├── examples/                    Source programs and compiler dump directories
 ├── requirements.txt             Pinned Python environment
 └── README.md                    Setup, usage, and contribution guide
@@ -228,6 +296,15 @@ that process or stop it before starting another one.
 
 The API downloads the model, exports it through Turbine, captures the compiler stages, creates
 the normalized artifact, updates the landing-page index, and opens the new workload.
+
+Successful compilations are added to the artifact library, where every card summarizes the
+model family, architecture type, stage count, operation count, and available compiler insights.
+
+<p align="center">
+  <img src="docs/images/compiled-workloads.png" alt="CompilerLens compiled workload library with Pythia, GPT-2, BERT, RoBERTa, and Matmul pipelines" width="100%">
+</p>
+
+<p align="center"><em>Compiled workloads remain available as explorable pipeline artifacts.</em></p>
 
 Good small models to try:
 
