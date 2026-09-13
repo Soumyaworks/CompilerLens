@@ -15,7 +15,7 @@ import {MetricBar} from './components/MetricBar';
 import {THEME_NAME, monacoLanguage} from './monaco/setup';
 
 /**
- * The Sandbox: change a compiler flag, recompile for real, see what changed.
+ * The Compiler Playground: change a compiler flag, recompile for real, see what changed.
  *
  * This is the screen that turns the project from something you read into something you use. It
  * works because a compile is fast (~1-3s measured) as long as we only ask for the stages on
@@ -151,12 +151,12 @@ export function SandboxPage({onBack}: {onBack: () => void}) {
         <button type="button" className="back-button" onClick={onBack}>
           ← Workloads
         </button>
-        <h2>Sandbox API not running</h2>
+        <h2>Compiler Playground API not running</h2>
         <p>{unavailable}</p>
         <pre>{'source .venv/bin/activate\npython -m backend.api.run_server'}</pre>
         <p className="muted">
           The landing page and workspace do not need this server — they read pre-generated
-          artifacts. Only the Sandbox compiles on demand.
+          artifacts. Only the Compiler Playground compiles on demand.
         </p>
       </div>
     );
@@ -169,7 +169,7 @@ export function SandboxPage({onBack}: {onBack: () => void}) {
           ← Workloads
         </button>
         <h1>
-          Compiler Sandbox <span className="muted">— change a flag, recompile, measure</span>
+          Compiler Playground <span className="muted">— change a flag, recompile, measure</span>
         </h1>
         <span className="sandbox-status">{busy ? '⏳ ' : ''}{status}</span>
       </header>

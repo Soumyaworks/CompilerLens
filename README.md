@@ -14,7 +14,7 @@ stages in one navigable interface.
 - [Compiling Models from the Web Interface](#compiling-models-from-the-web-interface)
 - [Supported Model Architectures](#supported-model-architectures)
 - [Command-Line Model Compilation](#command-line-model-compilation)
-- [Compiler Sandbox and Benchmarking](#compiler-sandbox-and-benchmarking)
+- [Compiler Playground and Benchmarking](#compiler-playground-and-benchmarking)
 - [Validation and Testing](#validation-and-testing)
 - [Troubleshooting](#troubleshooting)
 - [Contributions](#contributions)
@@ -28,7 +28,7 @@ stages in one navigable interface.
 - Compiler evidence linked directly to the IR that produced it
 - Operation lineage from framework-level operations to lower-level representations
 - A landing-page search flow that compiles a Hugging Face model and adds it as a workload
-- A Sandbox for changing selected compiler options and benchmarking the result
+- A Compiler Playground for changing selected compiler options and benchmarking the result
 
 ## System Architecture and Repository Layout
 
@@ -44,12 +44,12 @@ flowchart TB
         Landing[Landing page and model search]
         Workspace[Pipeline workspace]
         Lineage[Operation lineage explorer]
-        Sandbox[Compiler Sandbox]
+        Playground[Compiler Playground]
     end
 
     subgraph Service[FastAPI service]
         ExploreAPI[Persistent exploration job]
-        CompileAPI[Temporary Sandbox job]
+        CompileAPI[Temporary Playground job]
         Jobs[In-memory job state]
         Benchmark[Whole-model benchmark]
     end
@@ -73,7 +73,7 @@ flowchart TB
     end
 
     Landing -->|POST /explore| ExploreAPI
-    Sandbox -->|POST /compile| CompileAPI
+    Playground -->|POST /compile| CompileAPI
     ExploreAPI --> Detect
     CompileAPI --> Detect
     Detect --> Hub --> Wrapper --> Export --> IREE --> Dumps
@@ -82,8 +82,8 @@ flowchart TB
     Artifacts --> Landing
     Artifacts --> Workspace --> Lineage
 
-    Dumps -->|selected temporary stages| Jobs --> Sandbox
-    Jobs --> Benchmark --> Sandbox
+    Dumps -->|selected temporary stages| Jobs --> Playground
+    Jobs --> Benchmark --> Playground
 ```
 
 The pipeline performs the following steps:
@@ -123,8 +123,8 @@ artifact version.
 | Mode | Entry point | API required | Persistence | Primary purpose |
 |---|---|---:|---|---|
 | Static explorer | `npm run artifact` + `npm run dev` | No | Generated artifact files | Explore existing compiler dumps |
-| Web model search | Search icon on the landing page | Yes | Dumps and artifact are retained | Add a Hugging Face model end to end |
-| Compiler Sandbox | **Open the Compiler Sandbox** | Yes | In-memory job and temporary files | Test compiler options and selected stages |
+| Web model search | Model search field on the landing page | Yes | Dumps and artifact are retained | Add a Hugging Face model end to end |
+| Compiler Playground | **Open the Compiler Playground** | Yes | In-memory job and temporary files | Test compiler options and selected stages |
 | Command-line compilation | `scripts/compile_hf_model.py` | No | Dumps under `examples/` | Scriptable or offline compilation |
 
 ### Repository layout
@@ -214,7 +214,7 @@ npm run dev
 
 Open the **Local** URL printed by Vite after `npm run dev` (for example,
 `http://localhost:5173`). Vite may choose a different port when 5173 is already occupied.
-Keep both processes running while using model search or the Sandbox. The existing,
+Keep both processes running while using model search or the Compiler Playground. The existing,
 pre-generated workload viewer only needs the frontend.
 
 If port 8000 is already in use, an API server is probably running in another terminal. Reuse
@@ -223,9 +223,8 @@ that process or stop it before starting another one.
 ## Compiling Models from the Web Interface
 
 1. Open the landing page.
-2. Select the search icon beside the CompilerLens title.
-3. Enter a Hugging Face repository ID.
-4. Select **Compile & open**.
+2. Enter a Hugging Face repository ID in the prominent model search field.
+3. Select **Compile & explore** or press Enter.
 
 The API downloads the model, exports it through Turbine, captures the compiler stages, creates
 the normalized artifact, updates the landing-page index, and opens the new workload.
@@ -279,9 +278,9 @@ python -m models.prefetch MODEL_ID [MODEL_ID ...]
 `--full` disables dump trimming and can generate several GB of data. The default mode retains
 the stages needed by the UI while removing embedded weight payloads and redundant pass dumps.
 
-## Compiler Sandbox and Benchmarking
+## Compiler Playground and Benchmarking
 
-Choose **Open the Compiler Sandbox** from the landing page to:
+Choose **Open the Compiler Playground** from the landing page to:
 
 - Compile selected stages
 - Compare allowlisted compiler options such as target CPU and optimization level
@@ -289,10 +288,10 @@ Choose **Open the Compiler Sandbox** from the landing page to:
 - Run an explicit whole-model benchmark
 
 The model selector combines a small set of baseline models with every successful persisted
-compilation found under `examples/*/model_info.json`. Reopening the Sandbox refreshes this list,
+compilation found under `examples/*/model_info.json`. Reopening the Playground refreshes this list,
 so models added through landing-page search or the command-line compiler appear automatically.
 
-Sandbox jobs are stored in memory and disappear when the API restarts. Hugging Face models
+Playground jobs are stored in memory and disappear when the API restarts. Hugging Face models
 compiled through landing-page search are persisted under `examples/` and remain available after
 artifact regeneration.
 

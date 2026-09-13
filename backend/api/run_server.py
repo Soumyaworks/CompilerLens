@@ -1,4 +1,4 @@
-"""Start the Sandbox API.
+"""Start the Compiler Playground API.
 
     source .venv/bin/activate
     python -m backend.api.run_server
@@ -41,7 +41,7 @@ def main() -> int:
     except Exception:
         reachable = "localhost"
 
-    print(f"CompilerLens Sandbox API listening on {HOST}:{PORT}")
+    print(f"CompilerLens Playground API listening on {HOST}:{PORT}")
     print(f"  local:   http://localhost:{PORT}")
     print(f"  network: http://{reachable}:{PORT}   <- use this from another machine")
     print(f"  GET  /options                          the knobs, and why each matters")

@@ -1,5 +1,5 @@
 /**
- * Client for the live-compile Sandbox API (backend/api/app.py).
+ * Client for the live-compile Compiler Playground API (backend/api/app.py).
  *
  * Distinct from api/client.ts, which fetches pre-generated static artifacts. This one talks to
  * a running server, so every call can fail in ways a static fetch cannot -- the server may not
@@ -8,7 +8,7 @@
  */
 
 /**
- * Where the Sandbox API lives.
+ * Where the Compiler Playground API lives.
  *
  * Derived from the page's own hostname rather than hardcoded to localhost: the frontend is
  * commonly served from a remote box, and a hardcoded 127.0.0.1 would make the *browser* look
@@ -75,7 +75,7 @@ export interface Job {
   bench: Bench | null;
   error: string | null;
   artifact_id?: string | null;
-  /** Real progress through the `/explore` pipeline -- null for the Sandbox's `/compile`,
+  /** Real progress through the `/explore` pipeline -- null for the Playground's `/compile`,
    *  which only ever does one stage and doesn't report this. */
   progress?: {label: string; done: number; total: number} | null;
 }
@@ -89,7 +89,7 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
     });
   } catch {
     throw new SandboxUnavailableError(
-      `Cannot reach the Sandbox API at ${BASE}. Start it with: python -m backend.api.run_server`,
+      `Cannot reach the Compiler Playground API at ${BASE}. Start it with: python -m backend.api.run_server`,
     );
   }
   if (!response.ok) {

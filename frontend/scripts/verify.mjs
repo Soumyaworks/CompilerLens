@@ -259,14 +259,14 @@ check(
 );
 await page.screenshot({path: `${SHOT}/05-linear-relu.png`});
 
-// --- the Sandbox ------------------------------------------------------------------------------
+// --- the Compiler Playground -----------------------------------------------------------------
 // Only structural checks here. Driving a real compile needs the API server running, and a test
 // that fails because an optional server is down would be a false alarm rather than a signal --
 // so the compile path is exercised by hand (see README) and this covers the UI reaching it.
 
 await page.locator('.back-button').click();
 await page.waitForSelector('.workload-card', {timeout: 10_000});
-check('landing page offers the Sandbox', (await page.locator('.sandbox-entry').count()) === 1);
+check('landing page offers the Compiler Playground', (await page.locator('.sandbox-entry').count()) === 1);
 
 await page.locator('.sandbox-entry').click();
 await page.waitForTimeout(1200);

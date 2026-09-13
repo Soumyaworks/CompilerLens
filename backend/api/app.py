@@ -1,6 +1,6 @@
-"""Live compilation API, for the Sandbox.
+"""Live compilation API for the Compiler Playground.
 
-The Sandbox lets you change a compiler flag and see the result, so the endpoints here are
+The Playground lets you change a compiler flag and see the result, so the endpoints here are
 built around one measured fact: a compile is fast (~0.8-1.2s) but *dumping all 41 stages plus
 pass traces is not*. So `POST /compile` takes the list of stages you actually want to look at
 and compiles only those. Benchmarking is a separate opt-in call because it costs seconds, and
@@ -9,7 +9,7 @@ firing it on every flag change would make the UI feel broken.
 Everything here delegates to the same compiler and measurement classes the CLI uses, so there
 is no second implementation to keep in sync.
 
-Job tracking is intentionally in memory. Restarting the server loses in-flight Sandbox jobs;
+Job tracking is intentionally in memory. Restarting the server loses in-flight Playground jobs;
 persisted landing-page artifacts remain on disk.
 """
 
@@ -39,7 +39,7 @@ _PUBLIC_ERROR_LIMIT = 500
 # turn one click into multi-GB files. The lower-level CLI remains available for deliberate runs.
 _MAX_EXPLORE_PARAMETERS = 100_000_000
 
-# Keep the Sandbox useful in a fresh checkout before the user has compiled any additional
+# Keep the Playground useful in a fresh checkout before the user has compiled any additional
 # models. Successful landing-page and CLI compilations are discovered dynamically from their
 # model_info.json files and appended to this list by _sandbox_models().
 _DEFAULT_SANDBOX_MODELS = (
@@ -53,7 +53,7 @@ _DEFAULT_SANDBOX_MODELS = (
 class ExploreModelTooLargeError(RuntimeError):
     pass
 
-app = FastAPI(title="CompilerLens Sandbox API")
+app = FastAPI(title="CompilerLens Playground API")
 
 # Permissive CORS because Vite serves the frontend from a different port in development.
 # Would need tightening before any real deployment.
@@ -81,7 +81,7 @@ STAGE_INDEX = {
     "vm": "12",
 }
 
-# What the Sandbox offers as togglable knobs. Kept server-side so the UI cannot invent a flag
+# What the Playground offers as togglable knobs. Kept server-side so the UI cannot invent a flag
 # we have not thought about -- an arbitrary-flag passthrough would be a command injection risk
 # and would also let a user produce dumps we cannot interpret.
 ALLOWED_FLAGS = {
@@ -160,7 +160,7 @@ def _flags_from_options(options: dict) -> list:
 
 @app.get("/options")
 def options():
-    """The knobs the Sandbox may offer, and why each matters."""
+    """The knobs the Playground may offer, and why each matters."""
     return {
         "options": ALLOWED_FLAGS,
         "stages": list(STAGE_INDEX),
@@ -172,7 +172,7 @@ def _sandbox_models() -> list[str]:
     """Return baseline models plus every successfully persisted Hugging Face model.
 
     A generated workload writes model_info.json only after compilation succeeds. Scanning on
-    each /options request means the Sandbox sees newly explored models immediately after it is
+    each /options request means the Playground sees newly explored models immediately after it is
     opened, without restarting the API or maintaining a second model registry.
     """
     models = list(_DEFAULT_SANDBOX_MODELS)
@@ -219,7 +219,7 @@ def compile_model(request: CompileRequest, background: BackgroundTasks):
 def explore_model(request: ExploreRequest, background: BackgroundTasks):
     """Compile a Hub model into the same static artifact the Workspace consumes.
 
-    Unlike the Sandbox's short-lived, selected-stage job, this deliberately retains the
+    Unlike the Playground's short-lived, selected-stage job, this deliberately retains the
     trimmed dumps under examples/ and updates the public artifact index. This makes a finished
     search a first-class landing-page entry after a refresh or server restart.
     """
