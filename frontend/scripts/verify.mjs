@@ -192,6 +192,21 @@ async function addPane(label) {
   await page.waitForTimeout(400);
 }
 
+await page.locator('.add-pane-button').click();
+await page.waitForTimeout(150);
+const addPaneLabels = await page.locator('.add-pane-dropdown button').allInnerTexts();
+check(
+  'add pane menu omits the redundant lineage pane',
+  !addPaneLabels.some(label => label.includes('Lineage')),
+  JSON.stringify(addPaneLabels),
+);
+await page.locator('.topbar h1').click();
+await page.waitForTimeout(150);
+check(
+  'add pane menu closes after clicking outside it',
+  (await page.locator('.add-pane-dropdown').count()) === 0,
+);
+
 const panesBeforeAdd = await panes().count();
 await addPane('Stage viewer');
 check('add pane inserts a new stage viewer', (await panes().count()) === panesBeforeAdd + 1);

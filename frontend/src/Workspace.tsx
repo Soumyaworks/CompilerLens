@@ -113,6 +113,7 @@ export function Workspace({workloadId, onBack, onOpenArchitecture, initialLineag
   const [error, setError] = useState<{missing: boolean; message: string} | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<GoldenLayout | null>(null);
+  const addMenuRef = useRef<HTMLDivElement>(null);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
   // Whether the dedicated Lineage page (LineageExplorerPage) is showing instead of the
   // golden-layout workspace. The workspace's container div and PipelineRail stay mounted
@@ -127,6 +128,27 @@ export function Workspace({workloadId, onBack, onOpenArchitecture, initialLineag
     () => new Map(),
   );
   const activeStageIds = useMemo(() => new Set(paneSelections.values()), [paneSelections]);
+
+  useEffect(() => {
+    if (!addMenuOpen) return;
+
+    function closeAddMenuOnOutsidePointer(event: PointerEvent) {
+      if (!addMenuRef.current?.contains(event.target as Node)) {
+        setAddMenuOpen(false);
+      }
+    }
+
+    function closeAddMenuOnEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setAddMenuOpen(false);
+    }
+
+    document.addEventListener('pointerdown', closeAddMenuOnOutsidePointer);
+    document.addEventListener('keydown', closeAddMenuOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', closeAddMenuOnOutsidePointer);
+      document.removeEventListener('keydown', closeAddMenuOnEscape);
+    };
+  }, [addMenuOpen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -274,7 +296,7 @@ export function Workspace({workloadId, onBack, onOpenArchitecture, initialLineag
               <span className="chip-value">{target.native_vector_size}B</span>
             </span>
           )}
-          <div className="add-pane-menu">
+          <div className="add-pane-menu" ref={addMenuRef}>
             <button
               type="button"
               className="add-pane-button"
@@ -302,18 +324,6 @@ export function Workspace({workloadId, onBack, onOpenArchitecture, initialLineag
                   onClick={() => layoutRef.current?.addComponent('evidence', undefined, 'Evidence')}
                 >
                   Evidence
-                </button>
-                <button
-                  type="button"
-                  disabled={!artifact.lineage?.lines || Object.keys(artifact.lineage.lines).length === 0}
-                  onClick={() => layoutRef.current?.addComponent('lineage', undefined, 'Lineage')}
-                  title={
-                    artifact.lineage?.summary?.source_lines_covered
-                      ? `${artifact.lineage.summary.source_lines_covered} source lines, ${artifact.lineage.summary.total_anchored_ops.toLocaleString()} operations`
-                      : 'No lineage data in this artifact'
-                  }
-                >
-                  Lineage ({artifact.lineage?.summary?.source_lines_covered ?? 0})
                 </button>
                 <button
                   type="button"
