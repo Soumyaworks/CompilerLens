@@ -33,6 +33,12 @@ function mappingLabel(mapping: string): string {
   return 'Model structure';
 }
 
+function formatPyTorchOperation(name: string): string {
+  if (!name.startsWith('torch.')) return name;
+  const [namespace, ...operation] = name.slice('torch.'.length).split('.');
+  return operation.length ? `${namespace}::${operation.join('.')}` : namespace;
+}
+
 function NodeGlyph({kind}: {kind: string}) {
   if (kind === 'attention') {
     return <svg viewBox="0 0 24 24"><path d="M4 7h5l3 5 3-5h5M4 17h5l3-5 3 5h5" /><circle cx="4" cy="7" r="1.5" /><circle cx="20" cy="7" r="1.5" /><circle cx="4" cy="17" r="1.5" /><circle cx="20" cy="17" r="1.5" /></svg>;
@@ -352,12 +358,12 @@ function Explorer({
           )}
 
           <section className="architecture-inspector-section">
-            <h3>Operations in this module</h3>
+            <h3>PyTorch operations in this module</h3>
             <div className="architecture-op-list">
               {Object.entries(selected.op_names).slice(0, 8).map(([name, count]) => (
-                <span key={name}><code>{name.replace('torch.aten.', '')}</code><b>×{count}</b></span>
+                <span key={name}><code>{formatPyTorchOperation(name)}</code><b>×{count}</b></span>
               ))}
-              {Object.keys(selected.op_names).length === 0 && <em>No direct tensor operations</em>}
+              {Object.keys(selected.op_names).length === 0 && <em>No mapped PyTorch operations</em>}
             </div>
           </section>
 
