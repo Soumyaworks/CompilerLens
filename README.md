@@ -5,7 +5,7 @@ Hugging Face model through IREE and presents the resulting Torch, MLIR, LLVM IR,
 stages in one navigable interface.
 
 <p align="center">
-  <img src="docs/images/landing-page.png" alt="CompilerLens landing page with Hugging Face model search, the MLIR lowering pipeline, and Compiler Playground" width="100%">
+  <img src="docs/images/CompilerLens_frontpage.png" alt="CompilerLens landing page with Hugging Face model search, the MLIR lowering pipeline, and Compiler Playground" width="100%">
 </p>
 
 <p align="center"><em>Search and compile Hugging Face models, follow the lowering path, or experiment in the Compiler Playground.</em></p>
