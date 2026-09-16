@@ -231,7 +231,7 @@ export function LandingPage({onSelect, onOpenSandbox}: LandingPageProps) {
         <header className="landing-header">
           <div className="landing-eyebrow"><span /> AI compiler explorer</div>
           <h1>Compiler<span>Lens</span></h1>
-          <p className="tagline">See how AI models transform from <strong>PyTorch</strong> to <strong>LLVM</strong>.</p>
+          <p className="tagline">Trace how AI models are lowered from <strong>PyTorch</strong> through <strong>MLIR</strong> to <strong>LLVM</strong>.</p>
           <p className="landing-description">
             Compile a Hugging Face model and explore every intermediate representation,
             transformation, and operation in one connected view.
