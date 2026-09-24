@@ -4,6 +4,26 @@ CompilerLens is an interactive explorer for AI compiler pipelines. It compiles a
 Hugging Face model through IREE and presents the resulting Torch, MLIR, LLVM IR, and x86-64
 stages in one navigable interface.
 
+## CLI and native LLVM pass
+
+The `feature/experiments-cli` branch adds a pip-installable CLI, the bundled existing viewer,
+a C++ LLVM provenance pass/plugin, source-to-assembly tracing, and object/DWARF lookup.
+
+```bash
+python -m pip install dist/compilerlens-0.1.0-py3-none-linux_x86_64.whl \
+  --extra-index-url https://download.pytorch.org/whl/cpu
+compilerlens doctor
+compilerlens compile --example matmul --out runs/matmul --lineage required
+compilerlens inspect runs/matmul
+compilerlens trace runs/matmul --module model --to asm
+compilerlens view runs/matmul
+```
+
+The local wheel targets Linux x86-64 (validated on glibc 2.35/Python 3.10); it has not been
+published to PyPI. See [CLI parameters, native development and release instructions](docs/CLI.md)
+and the [implementation review](FINALS_5_DAY_PLAN.md). The Python implementation lives under
+`compilerlens/`; checkout compatibility imports preserve the older developer commands below.
+
 <p align="center">
   <img src="docs/images/CompilerLens_frontpage.png" alt="CompilerLens landing page with Hugging Face model search, the MLIR lowering pipeline, and Compiler Playground" width="100%">
 </p>

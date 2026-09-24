@@ -26,14 +26,14 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from backend.compiler.runner import (  # noqa: E402
+from compilerlens.backend.compiler.runner import (  # noqa: E402
     TRIM_CODEGEN_PASSES,
     TRIM_ELIDE_ATTRS,
     CompilerRunner,
     RunConfig,
 )
-from models.detect import UnsupportedModelError, detect  # noqa: E402
-from models.hf_wrapper import wrap, wrapper_source  # noqa: E402
+from compilerlens.models.detect import UnsupportedModelError, detect  # noqa: E402
+from compilerlens.models.hf_wrapper import wrap, wrapper_source  # noqa: E402
 
 
 def main() -> int:

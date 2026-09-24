@@ -1,0 +1,187 @@
+# CompilerLens CLI and native provenance
+
+The `feature/experiments-cli` branch provides a complete Python package, the existing viewer,
+a standalone LLVM analyzer and a loadable LLVM New Pass Manager plugin. The packaged analyzer
+runs on actual IREE output. Source attribution and LLVM def-use edges are separate relationships.
+
+## Install the built wheel
+
+```bash
+python -m pip install dist/compilerlens-0.1.0-py3-none-linux_x86_64.whl \
+  --extra-index-url https://download.pytorch.org/whl/cpu
+compilerlens doctor
+compilerlens compile --example matmul --out runs/matmul --lineage required
+compilerlens inspect runs/matmul
+compilerlens view runs/matmul
+```
+
+The wheel is local; it has **not** been uploaded to PyPI. It bundles the existing React app,
+Monaco workers, private native executable, LLVM license, zlib and zstd libraries/licenses.
+End users do not need Node, CMake, `opt` or an LLVM SDK. Dependencies include the validated
+PyTorch, Transformers, IREE compiler/runtime and Turbine versions in `pyproject.toml`.
+
+The first wheel targets Linux x86-64 and was built/tested on glibc 2.35 with Python 3.10.
+It has a `linux_x86_64` tag, not an audited manylinux tag. macOS, Windows, ARM and older glibc
+are not release targets. An LLVM 22 analyzer successfully parses the tested IREE 3.11.0
+LLVM 23 development snapshots; arbitrary future IR compatibility is not promised.
+
+## Capture parameters
+
+| Argument | Default | Meaning |
+|---|---|---|
+| `MODEL_ID` / `--example NAME` / `--python FILE:FACTORY` | Choose one | HF text model, packaged example, or local Python factory |
+| `--seq-len N` | 16, HF only | Static export sequence length |
+| `--revision REF` | Resolve main | Record a concrete HF commit; offline requires a cached ref or explicit cached SHA |
+| `--offline` | false | Config and model loaders use cached resources only |
+| `--cpu NAME` | host | IREE LLVM CPU target |
+| `--out DIR` | Fresh timestamped directory | Refuse an existing directory |
+| `--capture standard/full` | standard | Trim displayed constants and select pass snapshots, or capture full logs |
+| `--seed N` | 0 | Seed generated weights/inputs; actual tensors are saved |
+| `--lineage auto/required/off` | auto | Native analysis with explicit fallback, fail if unavailable/incompatible, or skip extra LLVM/assembly analysis |
+| `--format text/json` | text | JSON stdout is reserved for the result; diagnostics use stderr |
+
+```bash
+compilerlens compile sshleifer/tiny-gpt2 --seq-len 8 --out runs/gpt2
+compilerlens compile sshleifer/tiny-gpt2 --offline \
+  --revision 5f91d94bd9cd7190a9f3216ff93cd1dd95f2c7be --out runs/gpt2-offline
+compilerlens compile --example linear_relu --out runs/linear
+compilerlens compile --python workload.py:build --out runs/local
+compilerlens import examples/matmul --out runs/imported --lineage required
+```
+
+`build()` returns `(torch.nn.Module, tuple_of_example_tensors)`. The module is put in eval mode.
+This explicitly executes local code. HF-only arguments are rejected for local/examples inputs.
+The packaged examples are `matmul`, `linear_relu`, and `mini_transformer`.
+
+A failed capture keeps `run.json` with its error and phase. Successful runs include:
+
+```text
+run.json                  resolved parameters, versions, tensor/file hashes, status
+manifest.json             compiler commands and diagnostics
+inputs/*.npy              actual tensor values (including decoder masks)
+model_info.json
+architecture.json         torch.export module ownership when available
+source.py
+mlir/, llvm/, passes/     captured stages, every dispatch, LLVM checkpoints, assembly/objects
+_full/                    authoritative exports/resources retained for reproducibility
+native/                   per-snapshot JSON and annotated LLVM display views
+artifact.json             unchanged viewer schema 0.7
+provenance.json            schema 1; origin sets, inline frames, def-use and coverage
+index.json                viewer workload entry
+```
+
+Standard capture still retains the authoritative export and can be large for large models.
+Full capture can produce very large pass logs. Runs are self-contained and can be moved.
+Legacy imports without manifests use unique captured-file aliases and report gaps where
+metadata is absent; they cannot recover information the compiler never emitted.
+
+## Inspect, trace, compare and benchmark
+
+```bash
+compilerlens inspect runs/gpt2 --show architecture
+compilerlens inspect runs/gpt2 --show stages
+compilerlens inspect runs/gpt2 --show evidence
+compilerlens inspect runs/gpt2 --show ops --stage torch-input
+compilerlens inspect runs/gpt2 --show ops --stage torch-input --module transformer.h.0.mlp.c_fc
+compilerlens inspect runs/gpt2 --show ir --stage llvm-optimized --lines 100:140
+compilerlens trace runs/gpt2 --module transformer.h.0.mlp.c_fc --to asm
+compilerlens trace runs/gpt2 --op s00:op3 --to llvm   # use an ID actually listed by inspect
+compilerlens trace runs/imported --source torch-input:3:10 --to asm
+compilerlens trace runs/imported --from-stage target-asm --line 106
+compilerlens diff runs/gpt2 --from llvm-codegen --to llvm-optimized --mode semantic
+compilerlens bench runs/gpt2 --workers 8 --repetitions 10
+```
+
+Stage IDs, module paths and operation IDs are discovered from the saved run. Native IDs
+are qualified by stage in CLI output. Their identity is the snapshot's SHA-256 plus the
+function/block/instruction ordinal, **not** a persistent identity across optimization.
+Use `--format json` for complete structured records. Text output uses Rich tables/trees and
+IR highlighting; piped output works without terminal color or an interactive pager.
+
+Forward queries keep every explicit origin attached to matching records. Reverse queries
+show unknown provenance explicitly. `.file`/`.loc` state resets on line zero, section changes
+and function boundaries. Inline callsites are distinguished from primary debug locations.
+A debug location is a source association; it does not prove one-to-one instruction ancestry.
+
+Coverage separately counts debug locations, dispatch-resolved locations, Torch anchors and
+exact model-module associations. Native reports retain per-function counts so runtime helpers
+can be distinguished from dispatches. Count changes across snapshots do not identify a
+specific pass as causing lineage loss. Semantic diffs compare operation counts, not equivalence.
+Diffs reject unrelated tracks/modules.
+
+Benchmarking passes actual saved NPY arrays to IREE and verifies their hashes. It reports
+median, variance, worker count, host noise notes and reliability. Imported captures without
+saved inputs cannot be benchmarked through this command.
+
+### Object addresses
+
+```bash
+compilerlens inspect runs/matmul --show objects
+compilerlens trace runs/matmul --object 'llvm/FILE.o' \
+  --section '.text.FUNCTION' --address 0x100 --format json
+```
+
+Use the object path and nonempty executable section name from `--show objects`. IREE often
+uses function sections and an empty `.text`. The address is a **section-relative byte offset**,
+not an assembly display line, process address or file offset. Native LLVM DWARF lookup
+returns recorded frames and joins them to the captured dispatch and Torch source where possible.
+
+## Build/develop the native pass
+
+```bash
+cmake -S native -B build/native -G Ninja \
+  -DLLVM_DIR=/path/to/llvm/lib/cmake/llvm -DCMAKE_BUILD_TYPE=Release
+cmake --build build/native --parallel 2
+ctest --test-dir build/native --output-on-failure
+/path/to/llvm/bin/opt -load-pass-plugin=build/native/CompilerLensPasses.so \
+  -passes=compilerlens-provenance -disable-output run/llvm/FILE.optimized.ll
+build/native/compilerlens-native --input run/llvm/FILE.optimized.ll \
+  --output report.json --annotated-ir view.ll
+```
+
+The pass walks LLVM's real `Module`, `Instruction`, `DebugLoc` and `DILocation` APIs, recording
+inline chains, scopes, discriminators, memory effects, vector types and operand instruction IDs.
+It returns `PreservedAnalyses::all()`. CTest checks the standalone/plugin reports agree,
+annotations parse, invalid IR fails, object lookups work and normalized IR is unchanged.
+
+Use an LLVM 22 SDK matching `opt` for the tested plugin. The CMake project permits LLVM 23
+for source-build development, which requires validation with that particular SDK. The plugin
+ABI must match its host. `COMPILERLENS_NATIVE=/path/to/compilerlens-native` overrides the
+private executable; `COMPILERLENS_WORKSPACE=/path` selects server storage.
+
+An optional [IREE source-build hook](../native/iree/README.md) brackets its actual optimization
+pipeline, including O0. Its C++ hook is tested; the pinned source patch is supplied. A full
+IREE source build has not been performed. The ordinary wheel uses emitted snapshots.
+There is no assumed `iree-compile --load-pass-plugin` support.
+
+## Build the wheel and verify
+
+Install frontend dependencies with `npm ci` in `frontend`, and use Python with setuptools >=77.
+After configuring the native build:
+
+```bash
+python scripts/build_release.py
+python -m unittest discover -s tests -v
+python -m pip install dist/compilerlens-0.1.0-py3-none-linux_x86_64.whl
+python scripts/check_installed.py /path/to/installed/env/bin/python /path/to/run --browser
+```
+
+`build_release.py` builds/tests C++, installs private assets, bundles the unchanged application,
+runs TypeScript checking and builds the wheel. It accepts `--cmake /path/to/cmake` and
+`--llvm-dir /path/to/llvm/lib/cmake/llvm`. Source wheel builds require prepared assets;
+`--assets-only` prepares them without building the wheel. Browser verification requires a
+Playwright Chromium installation. Browser components and styling are unchanged.
+
+On this workspace's LLVM SDK, configure using:
+
+```bash
+/pkg/qct/software/cmake/3.31.5/bin/cmake -S native -B build/native -G Ninja \
+  -DLLVM_DIR=/pkg/qct/software/llvm/22.1.8/lib/cmake/llvm \
+  -DCMAKE_C_COMPILER=/pkg/qct/software/llvm/22.1.8/bin/clang \
+  -DCMAKE_CXX_COMPILER=/pkg/qct/software/llvm/22.1.8/bin/clang++ \
+  -DCMAKE_CXX_FLAGS=--gcc-install-dir=/usr/lib/gcc/x86_64-linux-gnu/11 \
+  -DCMAKE_MAKE_PROGRAM=/pkg/qct/software/ninja/1.12.1/ninja \
+  -DCOMPILERLENS_ZSTD_LIBRARY=/usr/lib/x86_64-linux-gnu/libzstd.so.1 \
+  -DCMAKE_BUILD_TYPE=Release
+python scripts/build_release.py --cmake /pkg/qct/software/cmake/3.31.5/bin/cmake
+```

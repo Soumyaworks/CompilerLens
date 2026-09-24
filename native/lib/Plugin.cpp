@@ -1,0 +1,13 @@
+#include "compilerlens/Provenance.h"
+#include "llvm/Passes/PassBuilder.h"
+#include "llvm/Plugins/PassPlugin.h"
+extern "C" LLVM_ATTRIBUTE_WEAK llvm::PassPluginLibraryInfo llvmGetPassPluginInfo() {
+  return {LLVM_PLUGIN_API_VERSION, "CompilerLensPasses", "0.1.0", [](llvm::PassBuilder &PB) {
+    PB.registerPipelineParsingCallback([](llvm::StringRef Name, llvm::ModulePassManager &MPM,
+                                         llvm::ArrayRef<llvm::PassBuilder::PipelineElement>) {
+      if (Name != "compilerlens-provenance") return false;
+      MPM.addPass(compilerlens::ProvenancePass());
+      return true;
+    });
+  }};
+}

@@ -1,0 +1,28 @@
+--- a/compiler/plugins/target/LLVMCPU/LLVMIRPasses.cpp
++++ b/compiler/plugins/target/LLVMCPU/LLVMIRPasses.cpp
+@@ -6,6 +6,7 @@
+ 
+ #include "compiler/plugins/target/LLVMCPU/LLVMIRPasses.h"
+ 
++#include "compilerlens/Checkpoint.h"
+ #include "llvm/Analysis/AliasAnalysis.h"
+ #include "llvm/IR/IRBuilder.h"
+ #include "llvm/IR/LegacyPassManager.h"
+@@ -81,6 +82,8 @@
+   } break;
+   }
+ 
++  compilerlens::checkpoint(*module, moduleAnalysisManager, "before-optimization");
++
+   if (target.optimizerOptLevel != llvm::OptimizationLevel::O0 ||
+       target.sanitizerKind != SanitizerKind::kNone) {
+     llvm::ModulePassManager modulePassManager;
+@@ -88,6 +91,8 @@
+         passBuilder.buildPerModuleDefaultPipeline(target.optimizerOptLevel);
+     modulePassManager.run(*module, moduleAnalysisManager);
+   }
++
++  compilerlens::checkpoint(*module, moduleAnalysisManager, "after-optimization");
+ 
+   if (llvm::verifyModule(*module)) {
+     return failure();

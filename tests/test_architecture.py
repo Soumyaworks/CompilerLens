@@ -7,9 +7,9 @@ from types import SimpleNamespace
 
 import torch
 
-from ingest.architecture import build_architecture
-from ingest.schema import Operation, Stage
-from models.architecture import capture_architecture
+from compilerlens.ingest.architecture import build_architecture
+from compilerlens.ingest.schema import Operation, Stage
+from compilerlens.models.architecture import capture_architecture
 
 
 class TinyModule(torch.nn.Module):
