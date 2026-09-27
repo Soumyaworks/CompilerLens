@@ -28,8 +28,17 @@ TestPyPI 0.1.1 is uploaded and verified. A fresh download matched the local whee
 A separate clean environment installed that downloaded wheel and resolved all dependencies
 from PyPI and the PyTorch CPU index. `pip check`, installed-version/import-path checks,
 `doctor`, required-native matmul capture (33 stages), forward/reverse tracing (208 assembly
-matches), benchmarking, and installed HTTP/browser checks all passed. Production publication
-and installation testing remain pending; publish this exact wheel using the commands below.
+matches), benchmarking, and installed HTTP/browser checks all passed.
+
+[Production PyPI 0.1.1](https://pypi.org/project/compilerlens/0.1.1/) is published and
+verified. The production file and fresh installation download match the same SHA-256.
+A new environment outside the checkout resolved all dependencies from PyPI and the PyTorch
+CPU index, then passed `pip check`, installed-version/import-path checks, `doctor`, required-native
+matmul capture (33 stages), forward/reverse tracing (208 assembly matches), benchmarking,
+and HTTP/browser checks covering workload cards, the workspace, Monaco and its worker.
+The production benchmark passed its reliability check; these smoke tests are not a
+performance comparison. The source branch and `v0.1.1` tag are pushed; creating the GitHub
+Release is the remaining publication step.
 
 Wheel SHA-256:
 
@@ -169,6 +178,38 @@ Repeat `pip check`, `doctor`, matmul compilation, tracing and the viewer check. 
 the README installation instructions to use production PyPI. Tag the exact released source
 commit as `v0.1.1` and create a GitHub Release with the tested wheel and release notes.
 Publishing to PyPI does not automatically publish a GitHub Release.
+
+## GitHub release from the development branch
+
+Version `0.1.1` was published from `feature/experiments-cli`. The pushed tag `v0.1.1`
+points to release commit `cd818f28484430b5a884da65da2e1ca33788d76e`. Keep that tag on
+the released source commit when committing later documentation updates. Merging into
+`main` is not required: GitHub Releases belong to the repository and reference a tag.
+
+After production installation verification:
+
+1. Review, commit and push the publication documentation on `feature/experiments-cli`.
+2. Open [New release](https://github.com/Soumyaworks/CompilerLens/releases/new), select
+   the **existing** `v0.1.1` tag, and set the title to **CompilerLens 0.1.1**.
+3. Paste the updated [release notes](releases/0.1.1.md) into the description. Attach
+   `wheelhouse/compilerlens-0.1.1-py3-none-manylinux_2_35_x86_64.whl` and
+   `wheelhouse/compilerlens-0.1.1.SHA256SUMS`.
+4. Publish the release. A feature branch does not itself require GitHub's pre-release
+   checkbox; use it only when intentionally labeling the release as a preview.
+5. In the repository's **About** settings, set the website to
+   `https://pypi.org/project/compilerlens/` so visitors can find the package.
+
+The GitHub landing page displays the default branch's README. Documentation pushed only
+to `feature/experiments-cli` is visible when that branch is selected; it will reach the
+default branch when merged. The published release remains visible repository-wide.
+
+The README includes PyPI version, tested Python, platform and license badges. A build
+status badge should be added when a real GitHub Actions workflow exists. No CI workflow
+or automated publishing is configured yet.
+
+PyPI's project description is embedded in the uploaded wheel's metadata. Updating the
+GitHub README does not update the `0.1.1` PyPI description. Include the revised README
+in the next version (for example, `0.1.2`); do not rebuild or replace the published wheel.
 
 ## Later releases
 

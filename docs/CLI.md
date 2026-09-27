@@ -7,14 +7,13 @@ The `feature/experiments-cli` branch provides a complete Python package, the exi
 a standalone LLVM analyzer and a loadable LLVM New Pass Manager plugin. The packaged analyzer
 runs on actual IREE output. Source attribution and LLVM def-use edges are separate relationships.
 
-## Install the built wheel
+## Install from PyPI
 
-For a fresh virtual environment and installation from TestPyPI, follow the
-[CLI quick start](../README.md#cli-quick-start). The commands below assume an existing
-local wheel build.
+For a fresh virtual environment, follow the [CLI quick start](../README.md#cli-quick-start).
+Inside that environment, install the published package:
 
 ```bash
-python -m pip install dist/compilerlens-0.1.1-py3-none-linux_x86_64.whl \
+python -m pip install compilerlens==0.1.1 --index-url https://pypi.org/simple/ \
   --extra-index-url https://download.pytorch.org/whl/cpu
 compilerlens doctor
 compilerlens compile --example matmul --out runs/matmul --lineage required
@@ -22,11 +21,9 @@ compilerlens inspect runs/matmul
 compilerlens view runs/matmul
 ```
 
-This guide targets version 0.1.1; production PyPI publication and installation testing
-are pending. See the [release checklist](RELEASING.md) for current validation results. The local build command above uses the original wheel in `dist/`.
-The repaired release wheel is
-`wheelhouse/compilerlens-0.1.1-py3-none-manylinux_2_35_x86_64.whl`; the
-[release checklist](RELEASING.md) explains how to download it from TestPyPI.
+This guide targets [version 0.1.1 on PyPI](https://pypi.org/project/compilerlens/0.1.1/).
+See the [release checklist](RELEASING.md) for validation results and local wheel builds.
+The repaired release wheel is `compilerlens-0.1.1-py3-none-manylinux_2_35_x86_64.whl`.
 It bundles the existing React app,
 Monaco workers, private native executable, LLVM license, zlib and zstd libraries/licenses.
 End users do not need Node, CMake, `opt` or an LLVM SDK. Dependencies include the validated

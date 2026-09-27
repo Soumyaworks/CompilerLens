@@ -1,5 +1,10 @@
 # CompilerLens
 
+[![PyPI version](https://img.shields.io/pypi/v/compilerlens?color=38bdf8)](https://pypi.org/project/compilerlens/)
+[![Tested with Python 3.10](https://img.shields.io/badge/Python-3.10_tested-a78bfa)](#system-requirements)
+[![Platform: Linux x86-64](https://img.shields.io/badge/platform-Linux_x86--64-34d399)](#system-requirements)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache_2.0-fbbf24)](LICENSE)
+
 CompilerLens is an interactive explorer for AI compiler pipelines. It compiles a PyTorch or
 Hugging Face model through IREE and presents the resulting Torch, MLIR, LLVM IR, and x86-64
 stages in one navigable interface.
@@ -281,9 +286,8 @@ browser viewer. A repository checkout is not required.
 
 ### Create an environment and install
 
-Version `0.1.1` targets Linux x86-64 with Python 3.10 and glibc 2.35+. The commands
-below install it from **TestPyPI**. Production PyPI publication and installation testing
-are pending; see the [release checklist](docs/RELEASING.md) for validation status.
+Version [`0.1.1`](https://pypi.org/project/compilerlens/0.1.1/) is available on **PyPI**
+for Linux x86-64 with glibc 2.35+. Python 3.10 is the validated interpreter.
 
 ```bash
 mkdir compilerlens-demo
@@ -292,24 +296,19 @@ python3.10 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 
-# Download CompilerLens from TestPyPI.
-python -m pip download --no-deps --only-binary=:all: \
-  --index-url https://test.pypi.org/simple/ \
-  --dest wheels compilerlens==0.1.1
-
-# Install the wheel and resolve its dependencies from the normal indexes.
+# Install CompilerLens from PyPI, using CPU builds of PyTorch.
 python -m pip install \
   --index-url https://pypi.org/simple/ \
   --extra-index-url https://download.pytorch.org/whl/cpu \
-  wheels/compilerlens-0.1.1-py3-none-manylinux_2_35_x86_64.whl
+  compilerlens==0.1.1
 
 python -m pip check
 compilerlens doctor
 ```
 
-Downloading the package separately keeps TestPyPI out of dependency resolution. The PyTorch
-CPU index supplies CPU builds. Once a production release is published, installation can use
-`python -m pip install compilerlens` with the documented dependency indexes.
+The PyTorch CPU index supplies CPU builds for the supported workflow. CompilerLens itself
+comes from PyPI. See the [release notes](docs/releases/0.1.1.md) for compatibility and
+the [release checklist](docs/RELEASING.md) for validation details.
 
 ### Compile, inspect, and open the viewer
 
@@ -348,7 +347,7 @@ compilerlens compile sshleifer/tiny-gpt2 --seq-len 8 --out runs/tiny-gpt2
 
 See the **[detailed CLI guide](docs/CLI.md)** for selectors, JSON output, offline capture,
 local Python factories, object-address lookup, and build instructions. The
-[release checklist](docs/RELEASING.md) records TestPyPI validation and publication steps.
+[release checklist](docs/RELEASING.md) records PyPI validation and publication steps.
 Version `0.1.1` includes the `llvm/` source-directory rename and consistent lineage
 terminology, while preserving the ability to read saved runs from version `0.1.0`.
 
