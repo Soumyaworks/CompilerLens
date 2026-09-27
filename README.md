@@ -1,9 +1,11 @@
 # CompilerLens
 
-[![PyPI version](https://img.shields.io/pypi/v/compilerlens?color=38bdf8)](https://pypi.org/project/compilerlens/)
-[![Tested with Python 3.10](https://img.shields.io/badge/Python-3.10_tested-a78bfa)](#system-requirements)
-[![Platform: Linux x86-64](https://img.shields.io/badge/platform-Linux_x86--64-34d399)](#system-requirements)
-[![License: Apache 2.0](https://img.shields.io/badge/license-Apache_2.0-fbbf24)](LICENSE)
+<p align="center">
+  <a href="https://pypi.org/project/compilerlens/"><img src="https://img.shields.io/pypi/v/compilerlens?style=for-the-badge&amp;logo=pypi&amp;logoColor=38bdf8&amp;labelColor=111827&amp;color=38bdf8" alt="PyPI version" height="22"></a>
+  <a href="#system-requirements"><img src="https://img.shields.io/badge/Python-3.10_tested-a78bfa?style=for-the-badge&amp;logo=python&amp;logoColor=a78bfa&amp;labelColor=111827" alt="Tested with Python 3.10" height="22"></a>
+  <a href="#system-requirements"><img src="https://img.shields.io/badge/Linux-x86--64-34d399?style=for-the-badge&amp;logo=linux&amp;logoColor=34d399&amp;labelColor=111827" alt="Platform: Linux x86-64" height="22"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-fbbf24?style=for-the-badge&amp;labelColor=111827" alt="License: Apache 2.0" height="22"></a>
+</p>
 
 CompilerLens is an interactive explorer for AI compiler pipelines. It compiles a PyTorch or
 Hugging Face model through IREE and presents the resulting Torch, MLIR, LLVM IR, and x86-64
