@@ -1,4 +1,4 @@
-#include "compilerlens/Provenance.h"
+#include "compilerlens/Lineage.h"
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/SmallPtrSet.h"
 #include "llvm/Config/llvm-config.h"
@@ -98,7 +98,7 @@ void printAnnotated(Module &M, raw_ostream &OS) {
   AnnotationWriter Writer(Index);
   M.print(OS, &Writer);
 }
-PreservedAnalyses ProvenancePass::run(Module &M, ModuleAnalysisManager &) {
+PreservedAnalyses LineagePass::run(Module &M, ModuleAnalysisManager &) {
   auto Report = analyze(M);
   if (Result) *Result = std::move(Report);
   else outs() << json::Value(std::move(Report)) << '\n';

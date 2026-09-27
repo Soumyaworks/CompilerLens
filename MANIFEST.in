@@ -1,5 +1,5 @@
 include README.md pyproject.toml setup.py
-recursive-include native *.cpp *.h *.ll *.py *.txt *.md *.cmake *.patch
+recursive-include llvm *.cpp *.h *.ll *.py *.txt *.md *.cmake *.patch
 recursive-include scripts *.py *.mjs
 recursive-include frontend src/*
 include frontend/package.json frontend/package-lock.json frontend/index.html frontend/vite.config.ts frontend/vite.release.config.ts frontend/tsconfig.json

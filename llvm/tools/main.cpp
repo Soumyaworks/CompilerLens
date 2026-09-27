@@ -1,4 +1,4 @@
-#include "compilerlens/Provenance.h"
+#include "compilerlens/Lineage.h"
 #include "llvm/Config/llvm-config.h"
 #include "llvm/DebugInfo/DWARF/DWARFContext.h"
 #include "llvm/IR/DiagnosticInfo.h"
@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
   cl::SetVersionPrinter([](raw_ostream &OS) {
     OS << "compilerlens-native 0.1.0 LLVM " << LLVM_VERSION_STRING << " protocol 1\n";
   });
-  cl::ParseCommandLineOptions(argc, argv, "CompilerLens native provenance analyzer\n");
+  cl::ParseCommandLineOptions(argc, argv, "CompilerLens native lineage analyzer\n");
   json::Object Report;
   if (!Object.empty()) {
     if (!Input.empty() || (!ListSections && Section.empty())) { errs() << "--object requires --section and no --input\n"; return 2; }
@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
     PB.registerFunctionAnalyses(FAM); PB.registerLoopAnalyses(LAM);
     PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
     ModulePassManager MPM;
-    MPM.addPass(compilerlens::ProvenancePass(&Report));
+    MPM.addPass(compilerlens::LineagePass(&Report));
     MPM.run(*M, MAM);
     if (!Annotated.empty()) {
       std::error_code EC;

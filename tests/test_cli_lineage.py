@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from compilerlens.provenance import SourceIndex, assembly_locations, analyze_files
+from compilerlens.lineage import SourceIndex, assembly_locations, analyze_files
 from compilerlens.ingest.mlir_loc import source_location_sets_by_line
 from compilerlens.queries import trace_report, diff_report, inspect_report
 from compilerlens.services import capture, import_dump, save_inputs
@@ -94,7 +94,7 @@ class QueryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             atomic_json(root / 'artifact.json', self.artifact)
-            atomic_json(root / 'provenance.json', {'schema_version': 1, **self.prov})
+            atomic_json(root / 'lineage.json', {'schema_version': 1, **self.prov})
             cmd = [sys.executable, '-m', 'compilerlens', 'trace', tmp, '--source', 'torch-input:3:10', '--format', 'json']
             result = subprocess.run(cmd, capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
@@ -102,6 +102,20 @@ class QueryTests(unittest.TestCase):
             result = subprocess.run([sys.executable, '-m', 'compilerlens', 'trace', tmp, '--module', 'absent'], capture_output=True, text=True)
             self.assertNotEqual(result.returncode, 0)
             self.assertNotIn('Traceback', result.stderr)
+
+    def test_saved_run_sidecar_compatibility(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            atomic_json(root / 'artifact.json', self.artifact)
+            legacy = {'schema_version': 1, **self.prov}
+            atomic_json(root / 'provenance.json', legacy)
+            self.assertEqual(load_run(root)[2], legacy)
+            current = {**legacy, 'status': 'partial'}
+            atomic_json(root / 'lineage.json', current)
+            self.assertEqual(load_run(root)[2], current)
+            atomic_json(root / 'lineage.json', {'schema_version': 999})
+            with self.assertRaisesRegex(ValueError, 'Unsupported lineage schema'):
+                load_run(root)
 
 
 class ServiceTests(unittest.TestCase):

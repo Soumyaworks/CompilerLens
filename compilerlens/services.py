@@ -47,7 +47,7 @@ def versions():
 
 
 def _finish(root, info, lineage, progress):
-    from .provenance import analyze_files
+    from .lineage import analyze_files
     from .ingest.build import build_artifact, build_index
     from .ingest.workloads.generated import spec_from_dump_dir
     analysis = analyze_files(root, lineage, progress)
@@ -76,7 +76,7 @@ def capture(model_id=None, *, example=None, python=None, out=None, seq_len=None,
     if capture not in ('standard', 'full') or lineage not in ('auto', 'required', 'off'):
         raise ValueError('Invalid capture or lineage mode.')
     if lineage == 'required':
-        from .provenance import native_binary
+        from .lineage import native_binary
         if not native_binary(): raise RuntimeError('Required native analyzer is unavailable; run compilerlens doctor.')
     root = _fresh(out, model_id or example or Path(python.split(':')[0]).stem)
     progress = progress or (lambda label: None)
@@ -143,7 +143,7 @@ def capture(model_id=None, *, example=None, python=None, out=None, seq_len=None,
         if manifest.get('errors'):
             failure = manifest['errors'][0]
             raise RuntimeError(f"Compiler failed at {failure['stage']}: {failure.get('stderr', '')[-2000:]}")
-        state['provenance'] = _finish(root, info, lineage, report)
+        state['lineage'] = _finish(root, info, lineage, report)
         state['status'] = 'complete'
         # Retain _full: it is the authoritative export for recompile/reproducibility.
         state['file_hashes'] = {str(p.relative_to(root)): digest(p) for folder in ('mlir', 'llvm', '_full')
@@ -176,7 +176,7 @@ def import_dump(source, *, out=None, lineage='auto', progress=None) -> Path:
         info_path = root / 'model_info.json'
         info = json.loads(info_path.read_text()) if info_path.exists() else {'model_id': source.name, 'kind': 'import'}
         atomic_json(info_path, info)
-        state['provenance'] = _finish(root, info, lineage, progress or (lambda label: None))
+        state['lineage'] = _finish(root, info, lineage, progress or (lambda label: None))
         state['status'] = 'complete'
     except BaseException as exc:
         state.update(status='failed', error=f'{type(exc).__name__}: {exc}')

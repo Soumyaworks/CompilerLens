@@ -256,9 +256,9 @@
 .architecture-tree-select small { margin-top: 2px; color: #596875; font: 7px var(--font-mono); }
 .architecture-tree-select i { color: #61717e; font: normal 7px var(--font-mono); }
 
-.architecture-provenance { display: flex; gap: 9px; margin: 8px; padding: 11px 12px; border: 1px solid rgba(148, 184, 216, 0.08); border-radius: 10px; background: rgba(255, 255, 255, 0.025); }
-.architecture-provenance .architecture-map-dot { margin-top: 3px; }
-.architecture-provenance p { margin: 0; color: #74838f; font-size: 9px; line-height: 1.5; }
+.architecture-lineage { display: flex; gap: 9px; margin: 8px; padding: 11px 12px; border: 1px solid rgba(148, 184, 216, 0.08); border-radius: 10px; background: rgba(255, 255, 255, 0.025); }
+.architecture-lineage .architecture-map-dot { margin-top: 3px; }
+.architecture-lineage p { margin: 0; color: #74838f; font-size: 9px; line-height: 1.5; }
 
 .architecture-canvas {
   display: grid;

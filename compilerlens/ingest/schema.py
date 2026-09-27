@@ -92,7 +92,7 @@ class Stage:
     title: str  # human label, "Executable Targets"
     phase: str  # one of the PHASE_* constants
     language: str  # "mlir" | "llvm" | "asm" | "python" -- drives syntax highlighting
-    source_path: str  # path relative to repo root, for provenance
+    source_path: str  # path relative to repo root, for lineage
     text: str  # the full IR, embedded so the frontend needs one fetch
     line_count: int = 0
     byte_size: int = 0

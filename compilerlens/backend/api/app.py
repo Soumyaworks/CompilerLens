@@ -246,7 +246,7 @@ def explore_model(request: ExploreRequest, background: BackgroundTasks):
 
 
 def _run_explore(job_id: str, model_id: str, seq_len: int) -> None:
-    """Use the same durable capture and native provenance pipeline as the CLI."""
+    """Use the same durable capture and native lineage pipeline as the CLI."""
     from compilerlens.services import capture
     job = JOBS[job_id]
     started = time.monotonic()

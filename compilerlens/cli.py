@@ -82,7 +82,7 @@ def parser():
 
 
 def doctor_report():
-    from .provenance import native_binary
+    from .lineage import native_binary
     from .services import versions
     from .toolchain import find_tool
     native = native_binary()
@@ -115,7 +115,7 @@ def render(value, *, json_output=False, kind=None):
         return
     if kind == 'summary':
         console.print(f"CompilerLens · {value['compilation_id']}", style='bold', markup=False)
-        console.print(f"{value['stage_count']} stages · {value['evidence_count']} evidence items · provenance: {value['provenance']}")
+        console.print(f"{value['stage_count']} stages · {value['evidence_count']} evidence items · lineage: {value['lineage']}")
         console.print('Target: ' + json.dumps(value['target']), markup=False)
         if value['coverage']:
             render([{'Stage': name, 'Ops': c['instructions'], 'Debug': c.get('debug_locations', '—'),
@@ -176,27 +176,27 @@ def main(argv=None):
             value = benchmark_run(args.run, workers=args.workers, repetitions=args.repetitions)
         else:
             from .queries import inspect_report, trace_report, diff_report
-            root, artifact, provenance = load_run(args.run)
+            root, artifact, lineage = load_run(args.run)
             if command == 'inspect':
                 if args.stage and args.show not in ('evidence', 'ops', 'ir'): raise ValueError('--stage applies to --show evidence, ops or ir.')
                 if args.lines and args.show not in ('ops', 'ir'): raise ValueError('--lines applies to --show ops or ir.')
                 if args.module and args.show not in ('ops', 'architecture'): raise ValueError('--module applies to --show ops or architecture.')
                 if args.show == 'objects':
-                    from .provenance import object_sections
+                    from .lineage import object_sections
                     value = object_sections(root)
                 else:
-                    value = inspect_report(artifact, provenance, show=args.show, stage=args.stage, module=args.module, lines=args.lines)
+                    value = inspect_report(artifact, lineage, show=args.show, stage=args.stage, module=args.module, lines=args.lines)
                 kind = args.show
             elif command == 'trace':
                 if args.object:
                     if not args.section or args.address is None or args.line is not None: raise ValueError('--object requires --section and --address (not --line).')
-                    from .provenance import object_lookup
+                    from .lineage import object_lookup
                     value = object_lookup(root, args.object, args.section, args.address)
                 else:
                     if args.section or args.address is not None: raise ValueError('--section and --address require --object.')
-                    value = trace_report(artifact, provenance, op=args.op, module=args.module, source=args.source, from_stage=args.from_stage, line=args.line, to=args.to)
+                    value = trace_report(artifact, lineage, op=args.op, module=args.module, source=args.source, from_stage=args.from_stage, line=args.line, to=args.to)
                 kind = 'trace'
-            else: value = diff_report(artifact, provenance, args.before, args.after, args.mode)
+            else: value = diff_report(artifact, lineage, args.before, args.after, args.mode)
         render(value, json_output=fmt == 'json', kind=kind)
         return 0 if command != 'doctor' or value['ready'] else 1
     except (OSError, ValueError, RuntimeError, ImportError, subprocess.SubprocessError) as exc:

@@ -1,6 +1,6 @@
 """Capture a model's module hierarchy and connect it to exported Torch operations.
 
-The important property is provenance, not visual similarity. We use the nn_module_stack
+The important property is lineage, not visual similarity. We use the nn_module_stack
 metadata emitted by torch.export and only attach Torch-MLIR line numbers when the complete
 ordered operation stream agrees with the exact ExportedProgram passed to Turbine.
 """

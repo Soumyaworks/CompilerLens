@@ -1,10 +1,17 @@
-# CompilerLens CLI and native provenance
+# CompilerLens CLI and native lineage
+
+[Project overview](../README.md) · [LLVM component](../llvm/README.md) ·
+[Release checklist](RELEASING.md)
 
 The `feature/experiments-cli` branch provides a complete Python package, the existing viewer,
 a standalone LLVM analyzer and a loadable LLVM New Pass Manager plugin. The packaged analyzer
 runs on actual IREE output. Source attribution and LLVM def-use edges are separate relationships.
 
 ## Install the built wheel
+
+For a fresh virtual environment and installation from TestPyPI, follow the
+[CLI quick start](../README.md#cli-quick-start). The commands below assume an existing
+local wheel build.
 
 ```bash
 python -m pip install dist/compilerlens-0.1.0-py3-none-linux_x86_64.whl \
@@ -15,13 +22,19 @@ compilerlens inspect runs/matmul
 compilerlens view runs/matmul
 ```
 
-The wheel is local; it has **not** been uploaded to PyPI. It bundles the existing React app,
+Version 0.1.0 was tested through TestPyPI; production PyPI publication and installation
+testing are pending. The local build command above uses the original wheel in `dist/`.
+The tested, repaired wheel is
+`wheelhouse/compilerlens-0.1.0-py3-none-manylinux_2_35_x86_64.whl`; the
+[release checklist](RELEASING.md) explains how to download it from TestPyPI.
+It bundles the existing React app,
 Monaco workers, private native executable, LLVM license, zlib and zstd libraries/licenses.
 End users do not need Node, CMake, `opt` or an LLVM SDK. Dependencies include the validated
 PyTorch, Transformers, IREE compiler/runtime and Turbine versions in `pyproject.toml`.
 
 The first wheel targets Linux x86-64 and was built/tested on glibc 2.35 with Python 3.10.
-It has a `linux_x86_64` tag, not an audited manylinux tag. macOS, Windows, ARM and older glibc
+The build first produces a `linux_x86_64` wheel; auditwheel repair produces the tested
+`manylinux_2_35_x86_64` wheel. macOS, Windows, ARM and older glibc
 are not release targets. An LLVM 22 analyzer successfully parses the tested IREE 3.11.0
 LLVM 23 development snapshots; arbitrary future IR compatibility is not promised.
 
@@ -66,7 +79,7 @@ mlir/, llvm/, passes/     captured stages, every dispatch, LLVM checkpoints, ass
 _full/                    authoritative exports/resources retained for reproducibility
 native/                   per-snapshot JSON and annotated LLVM display views
 artifact.json             unchanged viewer schema 0.7
-provenance.json            schema 1; origin sets, inline frames, def-use and coverage
+lineage.json               schema 1; origin sets, inline frames, def-use and coverage
 index.json                viewer workload entry
 ```
 
@@ -74,6 +87,10 @@ Standard capture still retains the authoritative export and can be large for lar
 Full capture can produce very large pass logs. Runs are self-contained and can be moved.
 Legacy imports without manifests use unique captured-file aliases and report gaps where
 metadata is absent; they cannot recover information the compiler never emitted.
+
+Current source uses `lineage` for the analysis module, pass, CLI output fields and sidecar.
+The reader also accepts the older `provenance.json` sidecar from TestPyPI 0.1.0 runs.
+The uploaded wheel retains its original names; these source changes need a new release.
 
 ## Inspect, trace, compare and benchmark
 
@@ -99,7 +116,7 @@ Use `--format json` for complete structured records. Text output uses Rich table
 IR highlighting; piped output works without terminal color or an interactive pager.
 
 Forward queries keep every explicit origin attached to matching records. Reverse queries
-show unknown provenance explicitly. `.file`/`.loc` state resets on line zero, section changes
+show unknown lineage explicitly. `.file`/`.loc` state resets on line zero, section changes
 and function boundaries. Inline callsites are distinguished from primary debug locations.
 A debug location is a source association; it does not prove one-to-one instruction ancestry.
 
@@ -128,14 +145,18 @@ returns recorded frames and joins them to the captured dispatch and Torch source
 
 ## Build/develop the native pass
 
+See the [LLVM component overview](../llvm/README.md) for the analysis flow and file layout.
+Configure a fresh `build/llvm/` directory after the source-directory rename; CMake caches
+contain absolute source paths and should not be moved from the previous build directory.
+
 ```bash
-cmake -S native -B build/native -G Ninja \
+cmake -S llvm -B build/llvm -G Ninja \
   -DLLVM_DIR=/path/to/llvm/lib/cmake/llvm -DCMAKE_BUILD_TYPE=Release
-cmake --build build/native --parallel 2
-ctest --test-dir build/native --output-on-failure
-/path/to/llvm/bin/opt -load-pass-plugin=build/native/CompilerLensPasses.so \
-  -passes=compilerlens-provenance -disable-output run/llvm/FILE.optimized.ll
-build/native/compilerlens-native --input run/llvm/FILE.optimized.ll \
+cmake --build build/llvm --parallel 2
+ctest --test-dir build/llvm --output-on-failure
+/path/to/llvm/bin/opt -load-pass-plugin=build/llvm/CompilerLensPasses.so \
+  -passes=compilerlens-lineage -disable-output run/llvm/FILE.optimized.ll
+build/llvm/compilerlens-native --input run/llvm/FILE.optimized.ll \
   --output report.json --annotated-ir view.ll
 ```
 
@@ -149,7 +170,7 @@ for source-build development, which requires validation with that particular SDK
 ABI must match its host. `COMPILERLENS_NATIVE=/path/to/compilerlens-native` overrides the
 private executable; `COMPILERLENS_WORKSPACE=/path` selects server storage.
 
-An optional [IREE source-build hook](../native/iree/README.md) brackets its actual optimization
+An optional [IREE source-build hook](../llvm/iree/README.md) brackets its actual optimization
 pipeline, including O0. Its C++ hook is tested; the pinned source patch is supplied. A full
 IREE source build has not been performed. The ordinary wheel uses emitted snapshots.
 There is no assumed `iree-compile --load-pass-plugin` support.
@@ -175,7 +196,7 @@ Playwright Chromium installation. Browser components and styling are unchanged.
 On this workspace's LLVM SDK, configure using:
 
 ```bash
-/pkg/qct/software/cmake/3.31.5/bin/cmake -S native -B build/native -G Ninja \
+/pkg/qct/software/cmake/3.31.5/bin/cmake -S llvm -B build/llvm -G Ninja \
   -DLLVM_DIR=/pkg/qct/software/llvm/22.1.8/lib/cmake/llvm \
   -DCMAKE_C_COMPILER=/pkg/qct/software/llvm/22.1.8/bin/clang \
   -DCMAKE_CXX_COMPILER=/pkg/qct/software/llvm/22.1.8/bin/clang++ \

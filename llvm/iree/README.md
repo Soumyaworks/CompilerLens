@@ -1,5 +1,8 @@
 # Optional IREE source-build hook
 
+See the [LLVM component overview](../README.md) for the ordinary packaged analysis
+path and the [CLI guide](../../docs/CLI.md#builddevelop-the-native-pass) for SDK builds.
+
 The release analyzes emitted LLVM snapshots in its private native process. A matching LLVM
 `opt` can also load `CompilerLensPasses.so`. Neither requires an IREE rebuild.
 

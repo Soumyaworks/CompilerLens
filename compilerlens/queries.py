@@ -17,8 +17,8 @@ def module_for(artifact, path):
     return matches[0]
 
 
-def operations(stage, provenance):
-    saved = provenance.get('stages', {}).get(stage['id'], {})
+def operations(stage, lineage):
+    saved = lineage.get('stages', {}).get(stage['id'], {})
     if saved.get('records'):
         lines = stage['text'].splitlines()
         return [{**r, 'id': r['id'] if r['id'].startswith(stage['id'] + ':') else f"{stage['id']}:{r['id']}",
@@ -35,7 +35,7 @@ def operations(stage, provenance):
     return [{**op, 'id': f"{stage['id']}:op{op['line']}"} for op in parsed]
 
 
-def inspect_report(artifact, provenance, *, show='summary', stage=None, module=None, lines=None):
+def inspect_report(artifact, lineage, *, show='summary', stage=None, module=None, lines=None):
     selected = stage_for(artifact, stage) if stage else None
     node = module_for(artifact, module) if module else None
     source_lines = set(node.get('source_lines', [])) if node else None
@@ -43,8 +43,8 @@ def inspect_report(artifact, provenance, *, show='summary', stage=None, module=N
         return {'compilation_id': artifact['compilation_id'], 'target': artifact['target'],
                 'stage_count': len(artifact['stages']), 'evidence_count': len(artifact['evidence']),
                 'architecture_mapping': artifact.get('architecture', {}).get('mapping_status'),
-                'provenance': provenance.get('status', 'legacy'), 'notes': artifact['notes'],
-                'coverage': {s['name']: s['coverage'] for s in provenance.get('stages', {}).values() if s['language'] in ('llvm', 'asm')}}
+                'lineage': lineage.get('status', 'legacy'), 'notes': artifact['notes'],
+                'coverage': {s['name']: s['coverage'] for s in lineage.get('stages', {}).values() if s['language'] in ('llvm', 'asm')}}
     if show == 'architecture':
         architecture = artifact.get('architecture', {})
         if node: return {**architecture, 'nodes': [n for n in architecture.get('nodes', []) if n['id'] == node['id'] or n.get('path', '').startswith(node.get('path', '') + '.')]}
@@ -62,7 +62,7 @@ def inspect_report(artifact, provenance, *, show='summary', stage=None, module=N
         if start < 1 or end < start or end > len(text): raise ValueError(f'Line range must be within 1:{len(text)}.')
         return {'stage': selected['name'], 'language': selected['language'], 'start_line': start,
                 'end_line': end, 'text': '\n'.join(text[start-1:end])}
-    ops = operations(selected, provenance)
+    ops = operations(selected, lineage)
     if source_lines is not None:
         if selected['name'] == 'torch-input': ops = [op for op in ops if op['line'] in source_lines]
         else: ops = [op for op in ops if any(o['line'] in source_lines for o in op.get('origins', []))]
@@ -70,17 +70,17 @@ def inspect_report(artifact, provenance, *, show='summary', stage=None, module=N
     return ops
 
 
-def trace_report(artifact, provenance, *, op=None, module=None, source=None, from_stage=None, line=None, to='all'):
+def trace_report(artifact, lineage, *, op=None, module=None, source=None, from_stage=None, line=None, to='all'):
     if sum(v is not None for v in (op, module, source, from_stage)) != 1:
         raise ValueError('Choose one --op, --module, --source or --from-stage selector.')
     if (from_stage is None) != (line is None): raise ValueError('--from-stage and --line must be supplied together.')
-    if not provenance: raise ValueError('This legacy artifact has no provenance sidecar; import its dump directory first.')
+    if not lineage: raise ValueError('This legacy artifact has no lineage sidecar; import its dump directory first.')
     result = {'relationship': 'compiler-recorded source attribution; not persistent instruction identity',
-              'provenance': provenance['status'], 'origins': [], 'matches': [], 'notes': list(provenance.get('notes', []))}
+              'lineage': lineage['status'], 'origins': [], 'matches': [], 'notes': list(lineage.get('notes', []))}
     if from_stage:
         stage = stage_for(artifact, from_stage)
         if line < 1 or line > stage['line_count']: raise ValueError('Line is outside this stage.')
-        found = [r for r in operations(stage, provenance) if r['line'] == line]
+        found = [r for r in operations(stage, lineage) if r['line'] == line]
         result['matches'] = [{'stage': stage['name'], 'stage_id': stage['id'], **r} for r in found]
         result['origins'] = list({(o['file'], o['line'], o['column']): o for r in found for o in r.get('origins', [])}.values())
         if not result['origins']: result['notes'].append('No resolved source attribution at this display line.')
@@ -99,7 +99,7 @@ def trace_report(artifact, provenance, *, op=None, module=None, source=None, fro
         result['module_mapping'] = node.get('mapping', 'unavailable')
     else:
         stage = stage_for(artifact, op.split(':', 1)[0])
-        found = [r for r in operations(stage, provenance) if r['id'] == op]
+        found = [r for r in operations(stage, lineage) if r['id'] == op]
         if not found: raise ValueError(f'Unknown operation {op!r}; inspect --show ops lists IDs.')
         if stage['id'] == anchor['id']:
             selected_lines = {found[0]['line']}
@@ -110,20 +110,20 @@ def trace_report(artifact, provenance, *, op=None, module=None, source=None, fro
             exact = {(o['file'], o['line'], o['column']) for o in result['origins']}
     for stage in artifact['stages']:
         if stage['language'] not in (('llvm', 'asm') if to == 'all' else (to,)): continue
-        for r in operations(stage, provenance):
+        for r in operations(stage, lineage):
             origins = [o for o in r.get('origins', []) if o['line'] in selected_lines and (columns is None or o['column'] in columns)]
             if op and 'exact' in locals(): origins = [o for o in origins if (o['file'], o['line'], o['column']) in exact]
             if origins: result['matches'].append({'stage': stage['name'], 'stage_id': stage['id'], **r})
     result['origins'] = list({(o['file'], o['line'], o['column']): o for r in result['matches'] for o in r.get('origins', []) if o['line'] in selected_lines and (columns is None or o['column'] in columns)}.values())
-    if not result['matches']: result['notes'].append('No captured destination instructions resolve to this selector. Missing provenance is not inferred from operands.')
+    if not result['matches']: result['notes'].append('No captured destination instructions resolve to this selector. Missing lineage is not inferred from operands.')
     return result
 
 
-def diff_report(artifact, provenance, before, after, mode='text'):
+def diff_report(artifact, lineage, before, after, mode='text'):
     a, b = stage_for(artifact, before), stage_for(artifact, after)
     if a['track'] != b['track']: raise ValueError(f"Incompatible comparison tracks: {a['track']} and {b['track']}.")
     if mode == 'text': return ''.join(difflib.unified_diff(a['text'].splitlines(True), b['text'].splitlines(True), fromfile=a['name'], tofile=b['name']))
-    ca, cb = (Counter(r.get('opcode', r.get('name')) for r in operations(s, provenance)) for s in (a, b))
+    ca, cb = (Counter(r.get('opcode', r.get('name')) for r in operations(s, lineage)) for s in (a, b))
     return {'from': a['name'], 'to': b['name'], 'track': a['track'], 'op_delta': b['op_count'] - a['op_count'],
             'operations': {k: cb[k]-ca[k] for k in sorted(ca.keys() | cb.keys()) if ca[k] != cb[k]},
             'note': 'Operation-count comparison; not a proof of equivalence or a transformation attribution.'}

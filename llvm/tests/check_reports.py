@@ -27,7 +27,7 @@ with tempfile.TemporaryDirectory() as tmp:
     assert annotated.read_text().count('; compilerlens.id=') == 4
     baseline, passed = tmp / 'baseline.ll', tmp / 'passed.ll'
     run(opt, '-S', fixture, '-o', baseline)
-    result = run(opt, f'-load-pass-plugin={plugin}', '-passes=compilerlens-provenance', '-S', fixture, '-o', passed)
+    result = run(opt, f'-load-pass-plugin={plugin}', '-passes=compilerlens-lineage', '-S', fixture, '-o', passed)
     assert json.loads(result.stdout) == report
     assert baseline.read_bytes() == passed.read_bytes(), 'Reporting pass changed IR'
     # Annotated view remains valid LLVM IR; comments do not alter semantics.

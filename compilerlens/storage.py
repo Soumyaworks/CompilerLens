@@ -49,8 +49,11 @@ def load_run(path: str | Path) -> tuple[Path, dict, dict]:
     if artifact.get('artifact_version') != '0.7' or not artifact.get('stages'):
         raise ValueError('Expected a CompilerLens artifact version 0.7 with stages.')
     root = artifact_path.parent
-    provenance_path = root / 'provenance.json'
-    provenance = json.loads(provenance_path.read_text()) if provenance_path.exists() else {}
-    if provenance and provenance.get('schema_version') != 1:
-        raise ValueError('Unsupported provenance schema; use a compatible CompilerLens version.')
-    return root, artifact, provenance
+    lineage_path = root / 'lineage.json'
+    if not lineage_path.exists():
+        # Read saved runs produced by the TestPyPI 0.1.0 release.
+        lineage_path = root / 'provenance.json'
+    lineage = json.loads(lineage_path.read_text()) if lineage_path.exists() else {}
+    if lineage and lineage.get('schema_version') != 1:
+        raise ValueError('Unsupported lineage schema; use a compatible CompilerLens version.')
+    return root, artifact, lineage

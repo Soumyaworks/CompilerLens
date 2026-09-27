@@ -268,7 +268,7 @@ function Explorer({
               />
             </ul>
           </nav>
-          <div className="architecture-provenance">
+          <div className="architecture-lineage">
             <span className={'architecture-map-dot map-' + architecture.mapping_status} />
             <p>{architecture.mapping_note}</p>
           </div>

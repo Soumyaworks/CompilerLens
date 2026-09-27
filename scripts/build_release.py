@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build native analyzer, existing web app and a platform-specific pip wheel.
 
-Configure build/native with a matching LLVM SDK first, or pass --llvm-dir.
+Configure build/llvm with a matching LLVM SDK first, or pass --llvm-dir.
 No dependency downloads: install frontend/node and Python build dependencies first.
 """
 import argparse
@@ -26,11 +26,11 @@ def main():
     parser.add_argument('--assets-only', action='store_true')
     args = parser.parse_args()
     if args.llvm_dir:
-        run(args.cmake, '-S', 'native', '-B', 'build/native', '-DCMAKE_BUILD_TYPE=Release', f'-DLLVM_DIR={args.llvm_dir}')
-    if not (ROOT / 'build/native/CMakeCache.txt').exists(): parser.error('Configure build/native first or supply --llvm-dir.')
-    run(args.cmake, '--build', 'build/native', '--parallel', '2')
-    run(str(Path(args.cmake).with_name("ctest")) if "/" in args.cmake else "ctest", "--test-dir", "build/native", "--output-on-failure")
-    run(args.cmake, '--install', 'build/native', '--prefix', ROOT, '--strip')
+        run(args.cmake, '-S', 'llvm', '-B', 'build/llvm', '-DCMAKE_BUILD_TYPE=Release', f'-DLLVM_DIR={args.llvm_dir}')
+    if not (ROOT / 'build/llvm/CMakeCache.txt').exists(): parser.error('Configure build/llvm first or supply --llvm-dir.')
+    run(args.cmake, '--build', 'build/llvm', '--parallel', '2')
+    run(str(Path(args.cmake).with_name("ctest")) if "/" in args.cmake else "ctest", "--test-dir", "build/llvm", "--output-on-failure")
+    run(args.cmake, '--install', 'build/llvm', '--prefix', ROOT, '--strip')
     binary = ROOT / 'compilerlens/_bin/compilerlens-native'
     # LLVM is statically linked. Bundle zstd (outside the manylinux baseline) and
     # libz so the private executable needs only the host C/C++ runtime libraries.
@@ -47,7 +47,7 @@ def main():
     for name, path in [('zstd', '/usr/share/doc/libzstd1/copyright'), ('zlib', '/usr/share/doc/zlib1g/copyright')]:
         if Path(path).exists(): shutil.copy2(path, licenses / (name + '.txt'))
     # LLVM license is maintained alongside the native source, and bundled in wheels.
-    shutil.copy2(ROOT / 'native/LLVM-LICENSE.txt', licenses / 'LLVM.txt')
+    shutil.copy2(ROOT / 'llvm/LLVM-LICENSE.txt', licenses / 'LLVM.txt')
     run('npm', 'exec', '--', 'tsc', '--noEmit', cwd=ROOT / 'frontend')
     run('npm', 'exec', '--', 'vite', 'build', '--config', 'vite.release.config.ts', cwd=ROOT / 'frontend')
     if not args.assets_only:

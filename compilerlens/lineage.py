@@ -27,7 +27,7 @@ def native_binary() -> Path | None:
         path = Path(override).expanduser().resolve()
         return path if path.is_file() else None
     package = Path(__file__).resolve().parent
-    for path in (package / '_bin' / 'compilerlens-native', package.parent / 'build/native/compilerlens-native'):
+    for path in (package / '_bin' / 'compilerlens-native', package.parent / 'build/llvm/compilerlens-native'):
         if path.is_file() and os.access(path, os.X_OK):
             return path
     found = shutil.which('compilerlens-native')
@@ -145,7 +145,7 @@ def assembly_locations(text: str) -> dict[int, dict]:
 def analyze_files(root: Path, mode: str = 'auto', progress=None) -> dict:
     reports = {}
     if mode == 'off':
-        return {'status': 'off', 'reports': reports, 'notes': ['Additional provenance was disabled.']}
+        return {'status': 'off', 'reports': reports, 'notes': ['Additional lineage was disabled.']}
     executable = native_binary()
     if executable is None:
         if mode == 'required':
@@ -155,7 +155,7 @@ def analyze_files(root: Path, mode: str = 'auto', progress=None) -> dict:
     native_dir = root / 'native'
     native_dir.mkdir(exist_ok=True)
     for path in sorted((root / 'llvm').glob('*.ll')):
-        if progress: progress(f'Native provenance: {path.name}')
+        if progress: progress(f'Native lineage: {path.name}')
         report_path = native_dir / (path.name + '.json')
         view_path = native_dir / (path.name + '.annotated.ll')
         command = [str(executable), '--input', str(path), '--output', str(report_path), '--annotated-ir', str(view_path)]

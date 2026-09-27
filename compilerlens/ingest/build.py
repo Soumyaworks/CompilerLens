@@ -474,10 +474,10 @@ def build_artifact(workload: WorkloadSpec, root: Path | None = None, *, analysis
 
     source_sets = None
     if analysis is not None:
-        from compilerlens.provenance import enrich_stages
+        from compilerlens.lineage import enrich_stages
         from compilerlens.storage import atomic_json
         sidecar, source_sets = enrich_stages(dump_root, stages, analysis)
-        atomic_json(dump_root / "provenance.json", sidecar)
+        atomic_json(dump_root / "lineage.json", sidecar)
 
     # Evidence, diffs and lineage all read the full op index, so trimming happens only after
     # they have been derived. Lineage in particular *must* precede it: trimming clears the op
@@ -492,7 +492,7 @@ def build_artifact(workload: WorkloadSpec, root: Path | None = None, *, analysis
                         for line in node.get('source_lines', [])}
         for entry in sidecar['stages'].values():
             entry['coverage']['module_associated'] = sum(any(o['line'] in mapped_lines for o in r['origins']) for r in entry['records'])
-        atomic_json(dump_root / 'provenance.json', sidecar)
+        atomic_json(dump_root / 'lineage.json', sidecar)
     located = sum(1 for s in stages for op in s.ops if op.source_loc)
     trim_note = _trim_op_index(stages)
 
@@ -504,7 +504,7 @@ def build_artifact(workload: WorkloadSpec, root: Path | None = None, *, analysis
     ]
     notes.extend(stage_notes)
     if analysis is not None:
-        notes.append("Provenance: " + analysis["status"] + ". Native IDs are snapshot-local; assembly links use emitted .file/.loc associations. Source attribution is not instruction identity.")
+        notes.append("Lineage: " + analysis["status"] + ". Native IDs are snapshot-local; assembly links use emitted .file/.loc associations. Source attribution is not instruction identity.")
         notes.extend(analysis["notes"])
     if trim_note:
         notes.append(trim_note)

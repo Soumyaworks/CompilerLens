@@ -1,4 +1,4 @@
-"""CompilerLens: model-aware compiler inspection and provenance."""
+"""CompilerLens: model-aware compiler inspection and lineage."""
 
 __version__ = "0.1.0"
 

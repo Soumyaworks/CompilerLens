@@ -1,7 +1,15 @@
 # CompilerLens: TestPyPI to GitHub and PyPI
 
-Run these steps in order. They describe actions for you to perform; creating this checklist
-has not committed, pushed, merged, tagged or published anything.
+[Project overview](../README.md) · [CLI guide](CLI.md) · [LLVM component](../llvm/README.md)
+
+Current status (28 September 2026): version 0.1.0 has been tested through TestPyPI.
+Production PyPI publication and installation testing remain pending. The initial
+implementation is committed as `42c45f4` on `feature/experiments-cli`.
+
+The `llvm/` directory and lineage terminology changes are subsequent source changes.
+They are not in the existing TestPyPI wheel. Build and validate a new version to release
+these changes; do not overwrite or relabel the existing 0.1.0 artifact. The 0.1.0 commands
+below describe the already tested artifact and its publication procedure.
 
 Verified on 25 September 2026:
 
@@ -9,7 +17,7 @@ Verified on 25 September 2026:
 - Its uploaded wheel's SHA-256 matches the local repaired wheel in `wheelhouse/`.
 - The wheel is `compilerlens-0.1.0-py3-none-manylinux_2_35_x86_64.whl`.
 - GitHub remote: `git@github.com:Soumyaworks/CompilerLens.git`; default branch: `main`.
-- Current branch: `feature/experiments-cli`; implementation changes are not yet committed.
+- Implementation branch: `feature/experiments-cli` (committed after these checks).
 - No production PyPI project is publicly visible under `compilerlens` at the time of checking.
   TestPyPI does not reserve that name on production PyPI.
 
@@ -17,9 +25,9 @@ Local prepublication checks for this uploaded wheel are now complete: fresh Test
 fresh dependency installation from the normal indexes, `pip check`, required native matmul
 capture (33 stages), assembly tracing (208 matches), benchmarking, and the installed browser
 flow all ran successfully. All 21 Python tests, native CTest and wheel metadata checks passed.
-The benchmark flagged its timings as noisy; it is not a performance result. The release source
-files are staged, with generated artifacts and unrelated experiments excluded. No commit, push
-or production publication was performed during these checks.
+The benchmark flagged its timings as noisy; it is not a performance result. Generated
+artifacts and unrelated experiments were excluded from the subsequent implementation commit.
+No production publication was performed during these checks.
 
 Keep the uploaded `0.1.0` wheel unchanged while following these steps. If code, dependencies or
 packaged metadata need fixing, use a new version and repeat the TestPyPI checks. Git-only
@@ -117,20 +125,21 @@ cd "$CLENS_REPO"
 ```
 
 That browser directory was downloaded during implementation. If it has been removed, install
-Playwright's Chromium again as described in `docs/CLI.md`.
+Playwright's Chromium again as described in [the CLI guide](CLI.md).
 
 ## 4. Run the source checks and validate the release file
 
 ```bash
 cd "$CLENS_REPO"
 .venv/bin/python -m unittest discover -s tests -v
-/pkg/qct/software/cmake/3.31.5/bin/ctest --test-dir build/native --output-on-failure
+/pkg/qct/software/cmake/3.31.5/bin/ctest --test-dir build/llvm --output-on-failure
 .venv/bin/python -m twine check \
   wheelhouse/compilerlens-0.1.0-py3-none-manylinux_2_35_x86_64.whl
 ```
 
-The current suite has 21 Python tests and the native CTest integration check. The CTest command
-assumes the existing configured native build on this workstation; use `docs/CLI.md` to build
+The current suite has 22 Python tests, including old-run compatibility, and the native CTest
+integration check. The original 0.1.0 validation ran 21 Python tests. The CTest command
+assumes the existing configured native build on this workstation; use [the CLI guide](CLI.md) to build
 it on another machine. The release script already runs TypeScript checking when building assets.
 
 Keep the repaired wheel in `wheelhouse/`. That is the file to publish, not the original generic
@@ -138,36 +147,38 @@ Keep the repaired wheel in `wheelhouse/`. That is the file to publish, not the o
 
 ## 5. Stage exactly the release's source files
 
-The following files/directories belong in this feature commit:
+The initial feature is committed. For follow-up releases, review changes in these paths:
 
 | Path | Purpose |
 |---|---|
 | `compilerlens/` | Canonical Python package, CLI, capture/query services, examples and migrated implementation |
 | `backend/`, `ingest/`, `models/` | Compatibility imports and removal of the old implementation paths |
-| `native/` | C++ pass/analyzer, CMake, LLVM license, fixtures and optional IREE hook |
+| `llvm/` | C++ pass/analyzer, CMake, LLVM license, fixtures and optional IREE hook |
 | `pyproject.toml`, `setup.py`, `MANIFEST.in` | Package metadata and wheel/source packaging |
 | `frontend/vite.release.config.ts` | Bundle the existing frontend for installation |
 | `scripts/build_release.py`, `scripts/check_installed.py`, `scripts/check_viewer.mjs` | Release build and installation/browser validation |
 | `scripts/compile_hf_model.py` | Updated imports for the package move |
-| `tests/test_architecture.py`, `tests/test_llvm_lineage.py`, `tests/test_cli_provenance.py` | Existing adjusted tests and new regression tests |
-| `.gitignore`, `README.md`, `FINALS_5_DAY_PLAN.md`, `docs/CLI.md`, `docs/RELEASING.md` | Ignore rules and documentation |
+| `tests/test_architecture.py`, `tests/test_llvm_lineage.py`, `tests/test_cli_lineage.py` | Existing adjusted tests and new regression tests |
+| `.gitignore`, `README.md`, [the CLI guide](CLI.md), `docs/RELEASING.md` | Ignore rules and documentation |
 
-Run these scoped staging commands:
+For a follow-up commit, stage tracked changes (including the old directory deletions)
+and the scoped new source files:
 
 ```bash
 cd "$CLENS_REPO"
 
-git add -A -- compilerlens/ backend/ ingest/ models/ native/ \
+git add -u -- . ':(exclude)**/__pycache__/**'
+git add -A -- compilerlens/ backend/ ingest/ models/ llvm/ \
   ':(exclude)**/__pycache__/**'
 
 git add -- \
-  .gitignore README.md FINALS_5_DAY_PLAN.md \
+  .gitignore README.md \
   pyproject.toml setup.py MANIFEST.in \
   docs/CLI.md docs/RELEASING.md \
   frontend/vite.release.config.ts \
   scripts/build_release.py scripts/check_installed.py scripts/check_viewer.mjs \
   scripts/compile_hf_model.py \
-  tests/test_architecture.py tests/test_llvm_lineage.py tests/test_cli_provenance.py
+  tests/test_architecture.py tests/test_llvm_lineage.py tests/test_cli_lineage.py
 
 git diff --cached --check
 git diff --cached --stat
@@ -197,7 +208,7 @@ Remaining `??` entries for unrelated experiments are expected after staging.
 After reviewing the staged diff:
 
 ```bash
-git commit -m "Add installable CLI and native LLVM provenance"
+git commit -m "Add installable CLI and native LLVM lineage"
 git push -u origin feature/experiments-cli
 ```
 
@@ -209,7 +220,7 @@ Open a pull request into `main`:
 
 https://github.com/Soumyaworks/CompilerLens/compare/main...feature/experiments-cli
 
-Suggested title: `Add installable CLI and native LLVM provenance`.
+Suggested title: `Add installable CLI and native LLVM lineage`.
 
 Describe the packaged CLI, native reporting pass, source/assembly/DWARF tracing, unchanged
 viewer and validation results. State that the release wheel targets Linux x86-64/glibc 2.35+,
@@ -293,7 +304,7 @@ On https://github.com/Soumyaworks/CompilerLens/releases/new:
 
 1. Select tag `v0.1.0` and title `CompilerLens 0.1.0`.
 2. Describe the CLI/native pass, supported platform and install command.
-3. Link to https://pypi.org/project/compilerlens/0.1.0/ and `docs/CLI.md`.
+3. Link to https://pypi.org/project/compilerlens/0.1.0/ and [the CLI guide](CLI.md).
 4. Attach `wheelhouse/compilerlens-0.1.0-py3-none-manylinux_2_35_x86_64.whl`.
 5. Publish the release.
 
@@ -314,13 +325,13 @@ For a `0.1.1` release, update the version strings in these six places:
 ```text
 pyproject.toml                         project.version
 compilerlens/__init__.py               __version__
-native/CMakeLists.txt                  project version
-native/tools/main.cpp                  --version output
-native/lib/Plugin.cpp                  plugin version
-native/lib/Provenance.cpp              pass_version
+llvm/CMakeLists.txt                    project version
+llvm/tools/main.cpp                    --version output
+llvm/lib/Plugin.cpp                    plugin version
+llvm/lib/Lineage.cpp                   pass_version
 ```
 
-Do not bump artifact/provenance schema versions merely because the package version changed.
+Do not bump artifact/lineage schema versions merely because the package version changed.
 Update documentation examples as needed; historical release notes should retain their versions.
 
 The existing uploaded wheel has no project URL metadata. Add this for the next version in

@@ -1,6 +1,6 @@
 #pragma once
 // Optional source-build hook. Uses the host IREE build's LLVM, never a foreign plugin.
-#include "compilerlens/Provenance.h"
+#include "compilerlens/Lineage.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Support/FileSystem.h"
@@ -15,7 +15,7 @@ inline void checkpoint(llvm::Module &M, llvm::ModuleAnalysisManager &AM,
   if (!Directory || !*Directory) return;
   llvm::json::Object Report;
   llvm::ModulePassManager PM;
-  PM.addPass(ProvenancePass(&Report));
+  PM.addPass(LineagePass(&Report));
   PM.run(M, AM);
   Report["checkpoint"] = Phase.str();
   if (auto EC = llvm::sys::fs::create_directories(Directory)) {
