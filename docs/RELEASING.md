@@ -1,326 +1,179 @@
-# CompilerLens: TestPyPI to GitHub and PyPI
+# Releasing CompilerLens
 
 [Project overview](../README.md) · [CLI guide](CLI.md) · [LLVM component](../llvm/README.md)
 
-Current status (28 September 2026): version 0.1.0 has been tested through TestPyPI.
-Production PyPI publication and installation testing remain pending. The initial
-implementation is committed as `42c45f4` on `feature/experiments-cli`.
+## Current release: 0.1.1
 
-The `llvm/` directory and lineage terminology changes are subsequent source changes.
-They are not in the existing TestPyPI wheel. Build and validate a new version to release
-these changes; do not overwrite or relabel the existing 0.1.0 artifact. The 0.1.0 commands
-below describe the already tested artifact and its publication procedure.
+Version 0.1.1 contains the current CLI, LLVM directory and lineage terminology changes,
+updated installation documentation, and project URL metadata. See the
+[release notes](releases/0.1.1.md) for compatibility details.
 
-Verified on 25 September 2026:
+The release wheel is:
 
-- TestPyPI has `compilerlens` version `0.1.0` at https://test.pypi.org/project/compilerlens/0.1.0/.
-- Its uploaded wheel's SHA-256 matches the local repaired wheel in `wheelhouse/`.
-- The wheel is `compilerlens-0.1.0-py3-none-manylinux_2_35_x86_64.whl`.
-- GitHub remote: `git@github.com:Soumyaworks/CompilerLens.git`; default branch: `main`.
-- Implementation branch: `feature/experiments-cli` (committed after these checks).
-- No production PyPI project is publicly visible under `compilerlens` at the time of checking.
-  TestPyPI does not reserve that name on production PyPI.
+```text
+wheelhouse/compilerlens-0.1.1-py3-none-manylinux_2_35_x86_64.whl
+```
 
-Local prepublication checks for this uploaded wheel are now complete: fresh TestPyPI download,
-fresh dependency installation from the normal indexes, `pip check`, required native matmul
-capture (33 stages), assembly tracing (208 matches), benchmarking, and the installed browser
-flow all ran successfully. All 21 Python tests, native CTest and wheel metadata checks passed.
-The benchmark flagged its timings as noisy; it is not a performance result. Generated
-artifacts and unrelated experiments were excluded from the subsequent implementation commit.
-No production publication was performed during these checks.
+It targets Linux x86-64 with glibc 2.35 or newer. Python 3.10 is the validated interpreter.
+macOS, Windows and ARM wheels are not provided. The optional full IREE source-build
+integration remains unvalidated; the wheel analyzes emitted LLVM snapshots.
 
-Keep the uploaded `0.1.0` wheel unchanged while following these steps. If code, dependencies or
-packaged metadata need fixing, use a new version and repeat the TestPyPI checks. Git-only
-publication notes and ignore rules can be committed alongside the existing release.
+**Status (28 September 2026):** local verification passed: 22 Python tests, native CTest,
+TypeScript/viewer build, wheel metadata/platform checks, fresh dependency installation,
+`pip check`, installed `doctor`, required-native matmul capture (33 stages), assembly tracing
+(208 matches), benchmarking, and installed HTTP/browser checks. Benchmark timings were
+flagged as noisy and are not a performance result.
 
-## 1. Start in the repository
+TestPyPI 0.1.1 is uploaded and verified. A fresh download matched the local wheel SHA-256.
+A separate clean environment installed that downloaded wheel and resolved all dependencies
+from PyPI and the PyTorch CPU index. `pip check`, installed-version/import-path checks,
+`doctor`, required-native matmul capture (33 stages), forward/reverse tracing (208 assembly
+matches), benchmarking, and installed HTTP/browser checks all passed. Production publication
+and installation testing remain pending; publish this exact wheel using the commands below.
 
-Use one terminal for the commands so the temporary-directory variables remain available.
+Wheel SHA-256:
+
+```text
+053579416e9c84de30994329018aaf3fd94be905ff0d20770bb14d76998fcc7d
+```
+
+Local build and verification records are retained in `build/release-0.1.1/` (not tracked).
+
+The existing 0.1.0 release remains on TestPyPI. Its historical checks do not validate the
+new 0.1.1 wheel. Do not overwrite an uploaded artifact or rebuild it between TestPyPI and
+production publication.
+
+## Build and check
+
+Use a repository environment with the Python/frontend dependencies installed and the LLVM
+build configured as described in the [CLI guide](CLI.md#builddevelop-the-native-pass).
+On this workstation:
 
 ```bash
 cd /local/mnt/workspace/compilers/CompilerLens
-CLENS_REPO="$PWD"
-git branch --show-current
-git status --short
+source .venv/bin/activate
+python -m unittest discover -s tests -v
+python scripts/build_release.py --cmake /pkg/qct/software/cmake/3.31.5/bin/cmake
+auditwheel repair dist/compilerlens-0.1.1-py3-none-linux_x86_64.whl --wheel-dir wheelhouse
+python -m twine check wheelhouse/compilerlens-0.1.1-py3-none-manylinux_2_35_x86_64.whl
+auditwheel show wheelhouse/compilerlens-0.1.1-py3-none-manylinux_2_35_x86_64.whl
+sha256sum wheelhouse/compilerlens-0.1.1-py3-none-manylinux_2_35_x86_64.whl
 ```
 
-The branch should be `feature/experiments-cli`. Do not use `git add .`: the working directory
-also contains unrelated, untracked experimental models and presentation files.
+The release build runs native CTest, TypeScript checking and the bundled viewer build.
+Activating the environment also makes its `patchelf` executable available to auditwheel.
+Use the actual platform tag emitted by auditwheel if the build environment changes.
+When renaming/removing modules, use a fresh Python package staging tree so obsolete files
+in `build/lib.*` cannot enter the wheel. Keep the CMake build in `build/llvm/`.
 
-## 2. Install the actual TestPyPI release in a fresh environment
+## Upload to TestPyPI
 
-This verifies what another user downloads, including resolving real dependencies. Earlier
-isolated wheel checks reused local dependency files, so this step still matters.
+Configure a **TestPyPI** API token in your local keyring or a private `~/.pypirc` entry:
 
-Use a Linux x86-64 machine with glibc 2.35 or newer. Python 3.10 is the tested interpreter.
-The current release does not provide macOS, Windows or ARM wheels.
+```ini
+[testpypi]
+repository = https://test.pypi.org/legacy/
+username = __token__
+password = YOUR_TESTPYPI_TOKEN
+```
+
+Keep this file outside the repository and restrict it with `chmod 600 ~/.pypirc`.
+Do not put tokens in commands, source files, release logs or screenshots.
 
 ```bash
-CLENS_CHECK_DIR="$(mktemp -d /tmp/compilerlens-release.XXXXXX)"
-python3 -m venv --without-pip "$CLENS_CHECK_DIR/venv"
+.venv/bin/python -m twine upload --repository testpypi \
+  --repository-url https://test.pypi.org/legacy/ \
+  wheelhouse/compilerlens-0.1.1-py3-none-manylinux_2_35_x86_64.whl
+```
 
-# Bootstrap pip using the working repository environment. This also works on this
-# workstation, where ordinary `python3 -m venv` previously lacked ensurepip.
+## Verify the downloaded release
+
+Use a new environment outside the checkout. Do not reuse installed development dependencies
+or interpret `--no-deps` installation as a complete installation test. Download CompilerLens
+separately from TestPyPI, then resolve dependencies from PyPI and the PyTorch CPU index.
+
+```bash
+CLENS_REPO=/local/mnt/workspace/compilers/CompilerLens
+CLENS_CHECK_DIR="$(mktemp -d /tmp/compilerlens-release.XXXXXX)"
+python3.10 -m venv --without-pip "$CLENS_CHECK_DIR/venv"
 "$CLENS_REPO/.venv/bin/python" -m pip \
   --python "$CLENS_CHECK_DIR/venv/bin/python" install --upgrade pip
 
-# Download only CompilerLens from TestPyPI.
 "$CLENS_CHECK_DIR/venv/bin/python" -m pip download \
-  --index-url https://test.pypi.org/simple/ \
-  --no-deps --only-binary=:all: \
-  --dest "$CLENS_CHECK_DIR/downloads" \
-  compilerlens==0.1.0
+  --index-url https://test.pypi.org/simple/ --no-deps --only-binary=:all: \
+  --dest "$CLENS_CHECK_DIR/downloads" compilerlens==0.1.1
 
-# Install that downloaded wheel; resolve dependencies from their normal indexes.
 "$CLENS_CHECK_DIR/venv/bin/python" -m pip install \
   --index-url https://pypi.org/simple/ \
   --extra-index-url https://download.pytorch.org/whl/cpu \
-  "$CLENS_CHECK_DIR/downloads/compilerlens-0.1.0-py3-none-manylinux_2_35_x86_64.whl"
+  "$CLENS_CHECK_DIR/downloads/compilerlens-0.1.1-py3-none-manylinux_2_35_x86_64.whl"
 
-"$CLENS_CHECK_DIR/venv/bin/python" -m pip check
-```
-
-Downloading the package separately keeps TestPyPI out of dependency resolution. Do not treat
-an installation with `--no-deps` as a successful test of the complete user installation.
-
-## 3. Exercise the installed CLI and viewer
-
-Run outside the checkout, so Python cannot accidentally import the source directory.
-
-```bash
 cd "$CLENS_CHECK_DIR"
-"$CLENS_CHECK_DIR/venv/bin/compilerlens" --version
-"$CLENS_CHECK_DIR/venv/bin/compilerlens" doctor
-
-"$CLENS_CHECK_DIR/venv/bin/compilerlens" compile \
-  --example matmul --out "$CLENS_CHECK_DIR/matmul" --lineage required
-
-"$CLENS_CHECK_DIR/venv/bin/compilerlens" inspect "$CLENS_CHECK_DIR/matmul"
-"$CLENS_CHECK_DIR/venv/bin/compilerlens" inspect "$CLENS_CHECK_DIR/matmul" --show stages
-"$CLENS_CHECK_DIR/venv/bin/compilerlens" trace \
-  "$CLENS_CHECK_DIR/matmul" --module model --to asm
-
-"$CLENS_CHECK_DIR/venv/bin/compilerlens" bench \
-  "$CLENS_CHECK_DIR/matmul" --workers 2 --repetitions 5
-
-"$CLENS_CHECK_DIR/venv/bin/compilerlens" view \
-  "$CLENS_CHECK_DIR/matmul" --port 8001
+source venv/bin/activate
+python -m pip check
+compilerlens --version
+compilerlens doctor
+compilerlens compile --example matmul --out runs/matmul --lineage required
+compilerlens inspect runs/matmul
+compilerlens trace runs/matmul --module model --to asm
+compilerlens bench runs/matmul --workers 2 --repetitions 5
+compilerlens view runs/matmul --port 8001
 ```
 
-Open `http://127.0.0.1:8001`. Select the workload, open its architecture, then open the compiler
-pipeline and inspect IR/assembly. On a remote machine, forward port 8001 through SSH to your
-browser machine. Press Ctrl+C in the server terminal when finished.
+Open `http://127.0.0.1:8001`, select the workload and inspect its architecture and compiler
+pipeline. Stop the server with Ctrl+C. Timings may be flagged as noisy on a busy host;
+that is not an installation failure or a performance result.
 
-Expected: `doctor` reports ready, native analysis succeeds, the trace has matching instructions,
-and the existing architecture/workspace/editor load. A benchmark can legitimately be marked
-unreliable on a busy machine; that is not an installation failure.
-
-Optional automated browser check, using the existing local Playwright installation:
+Compare the downloaded wheel's SHA-256 with the repaired local wheel. For automated browser
+checks, using this workstation's existing Playwright installation:
 
 ```bash
 cd "$CLENS_REPO"
 .venv/bin/python scripts/check_installed.py \
-  "$CLENS_CHECK_DIR/venv/bin/python" "$CLENS_CHECK_DIR/matmul" \
+  "$CLENS_CHECK_DIR/venv/bin/python" "$CLENS_CHECK_DIR/runs/matmul" \
   --browser --browsers-path /tmp/compilerlens-browsers
 ```
 
-That browser directory was downloaded during implementation. If it has been removed, install
-Playwright's Chromium again as described in [the CLI guide](CLI.md).
+## Publish the exact tested wheel to production PyPI
 
-## 4. Run the source checks and validate the release file
+Finish TestPyPI verification first. Review and commit the release source changes so that
+there is a source revision corresponding to the tested wheel. If runtime code, dependencies
+or packaged metadata change, build and test a new version before publishing.
 
-```bash
-cd "$CLENS_REPO"
-.venv/bin/python -m unittest discover -s tests -v
-/pkg/qct/software/cmake/3.31.5/bin/ctest --test-dir build/llvm --output-on-failure
-.venv/bin/python -m twine check \
-  wheelhouse/compilerlens-0.1.0-py3-none-manylinux_2_35_x86_64.whl
-```
+Production PyPI requires its own API token. A TestPyPI token does not work there, and
+TestPyPI project ownership does not reserve the name on production PyPI. The first public
+production release may be 0.1.1; uploading 0.1.0 first is unnecessary.
 
-The current suite has 22 Python tests, including old-run compatibility, and the native CTest
-integration check. The original 0.1.0 validation ran 21 Python tests. The CTest command
-assumes the existing configured native build on this workstation; use [the CLI guide](CLI.md) to build
-it on another machine. The release script already runs TypeScript checking when building assets.
-
-Keep the repaired wheel in `wheelhouse/`. That is the file to publish, not the original generic
-`linux_x86_64` wheel in `dist/`.
-
-## 5. Stage exactly the release's source files
-
-The initial feature is committed. For follow-up releases, review changes in these paths:
-
-| Path | Purpose |
-|---|---|
-| `compilerlens/` | Canonical Python package, CLI, capture/query services, examples and migrated implementation |
-| `backend/`, `ingest/`, `models/` | Compatibility imports and removal of the old implementation paths |
-| `llvm/` | C++ pass/analyzer, CMake, LLVM license, fixtures and optional IREE hook |
-| `pyproject.toml`, `setup.py`, `MANIFEST.in` | Package metadata and wheel/source packaging |
-| `frontend/vite.release.config.ts` | Bundle the existing frontend for installation |
-| `scripts/build_release.py`, `scripts/check_installed.py`, `scripts/check_viewer.mjs` | Release build and installation/browser validation |
-| `scripts/compile_hf_model.py` | Updated imports for the package move |
-| `tests/test_architecture.py`, `tests/test_llvm_lineage.py`, `tests/test_cli_lineage.py` | Existing adjusted tests and new regression tests |
-| `.gitignore`, `README.md`, [the CLI guide](CLI.md), `docs/RELEASING.md` | Ignore rules and documentation |
-
-For a follow-up commit, stage tracked changes (including the old directory deletions)
-and the scoped new source files:
+From the repository, verify the saved checksum and upload only this wheel:
 
 ```bash
-cd "$CLENS_REPO"
-
-git add -u -- . ':(exclude)**/__pycache__/**'
-git add -A -- compilerlens/ backend/ ingest/ models/ llvm/ \
-  ':(exclude)**/__pycache__/**'
-
-git add -- \
-  .gitignore README.md \
-  pyproject.toml setup.py MANIFEST.in \
-  docs/CLI.md docs/RELEASING.md \
-  frontend/vite.release.config.ts \
-  scripts/build_release.py scripts/check_installed.py scripts/check_viewer.mjs \
-  scripts/compile_hf_model.py \
-  tests/test_architecture.py tests/test_llvm_lineage.py tests/test_cli_lineage.py
-
-git diff --cached --check
-git diff --cached --stat
-git diff --cached --name-status
-git status --short
-```
-
-`-A` is scoped to the listed source directories so the package moves include both additions
-and removals. The current `.gitignore` excludes build products, including `wheelhouse/`.
-The explicit exclusion avoids staging the old tracked bytecode file as part of this release.
-
-Leave these local/generated paths out of the feature commit:
-
-- `.venv/`, `build/`, `dist/`, `wheelhouse/`, `*.egg-info/`, `node_modules/`, `__pycache__/`.
-- `compilerlens/_bin/`, `compilerlens/_web/`, `frontend/public/artifacts/`, `lib/*.so`.
-- `runs/`, `jobs/`, `compilerlens-runs/` and generated `.vmfb`, `.bc`, `.o`, `.so` files.
-- Currently untracked `archived_models/`, `experiments/`, `presentation/` and the generated
-  model directories under `examples/`. They are separate work, not required by this package.
-- API tokens, `.pypirc` credentials and any environment file containing secrets.
-
-This does not remove existing tracked example fixtures. Generated native/web assets belong in
-the wheel and GitHub Release attachments; their sources and build instructions belong in Git.
-Remaining `??` entries for unrelated experiments are expected after staging.
-
-## 6. Commit and push the feature branch
-
-After reviewing the staged diff:
-
-```bash
-git commit -m "Add installable CLI and native LLVM lineage"
-git push -u origin feature/experiments-cli
-```
-
-The code will then be visible on the feature branch at:
-
-https://github.com/Soumyaworks/CompilerLens/tree/feature/experiments-cli
-
-Open a pull request into `main`:
-
-https://github.com/Soumyaworks/CompilerLens/compare/main...feature/experiments-cli
-
-Suggested title: `Add installable CLI and native LLVM lineage`.
-
-Describe the packaged CLI, native reporting pass, source/assembly/DWARF tracing, unchanged
-viewer and validation results. State that the release wheel targets Linux x86-64/glibc 2.35+,
-and that the optional full IREE source build has not been validated.
-
-Review and merge the PR. If review changes runtime code or package metadata, build and test a
-new version before continuing; do not publish the old wheel as if it contained those changes.
-
-## 7. Publish the tested wheel to production PyPI
-
-Create/log in to your account at https://pypi.org, verify your email, complete account security
-setup and create a **production PyPI** API token at https://pypi.org/manage/account/token/.
-For the first upload use an account-wide token; after the project exists, a project-scoped token
-can be used. Your TestPyPI token will not work on production PyPI.
-
-You may publish the same `0.1.0` artifact to production: the two indexes are independent.
-
-```bash
-cd "$CLENS_REPO"
+cd /local/mnt/workspace/compilers/CompilerLens
+(cd wheelhouse && sha256sum -c compilerlens-0.1.1.SHA256SUMS)
 .venv/bin/python -m twine upload \
   --repository-url https://upload.pypi.org/legacy/ \
-  wheelhouse/compilerlens-0.1.0-py3-none-manylinux_2_35_x86_64.whl
+  --username __token__ \
+  wheelhouse/compilerlens-0.1.1-py3-none-manylinux_2_35_x86_64.whl
 ```
 
-Enter the production API token when prompted. If Twine asks for a username, use `__token__`.
-Keep tokens out of shell commands, Git and screenshots. Explicitly naming the endpoint avoids
-accidentally uploading to TestPyPI through a local repository configuration.
+Enter your **production PyPI token** when prompted. Do not use a wildcard selecting multiple
+wheel versions, and do not use the unrepaired wheel from `dist/`.
 
-Confirm the new release at https://pypi.org/project/compilerlens/0.1.0/.
-If the name cannot be registered, TestPyPI ownership does not grant production ownership; resolve
-that before announcing an installation command under this name.
-
-## 8. Verify installation from production PyPI
-
-Use another fresh environment, so an already installed TestPyPI package cannot satisfy the request.
+After publication, install in another fresh environment using:
 
 ```bash
-CLENS_PROD_CHECK="$(mktemp -d /tmp/compilerlens-pypi.XXXXXX)"
-python3 -m venv --without-pip "$CLENS_PROD_CHECK/venv"
-"$CLENS_REPO/.venv/bin/python" -m pip \
-  --python "$CLENS_PROD_CHECK/venv/bin/python" install --upgrade pip
-
-"$CLENS_PROD_CHECK/venv/bin/python" -m pip install \
-  --index-url https://pypi.org/simple/ \
-  --extra-index-url https://download.pytorch.org/whl/cpu \
-  compilerlens==0.1.0
-
-cd "$CLENS_PROD_CHECK"
-"$CLENS_PROD_CHECK/venv/bin/python" -m pip check
-"$CLENS_PROD_CHECK/venv/bin/compilerlens" doctor
-"$CLENS_PROD_CHECK/venv/bin/compilerlens" compile \
-  --example matmul --out "$CLENS_PROD_CHECK/matmul" --lineage required
+python -m pip install --index-url https://pypi.org/simple/ \
+  --extra-index-url https://download.pytorch.org/whl/cpu compilerlens==0.1.1
 ```
 
-Once verified, ordinary users can use `pip install compilerlens` on supported systems. The
-PyTorch CPU extra index is recommended when explicitly choosing CPU-only PyTorch dependencies.
+Repeat `pip check`, `doctor`, matmul compilation, tracing and the viewer check. Then update
+the README installation instructions to use production PyPI. Tag the exact released source
+commit as `v0.1.1` and create a GitHub Release with the tested wheel and release notes.
+Publishing to PyPI does not automatically publish a GitHub Release.
 
-## 9. Tag the merged source and create a GitHub Release
+## Later releases
 
-After the PR is merged, update local `main` and inspect the commit being tagged:
-
-```bash
-cd "$CLENS_REPO"
-git switch main
-git pull --ff-only origin main
-git log -1 --oneline
-git tag --list v0.1.0
-```
-
-If the tag does not already exist, and this commit contains the released implementation:
-
-```bash
-git tag -a v0.1.0 -m "CompilerLens 0.1.0"
-git push origin v0.1.0
-```
-
-If `main` has acquired other runtime changes since your release commit, tag the actual reviewed
-release commit instead. Never move an existing published tag to different code.
-
-On https://github.com/Soumyaworks/CompilerLens/releases/new:
-
-1. Select tag `v0.1.0` and title `CompilerLens 0.1.0`.
-2. Describe the CLI/native pass, supported platform and install command.
-3. Link to https://pypi.org/project/compilerlens/0.1.0/ and [the CLI guide](CLI.md).
-4. Attach `wheelhouse/compilerlens-0.1.0-py3-none-manylinux_2_35_x86_64.whl`.
-5. Publish the release.
-
-Use the exact tested wheel as the release attachment. GitHub's automatic source archive is
-useful for development, but building a wheel from source also requires the native/web build
-steps. The binary wheel is the easy installation path.
-
-Your source appears in the repository and its release appears under **Releases**. Publishing
-to PyPI does not automatically create a GitHub Release or a GitHub Packages entry.
-
-## 10. Make subsequent changes without renaming the project
-
-Keep `name = "compilerlens"`, the `compilerlens` import and console command, and the GitHub
-repository name. Release new versions instead of overwriting existing files.
-
-For a `0.1.1` release, update the version strings in these six places:
+Keep the package name and command `compilerlens`. Publish a new version for subsequent
+changes; uploaded distribution files cannot be overwritten. Update version strings in:
 
 ```text
 pyproject.toml                         project.version
@@ -331,49 +184,10 @@ llvm/lib/Plugin.cpp                    plugin version
 llvm/lib/Lineage.cpp                   pass_version
 ```
 
-Do not bump artifact/lineage schema versions merely because the package version changed.
-Update documentation examples as needed; historical release notes should retain their versions.
+Update installation examples and release notes. Change artifact/sidecar schema versions only
+when their formats require it. Document CLI/JSON or Python API compatibility changes.
 
-The existing uploaded wheel has no project URL metadata. Add this for the next version in
-`pyproject.toml` so the PyPI page links back to GitHub:
-
-```toml
-[project.urls]
-Repository = "https://github.com/Soumyaworks/CompilerLens"
-Issues = "https://github.com/Soumyaworks/CompilerLens/issues"
-Documentation = "https://github.com/Soumyaworks/CompilerLens/blob/main/docs/CLI.md"
-```
-
-Then build and test that new version on this workstation:
-
-```bash
-cd "$CLENS_REPO"
-.venv/bin/python scripts/build_release.py \
-  --cmake /pkg/qct/software/cmake/3.31.5/bin/cmake
-
-.venv/bin/auditwheel repair \
-  dist/compilerlens-0.1.1-py3-none-linux_x86_64.whl --wheel-dir wheelhouse
-
-.venv/bin/python -m twine check \
-  wheelhouse/compilerlens-0.1.1-py3-none-manylinux_2_35_x86_64.whl
-
-.venv/bin/python -m twine upload --repository testpypi \
-  wheelhouse/compilerlens-0.1.1-py3-none-manylinux_2_35_x86_64.whl
-```
-
-Repeat the clean-install checks, commit/review the source, upload that exact new wheel to
-production, and create tag/release `v0.1.1`. Use the actual tag emitted by auditwheel if the
-build environment changes. Avoid `wheelhouse/*.whl` once it contains multiple releases.
-
-Users choose when to upgrade:
-
-```bash
-pip install --upgrade compilerlens
-# Or keep a specific release:
-pip install compilerlens==0.1.0
-```
-
-Older installations are not automatically changed by a new PyPI upload. Keep CLI/Python
-interfaces compatible where possible and document breaking changes. Once manual releases
-are working, GitHub Actions plus PyPI Trusted Publishing can automate this same tested
-sequence without storing a long-lived upload token; that automation is not configured here yet.
+Repeat build, repair, testing and publication for the new version. TestPyPI is optional
+for later releases, but useful for validating packaging and dependency changes. GitHub Actions
+and PyPI Trusted Publishing can automate this workflow later; they are not configured here.
+Users choose when to upgrade with `python -m pip install --upgrade compilerlens`.

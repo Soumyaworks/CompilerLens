@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "compilerlens"
-version = "0.1.0"
+version = "0.1.1"
 description = "Inspect model compilation and trace compiler-recorded lineage into LLVM and assembly"
 readme = "README.md"
 license = "Apache-2.0"
@@ -15,6 +15,11 @@ dependencies = [
   "torch==2.13.0", "iree-base-compiler==3.11.0", "iree-base-runtime==3.11.0",
   "iree-turbine==3.9.0", "transformers==5.16.1", "huggingface-hub>=1,<2"
 ]
+
+[project.urls]
+Repository = "https://github.com/Soumyaworks/CompilerLens"
+Issues = "https://github.com/Soumyaworks/CompilerLens/issues"
+Documentation = "https://github.com/Soumyaworks/CompilerLens#readme"
 
 [project.scripts]
 compilerlens = "compilerlens.cli:main"

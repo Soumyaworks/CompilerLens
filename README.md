@@ -281,9 +281,9 @@ browser viewer. A repository checkout is not required.
 
 ### Create an environment and install
 
-Version `0.1.0` is available on **TestPyPI** and has been tested on Linux x86-64 with
-Python 3.10 and glibc 2.35+. Production PyPI publication and installation testing are pending,
-so use the TestPyPI steps below for now.
+Version `0.1.1` targets Linux x86-64 with Python 3.10 and glibc 2.35+. The commands
+below install it from **TestPyPI**. Production PyPI publication and installation testing
+are pending; see the [release checklist](docs/RELEASING.md) for validation status.
 
 ```bash
 mkdir compilerlens-demo
@@ -295,13 +295,13 @@ python -m pip install --upgrade pip
 # Download CompilerLens from TestPyPI.
 python -m pip download --no-deps --only-binary=:all: \
   --index-url https://test.pypi.org/simple/ \
-  --dest wheels compilerlens==0.1.0
+  --dest wheels compilerlens==0.1.1
 
 # Install the wheel and resolve its dependencies from the normal indexes.
 python -m pip install \
   --index-url https://pypi.org/simple/ \
   --extra-index-url https://download.pytorch.org/whl/cpu \
-  wheels/compilerlens-0.1.0-py3-none-manylinux_2_35_x86_64.whl
+  wheels/compilerlens-0.1.1-py3-none-manylinux_2_35_x86_64.whl
 
 python -m pip check
 compilerlens doctor
@@ -349,8 +349,8 @@ compilerlens compile sshleifer/tiny-gpt2 --seq-len 8 --out runs/tiny-gpt2
 See the **[detailed CLI guide](docs/CLI.md)** for selectors, JSON output, offline capture,
 local Python factories, object-address lookup, and build instructions. The
 [release checklist](docs/RELEASING.md) records TestPyPI validation and publication steps.
-The tested `0.1.0` wheel predates the latest source-directory and terminology changes;
-those changes will ship in a subsequent release.
+Version `0.1.1` includes the `llvm/` source-directory rename and consistent lineage
+terminology, while preserving the ability to read saved runs from version `0.1.0`.
 
 ## Installation from Source
 

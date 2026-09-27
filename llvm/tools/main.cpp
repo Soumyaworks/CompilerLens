@@ -69,7 +69,7 @@ static Expected<json::Object> objectReport() {
 int main(int argc, char **argv) {
   InitLLVM Init(argc, argv);
   cl::SetVersionPrinter([](raw_ostream &OS) {
-    OS << "compilerlens-native 0.1.0 LLVM " << LLVM_VERSION_STRING << " protocol 1\n";
+    OS << "compilerlens-native 0.1.1 LLVM " << LLVM_VERSION_STRING << " protocol 1\n";
   });
   cl::ParseCommandLineOptions(argc, argv, "CompilerLens native lineage analyzer\n");
   json::Object Report;

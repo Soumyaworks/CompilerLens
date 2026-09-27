@@ -14,7 +14,7 @@ For a fresh virtual environment and installation from TestPyPI, follow the
 local wheel build.
 
 ```bash
-python -m pip install dist/compilerlens-0.1.0-py3-none-linux_x86_64.whl \
+python -m pip install dist/compilerlens-0.1.1-py3-none-linux_x86_64.whl \
   --extra-index-url https://download.pytorch.org/whl/cpu
 compilerlens doctor
 compilerlens compile --example matmul --out runs/matmul --lineage required
@@ -22,10 +22,10 @@ compilerlens inspect runs/matmul
 compilerlens view runs/matmul
 ```
 
-Version 0.1.0 was tested through TestPyPI; production PyPI publication and installation
-testing are pending. The local build command above uses the original wheel in `dist/`.
-The tested, repaired wheel is
-`wheelhouse/compilerlens-0.1.0-py3-none-manylinux_2_35_x86_64.whl`; the
+This guide targets version 0.1.1; production PyPI publication and installation testing
+are pending. See the [release checklist](RELEASING.md) for current validation results. The local build command above uses the original wheel in `dist/`.
+The repaired release wheel is
+`wheelhouse/compilerlens-0.1.1-py3-none-manylinux_2_35_x86_64.whl`; the
 [release checklist](RELEASING.md) explains how to download it from TestPyPI.
 It bundles the existing React app,
 Monaco workers, private native executable, LLVM license, zlib and zstd libraries/licenses.
@@ -90,7 +90,7 @@ metadata is absent; they cannot recover information the compiler never emitted.
 
 Current source uses `lineage` for the analysis module, pass, CLI output fields and sidecar.
 The reader also accepts the older `provenance.json` sidecar from TestPyPI 0.1.0 runs.
-The uploaded wheel retains its original names; these source changes need a new release.
+Version 0.1.1 uses the new names. Version 0.1.0 retains its original names.
 
 ## Inspect, trace, compare and benchmark
 
@@ -183,7 +183,7 @@ After configuring the native build:
 ```bash
 python scripts/build_release.py
 python -m unittest discover -s tests -v
-python -m pip install dist/compilerlens-0.1.0-py3-none-linux_x86_64.whl
+python -m pip install dist/compilerlens-0.1.1-py3-none-linux_x86_64.whl
 python scripts/check_installed.py /path/to/installed/env/bin/python /path/to/run --browser
 ```
 
