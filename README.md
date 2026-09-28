@@ -327,12 +327,42 @@ compilerlens view runs/matmul --port 8000
 Open `http://127.0.0.1:8000` to explore the captured model architecture, compiler pipeline,
 and operation lineage. Stop the viewer with Ctrl+C. Choose a new output directory for each
 capture; CompilerLens refuses to overwrite an existing run.
+If CompilerLens is running on a remote SSH server, use the
+[SSH tunnel instructions below](#viewing-from-a-remote-ssh-server) to open it on your computer.
 
 To capture a Hugging Face model:
 
 ```bash
 compilerlens compile sshleifer/tiny-gpt2 --seq-len 8 --out runs/tiny-gpt2
 ```
+
+### Viewing from a remote SSH server
+
+Use **SSH tunneling (local port forwarding)** to reach the remote viewer from your own
+computer. `127.0.0.1` refers to the machine where it is used: opening that address in your
+local browser does not directly connect to the remote server.
+
+1. On the **remote server**, start the viewer and leave it running:
+
+   ```bash
+   compilerlens view runs/matmul --port 8000
+   ```
+
+2. In a separate terminal on **your own computer**, start the tunnel:
+
+   ```bash
+   ssh -N -L 8001:127.0.0.1:8000 username@remote-host
+   ```
+
+   Replace `username@remote-host` with your usual SSH destination or configured SSH alias.
+   This forwards local port `8001` to port `8000` on the remote server.
+
+3. Open **http://127.0.0.1:8001** in your computer's browser to view the saved run.
+
+Keep both the viewer and SSH tunnel running while using the webpage; Ctrl+C stops each
+process. If local port `8001` is occupied, choose another local port in the tunnel command
+and browser URL. `--open` attempts to launch a browser on the machine running CompilerLens;
+it does not open your local browser through SSH.
 
 ### Primary commands
 
@@ -395,6 +425,18 @@ Open the **Local** URL printed by Vite after `npm run dev` (for example,
 `http://localhost:5173`). Vite may choose a different port when 5173 is already occupied.
 Keep both processes running while using model search or the Compiler Playground. The existing,
 pre-generated workload viewer only needs the frontend.
+
+When running this source-development setup on a remote SSH server, start both processes
+there, then forward the frontend and API ports from a terminal on **your own computer**:
+
+```bash
+ssh -N -L 5173:127.0.0.1:5173 -L 8000:127.0.0.1:8000 username@remote-host
+```
+
+Replace the SSH destination with your own and open `http://127.0.0.1:5173` locally.
+Use Vite's actual remote port if it selected a different one. Keep local port `8000`
+forwarded for model search and the Compiler Playground, which use the API on that port.
+For the installed CLI viewer, use the [single-port tunnel above](#viewing-from-a-remote-ssh-server).
 
 If port 8000 is already in use, an API server is probably running in another terminal. Reuse
 that process or stop it before starting another one.
@@ -510,6 +552,9 @@ npm run verify
 
 ## Troubleshooting
 
+- Remote viewer starts but the browser cannot connect: follow the
+  [SSH tunnel instructions](#viewing-from-a-remote-ssh-server), open the local forwarded URL,
+  and keep both the viewer and tunnel running.
 - `iree-compile not found`: activate `.venv` before starting the API or compiler script.
 - API unavailable in the UI: confirm `python -m backend.api.run_server` is listening on port
   8000.
