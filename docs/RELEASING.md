@@ -145,6 +145,43 @@ cd "$CLENS_REPO"
 
 ## Publish the exact tested wheel to production PyPI
 
+### Automated releases after 0.1.1
+
+GitHub Actions now runs Python tests and the frontend build for pushes to `main` and
+`feature/experiments-cli`, for pull requests, and on manual dispatch. The publishing
+workflow runs only when a tag matching `v*` is pushed. It rejects tags that are not exactly
+`vX.Y.Z` or do not match `project.version` in `pyproject.toml`, then builds, tests, repairs
+and checks the Linux wheel before publishing it.
+
+Before the first automated publication, configure PyPI Trusted Publishing for the
+`compilerlens` project with these values:
+
+```text
+Owner: Soumyaworks
+Repository: CompilerLens
+Workflow: publish.yml
+Environment: pypi
+```
+
+Create the `pypi` environment under the GitHub repository's **Settings → Environments**.
+Environment reviewers may be added when a manual approval before publication is desired.
+The workflow uses GitHub's short-lived OpenID Connect credential, so it does not require a
+PyPI API token in GitHub secrets.
+
+For a later version, update all version locations listed below, commit the release source
+including `.github/workflows/publish.yml`, and push the commit. After its CI run passes,
+tag that exact commit and push the tag:
+
+```bash
+git tag -a v0.1.2 -m "CompilerLens 0.1.2"
+git push origin v0.1.2
+```
+
+Do not reuse or move a published version tag. PyPI distributions are immutable, and pushing
+an existing version again will fail. Creating a GitHub Release remains a separate step.
+
+### Manual 0.1.1 procedure
+
 Finish TestPyPI verification first. Review and commit the release source changes so that
 there is a source revision corresponding to the tested wheel. If runtime code, dependencies
 or packaged metadata change, build and test a new version before publishing.
@@ -203,9 +240,9 @@ The GitHub landing page displays the default branch's README. Documentation push
 to `feature/experiments-cli` is visible when that branch is selected; it will reach the
 default branch when merged. The published release remains visible repository-wide.
 
-The README includes PyPI version, tested Python, platform and license badges. A build
-status badge should be added when a real GitHub Actions workflow exists. No CI workflow
-or automated publishing is configured yet.
+The README includes PyPI version, tested Python, platform and license badges. CI and
+tag-based PyPI publishing are configured in `.github/workflows/`. The publishing workflow
+applies to versions released after the manually published 0.1.1 package.
 
 PyPI's project description is embedded in the uploaded wheel's metadata. Updating the
 GitHub README does not update the `0.1.1` PyPI description. Include the revised README
@@ -228,7 +265,7 @@ llvm/lib/Lineage.cpp                   pass_version
 Update installation examples and release notes. Change artifact/sidecar schema versions only
 when their formats require it. Document CLI/JSON or Python API compatibility changes.
 
-Repeat build, repair, testing and publication for the new version. TestPyPI is optional
-for later releases, but useful for validating packaging and dependency changes. GitHub Actions
-and PyPI Trusted Publishing can automate this workflow later; they are not configured here.
+Repeat build, repair and testing for the new version. TestPyPI is optional for later
+releases, but useful for validating packaging and dependency changes. A matching `vX.Y.Z`
+tag starts the GitHub Actions build and PyPI Trusted Publishing workflow described above.
 Users choose when to upgrade with `python -m pip install --upgrade compilerlens`.

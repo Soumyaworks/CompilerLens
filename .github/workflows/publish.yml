@@ -1,0 +1,122 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and verify Linux wheel
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Python build tools
+        run: python -m pip install --upgrade pip "setuptools>=77" wheel auditwheel twine tomli
+
+      - name: Check tag matches package version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          import tomli
+
+          with open("pyproject.toml", "rb") as source:
+              version = tomli.load(source)["project"]["version"]
+
+          tag = os.environ["RELEASE_TAG"]
+          if not re.fullmatch(r"v\d+\.\d+\.\d+", tag):
+              raise SystemExit(f"Release tag must have the form vX.Y.Z, got {tag!r}")
+          if tag != f"v{version}":
+              raise SystemExit(f"Tag {tag!r} does not match project version {version!r}")
+          PY
+
+      - name: Install LLVM 22 and build tools
+        run: |
+          wget --quiet https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 22
+          sudo apt-get update
+          sudo apt-get install --yes llvm-22-dev libzstd-dev zlib1g-dev patchelf
+          npm ci --prefix frontend
+
+      - name: Install project dependencies and run Python tests
+        run: |
+          python - <<'PY'
+          import subprocess
+          import sys
+          import tomli
+
+          with open("pyproject.toml", "rb") as source:
+              dependencies = tomli.load(source)["project"]["dependencies"]
+
+          subprocess.check_call([
+              sys.executable,
+              "-m",
+              "pip",
+              "install",
+              "--extra-index-url",
+              "https://download.pytorch.org/whl/cpu",
+              *dependencies,
+          ])
+          PY
+          python -m unittest discover -s tests -v
+
+      - name: Build and test release wheel
+        run: |
+          python scripts/build_release.py --llvm-dir /usr/lib/llvm-22/lib/cmake/llvm
+          auditwheel repair dist/compilerlens-*.whl --wheel-dir wheelhouse
+          python -m twine check wheelhouse/*.whl
+          auditwheel show wheelhouse/*.whl
+
+      - name: Smoke-test installed wheel
+        run: |
+          python -m venv /tmp/compilerlens-wheel-test
+          /tmp/compilerlens-wheel-test/bin/python -m pip install --no-deps wheelhouse/*.whl
+          cd /tmp
+          /tmp/compilerlens-wheel-test/bin/compilerlens --version
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pypi-wheel
+          path: wheelhouse/*.whl
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Publish trusted release
+    needs: build
+    runs-on: ubuntu-22.04
+    environment:
+      name: pypi
+      url: https://pypi.org/project/compilerlens/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: pypi-wheel
+          path: wheelhouse
+
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: wheelhouse/
