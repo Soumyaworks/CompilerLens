@@ -6,6 +6,8 @@ wheelhouse/
 
 # Generated artifacts -- rebuild with `npm run artifact` (see README)
 frontend/public/artifacts/
+examples/*/native/
+examples/*/lineage.json
 
 # Verification output, regenerable via `npm run verify`
 frontend/screenshots/

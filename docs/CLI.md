@@ -142,6 +142,12 @@ returns recorded frames and joins them to the captured dispatch and Torch source
 
 ## Build/develop the native pass
 
+For system prerequisites and the complete source installation, start with the
+[README source steps](../README.md#installation-from-source). Miniconda installs the build tools,
+LLVM SDK and Python dependencies in one user-local environment without sudo, then you build
+our pass and generate viewer artifacts. The source environment replaces the separate venv.
+The PyPI package provides the separate prebuilt installation path.
+
 See the [LLVM component overview](../llvm/README.md) for the analysis flow and file layout.
 Configure a fresh `build/llvm/` directory after the source-directory rename; CMake caches
 contain absolute source paths and should not be moved from the previous build directory.
@@ -165,7 +171,24 @@ annotations parse, invalid IR fails, object lookups work and normalized IR is un
 Use an LLVM 22 SDK matching `opt` for the tested plugin. The CMake project permits LLVM 23
 for source-build development, which requires validation with that particular SDK. The plugin
 ABI must match its host. `COMPILERLENS_NATIVE=/path/to/compilerlens-native` overrides the
-private executable; `COMPILERLENS_WORKSPACE=/path` selects server storage.
+private executable; `COMPILERLENS_WORKSPACE=/path` selects server storage. The README's Conda
+build uses `build/llvm-conda/`; set `COMPILERLENS_NATIVE` to that build's executable as shown
+there. These generic commands also work with a separately provisioned compatible SDK.
+
+After building the analyzer, regenerate the source frontend's existing workloads with:
+
+```bash
+cd frontend
+npm run artifact -- --lineage required
+```
+
+The artifact builder invokes the same native analysis as CLI captures and writes `native/`
+reports and `lineage.json` beside each workload's dumps. It preserves the original LLVM IR.
+The default mode is `auto` (native analysis with fallback); `--lineage off` skips native
+analysis. The command prints each workload's lineage status. Source Web Explore uses
+`COMPILERLENS_NATIVE` from the API terminal; the README selects the Conda build explicitly.
+Both source and installed Web Explore use `auto` automatically, falling back if native
+analysis is unavailable or fails. No lineage selection is needed in the webpage.
 
 An optional [IREE source-build hook](../llvm/iree/README.md) brackets its actual optimization
 pipeline, including O0. Its C++ hook is tested; the pinned source patch is supplied. A full

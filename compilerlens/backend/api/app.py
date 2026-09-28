@@ -26,6 +26,7 @@ import time
 import threading
 import uuid
 from pathlib import Path
+from typing import Literal
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -134,6 +135,7 @@ class ExploreRequest(BaseModel):
 
     model_id: str = Field(min_length=1, max_length=200)
     seq_len: int = Field(default=16, ge=1, le=512)
+    lineage: Literal['auto', 'required', 'off'] = 'auto'
 
 
 class BenchmarkRequest(BaseModel):
@@ -237,15 +239,16 @@ def explore_model(request: ExploreRequest, background: BackgroundTasks):
     job_id = str(uuid.uuid4())[:8]
     JOBS[job_id] = {
         "status": "running", "model_id": model_id, "seq_len": request.seq_len,
+        "lineage": request.lineage,
         "options": {}, "flags": [], "stages": {}, "bench": None,
         "error": None, "compile_seconds": None, "work_dir": None, "artifact_id": None,
         "progress": None,
     }
-    background.add_task(_run_explore, job_id, model_id, request.seq_len)
+    background.add_task(_run_explore, job_id, model_id, request.seq_len, request.lineage)
     return {"job_id": job_id, "status": "running"}
 
 
-def _run_explore(job_id: str, model_id: str, seq_len: int) -> None:
+def _run_explore(job_id: str, model_id: str, seq_len: int, lineage: str = 'auto') -> None:
     """Use the same durable capture and native lineage pipeline as the CLI."""
     from compilerlens.services import capture
     job = JOBS[job_id]
@@ -253,11 +256,14 @@ def _run_explore(job_id: str, model_id: str, seq_len: int) -> None:
     phase = "loading and compiling the model"
     try:
         def report(label):
-            previous = job.get('progress', {}).get('done', 0)
+            nonlocal phase
+            phase = label
+            previous = (job.get('progress') or {}).get('done', 0)
             job['progress'] = {'label': label, 'done': previous + 1, 'total': max(previous + 2, 24)}
         output_dir = capture(model_id, seq_len=seq_len,
                              out=REPO_ROOT / 'runs' / job_id,
-                             max_parameters=_MAX_EXPLORE_PARAMETERS, progress=report)
+                             max_parameters=_MAX_EXPLORE_PARAMETERS, progress=report,
+                             lineage=lineage)
         info = json.loads((output_dir / 'model_info.json').read_text())
         artifact = json.loads((output_dir / 'artifact.json').read_text())
         artifact_id = artifact['compilation_id']
@@ -317,6 +323,14 @@ def _friendly_explore_error(exc: Exception, model_id: str, phase: str) -> str:
     raw = _one_line(exc, 2000)
     lower = raw.lower()
     kind = type(exc).__name__.lower()
+
+    if phase.startswith('Native lineage:') or any(token in lower for token in (
+        'native analyzer', 'native analysis', 'required native',
+    )):
+        return (
+            'Native lineage analysis could not complete. Check the native analyzer on the server, '
+            'or choose Automatic or Off to compile without requiring native analysis.'
+        )
 
     if isinstance(exc, ExploreModelTooLargeError):
         count_match = re.search(r"(\d+) parameters", raw)
@@ -464,6 +478,7 @@ def get_job(job_id: str):
         "bench": job["bench"],
         "error": job["error"],
         "artifact_id": job.get("artifact_id"),
+        "lineage": job.get("lineage"),
         "progress": job.get("progress"),
     }
 

@@ -459,18 +459,27 @@ def _build_evidence(stages: list[Stage]) -> tuple[list[Evidence], dict]:
     return evidence, target
 
 
-def build_artifact(workload: WorkloadSpec, root: Path | None = None, *, analysis: dict | None = None) -> Artifact:
+def build_artifact(workload: WorkloadSpec, root: Path | None = None, *,
+                   analysis: dict | None = None, lineage: str = 'auto') -> Artifact:
     """Build one workload's artifact.
 
     `root` overrides `workload.dump_root` -- used by Stage 5 to point at a fresh temp
     directory from a live compile while reusing the same registered stage/pass-track specs.
+    Reuse supplied capture analysis, or analyze the dumps using the same native pipeline.
+    Generated reports and lineage.json are written beside the dumps; original IR is retained.
     """
+    if lineage not in ('auto', 'required', 'off'):
+        raise ValueError('Invalid lineage mode.')
     dump_root = root if root is not None else Path(workload.dump_root)
     repo_relative = str(workload.dump_root).rstrip("/")
 
     stages, stage_notes = _build_stages(workload, dump_root, repo_relative)
     if not stages:
         raise SystemExit(f"no stages found under {dump_root}")
+
+    if analysis is None:
+        from compilerlens.lineage import analyze_files
+        analysis = analyze_files(dump_root, lineage)
 
     source_sets = None
     if analysis is not None:
@@ -570,7 +579,19 @@ def main() -> None:
     parser.add_argument("--out-dir", type=Path, help="directory to write <id>.json + index.json (--all mode)")
     parser.add_argument("--id", default=None, help="compilation id override (ad hoc mode; defaults to dir name)")
     parser.add_argument("--indent", type=int, default=None, help="pretty-print the JSON")
+    parser.add_argument("--lineage", choices=('auto', 'required', 'off'), default='auto',
+                        help="Native analysis: auto permits fallback, required fails on missing/failed analysis, off skips it")
     args = parser.parse_args()
+
+    def build(workload, root=None):
+        try:
+            artifact = build_artifact(workload, root=root, lineage=args.lineage)
+        except RuntimeError as exc:
+            parser.exit(1, f"{workload.id}: {exc}\n")
+        for note in artifact.notes:
+            if note.startswith('Lineage:'):
+                print(f"  {workload.id}: {note}", file=sys.stderr)
+        return artifact
 
     if args.all:
         if not args.out_dir:
@@ -583,7 +604,7 @@ def main() -> None:
             if not root.is_dir():
                 print(f"  warning: {root} missing, skipping workload {workload_id}", file=sys.stderr)
                 continue
-            artifact = build_artifact(workload)
+            artifact = build(workload)
             artifacts[workload_id] = artifact
 
             out_path = args.out_dir / f"{workload_id}.json"
@@ -618,7 +639,7 @@ def main() -> None:
             f"to test its specs against this directory."
         )
 
-    artifact = build_artifact(workload, root=args.dump_dir)
+    artifact = build(workload, root=args.dump_dir)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(artifact.to_json(indent=args.indent))
 

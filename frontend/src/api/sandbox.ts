@@ -75,6 +75,7 @@ export interface Job {
   bench: Bench | null;
   error: string | null;
   artifact_id?: string | null;
+  lineage?: LineageMode | null;
   /** Real progress through the `/explore` pipeline -- null for the Playground's `/compile`,
    *  which only ever does one stage and doesn't report this. */
   progress?: {label: string; done: number; total: number} | null;
@@ -142,10 +143,12 @@ export function startCompile(body: {
 }
 
 /** Full pipeline compilation used by the landing-page model search. */
-export function startExplore(model_id: string, seq_len = 16) {
+export type LineageMode = 'auto' | 'required' | 'off';
+
+export function startExplore(model_id: string, seq_len = 16, lineage: LineageMode = 'auto') {
   return call<{job_id: string; status: string}>('/explore', {
     method: 'POST',
-    body: JSON.stringify({model_id, seq_len}),
+    body: JSON.stringify({model_id, seq_len, lineage}),
   });
 }
 

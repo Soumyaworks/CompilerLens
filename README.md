@@ -278,8 +278,10 @@ CompilerLens/
 - For frontend development from source: Node.js 20.19+ or 22.12+; Node 22 is recommended
 
 The package includes the IREE compiler/runtime dependencies and a prebuilt LLVM analyzer.
-The installed CLI and bundled viewer do not require Node.js, CMake, or an LLVM SDK. Building
-that analyzer from source requires the tools listed in the [CLI development guide](docs/CLI.md#builddevelop-the-native-pass).
+The installed CLI and bundled viewer do not require Node.js, CMake, or an LLVM SDK.
+Source installation builds our LLVM pass. The [Miniconda setup below](#installation-from-source)
+provides Python, Node.js, CMake, Ninja, a C++ compiler and LLVM in one user-local environment;
+no sudo or separately installed LLVM/CMake is needed.
 
 ## CLI Quick Start
 
@@ -385,38 +387,100 @@ terminology, while preserving the ability to read saved runs from version `0.1.0
 
 ## Installation from Source
 
-Use this workflow to develop CompilerLens or run the frontend directly from the checkout.
-For the packaged CLI and viewer, follow the [CLI quick start](#cli-quick-start).
+This path builds the Python/frontend application **and our native LLVM pass** from the
+checkout. For the prebuilt application, use the [PyPI quick start](#cli-quick-start).
 
-From the repository root:
+Use **Linux x86-64 with glibc 2.35+** (for example, Ubuntu 22.04), internet access, and
+several GB of free disk space. No sudo or GPU is required. [environment.yml](environment.yml)
+provides Python 3.10, LLVM 22.1.8, the C/C++ build tools and Node.js 22; `requirements.txt`
+provides the Python packages. Conda replaces the separate venv for source development.
+
+### 1. Install Miniconda once
+
+Skip installation if you already have Conda. Otherwise, install it under your own account:
 
 ```bash
-python3.10 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
+curl -fsSLo /tmp/compilerlens-miniconda.sh \
+  https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash /tmp/compilerlens-miniconda.sh -b -p "$HOME/miniconda3"
+source "$HOME/miniconda3/etc/profile.d/conda.sh"
+```
+
+If curl is unavailable, download that installer using a browser. In new terminals, repeat
+the `source` command to enable `conda activate` (adjust the path for an existing installation).
+If a Python venv is currently active, run `deactivate` before activating Conda.
+
+### 2. Create the development environment
+
+From your updated CompilerLens checkout (`feature/experiments-cli` until merged):
+
+```bash
+CONDARC="$PWD/.condarc" conda env create -f environment.yml
+conda activate compilerlens-dev
 python -m pip install -r requirements.txt
+python -m pip check
+```
+
+The project-local `.condarc` selects conda-forge without changing global Conda settings.
+The environment excludes unrelated user-site Python packages. Do not create another venv
+or install CompilerLens from PyPI inside this environment.
+If you do not have the checkout or Git yet, use GitHub's **Code → Download ZIP** on the
+development branch and extract it first; the environment also installs Git for later use.
+
+### 3. Build the pass and prepare the webpage
+
+From the repository root with `compilerlens-dev` active:
+
+```bash
+cmake -S llvm -B build/llvm-conda -G Ninja \
+  -DLLVM_DIR="$CONDA_PREFIX/lib/cmake/llvm" \
+  -DPython3_EXECUTABLE="$CONDA_PREFIX/bin/python" \
+  -DCMAKE_BUILD_TYPE=Release
+cmake --build build/llvm-conda --parallel 2
+ctest --test-dir build/llvm-conda --output-on-failure
+export COMPILERLENS_NATIVE="$PWD/build/llvm-conda/compilerlens-native"
+"$COMPILERLENS_NATIVE" --version
 
 cd frontend
 npm ci
-npm run artifact
+npm run artifact -- --lineage required
 cd ..
 ```
 
-`npm run artifact` converts the compiler dumps under `examples/` into the JSON artifacts used
-by the website. Run it again after changing ingest code or adding a model from the command line.
+Conda activation selects the environment's compiler; `$CONDA_PREFIX` locates its LLVM SDK.
+The separate `build/llvm-conda/` directory avoids old system-toolchain CMake caches.
+CTest should pass, and artifact generation should report `Lineage: native`.
+Use `--parallel 1` if the native build runs out of memory. Keep the Conda environment active
+when running the analyzer: it uses libraries from that environment.
+
+Artifact generation updates the existing `examples/` workloads using their saved dumps,
+without recompiling models or modifying original LLVM files. Repeat the build after C++
+changes, then repeat `npm run artifact -- --lineage required` from `frontend/` and refresh
+the page. Native reports go into each workload's `native/` directory, mappings into
+`lineage.json`, and viewer JSON into `frontend/public/artifacts/`.
+Separate CLI captures under `runs/` are not automatically included.
+
+Lineage links source operations to LLVM and assembly instructions. `required` fails if native
+analysis is unavailable or fails. Plain `npm run artifact` uses Automatic with fallback;
+`npm run artifact -- --lineage off` skips native analysis. New Web Explore compilations
+automatically use native analysis when available, with fallback if it is unavailable or
+fails; viewing saved workloads does not rerun analysis. Missing compiler source locations
+can still leave instructions unlinked.
 
 ## Running CompilerLens Locally
 
-Start the API from the repository root:
+After completing the source installation above, start the API from the repository root:
 
 ```bash
-source .venv/bin/activate
+conda activate compilerlens-dev
+export COMPILERLENS_NATIVE="$PWD/build/llvm-conda/compilerlens-native"
 python -m backend.api.run_server
 ```
 
 In a second terminal, start the frontend:
 
 ```bash
+conda activate compilerlens-dev
 cd frontend
 npm run dev
 ```
@@ -492,7 +556,8 @@ For the installed package, use the [CLI quick start](#cli-quick-start). The repo
 provides a developer script for generating dumps and rebuilding the static artifact library:
 
 ```bash
-source .venv/bin/activate
+conda activate compilerlens-dev
+export COMPILERLENS_NATIVE="$PWD/build/llvm-conda/compilerlens-native"
 python scripts/compile_hf_model.py prajjwal1/bert-tiny --seq-len 16
 cd frontend
 npm run artifact
@@ -534,7 +599,8 @@ default; `COMPILERLENS_WORKSPACE` overrides it.
 Run the backend syntax checks and frontend production build:
 
 ```bash
-source .venv/bin/activate
+conda activate compilerlens-dev
+export COMPILERLENS_NATIVE="$PWD/build/llvm-conda/compilerlens-native"
 python -m py_compile compilerlens/backend/api/app.py compilerlens/backend/api/run_server.py compilerlens/ingest/build.py compilerlens/ingest/schema.py compilerlens/models/architecture.py compilerlens/ingest/architecture.py
 python -m unittest discover -s tests -v
 
@@ -555,7 +621,8 @@ npm run verify
 - Remote viewer starts but the browser cannot connect: follow the
   [SSH tunnel instructions](#viewing-from-a-remote-ssh-server), open the local forwarded URL,
   and keep both the viewer and tunnel running.
-- `iree-compile not found`: activate `.venv` before starting the API or compiler script.
+- `iree-compile not found`: activate `compilerlens-dev` for source development, or `.venv`
+  for the PyPI quick start, before starting the API or compiler script.
 - API unavailable in the UI: confirm `python -m backend.api.run_server` is listening on port
   8000.
 - Hugging Face download failure: check the model ID, network access, authentication for gated

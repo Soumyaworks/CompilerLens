@@ -1,0 +1,5 @@
+# Use only conda-forge for this project, without changing the user's global config.
+channels: #!final
+  - conda-forge
+default_channels: [] #!final
+channel_priority: strict

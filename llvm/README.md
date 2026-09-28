@@ -41,10 +41,21 @@ can be missing or shared, and operand dependencies do not establish source owner
 
 ## Build and integration
 
+The [README source installation](../README.md#installation-from-source) uses Miniconda to
+install the toolchain, LLVM SDK and Python dependencies without sudo. It builds this directory
+under `build/llvm-conda/` and selects the executable with `COMPILERLENS_NATIVE`.
+The PyPI package provides the separate prebuilt installation path.
+
 Use the [CLI guide's build instructions](../docs/CLI.md#builddevelop-the-native-pass)
 to configure `cmake -S llvm -B build/llvm` with the matching LLVM SDK. Build products
 include `compilerlens-native` and `CompilerLensPasses.so`. The ordinary wheel bundles
 the executable and runs it as a separate process; end users do not need an LLVM SDK.
+
+Source development selects its built executable through `COMPILERLENS_NATIVE` (the README
+uses `build/llvm-conda/compilerlens-native`).
+Both Web Explore and `npm run artifact` invoke the shared analysis pipeline; the latter
+accepts `-- --lineage required` to reject missing or failed native analysis. Generated
+reports feed the frontend's LLVM and assembly lineage views without a PyPI installation.
 
 The [optional IREE hook](iree/README.md) uses IREE's own LLVM build. Its small checkpoint
 test is covered by CTest; a full source-built IREE integration has not been validated.

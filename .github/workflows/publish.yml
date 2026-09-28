@@ -83,6 +83,7 @@ jobs:
       - name: Build and test release wheel
         run: |
           python scripts/build_release.py --llvm-dir /usr/lib/llvm-22/lib/cmake/llvm
+          python -m unittest discover -s tests -p test_source_artifacts.py -v
           auditwheel repair dist/compilerlens-*.whl --wheel-dir wheelhouse
           python -m twine check wheelhouse/*.whl
           auditwheel show wheelhouse/*.whl
