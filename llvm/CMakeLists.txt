@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(CompilerLensLLVM VERSION 0.1.1 LANGUAGES C CXX)
+project(CompilerLensLLVM VERSION 0.2.0 LANGUAGES C CXX)
 find_package(LLVM REQUIRED CONFIG)
 set(COMPILERLENS_ZSTD_LIBRARY "" CACHE FILEPATH "zstd library for LLVM SDKs missing its CMake package")
 if(COMPILERLENS_ZSTD_LIBRARY AND NOT TARGET zstd::libzstd_static)

@@ -38,6 +38,7 @@ jobs:
           import os
           import re
           import tomli
+          from pathlib import Path
 
           with open("pyproject.toml", "rb") as source:
               version = tomli.load(source)["project"]["version"]
@@ -47,6 +48,16 @@ jobs:
               raise SystemExit(f"Release tag must have the form vX.Y.Z, got {tag!r}")
           if tag != f"v{version}":
               raise SystemExit(f"Tag {tag!r} does not match project version {version!r}")
+          for name, pattern in {
+              'compilerlens/__init__.py': r'__version__ = "([^"]+)"',
+              'llvm/CMakeLists.txt': r'project\(CompilerLensLLVM VERSION (\S+)',
+              'llvm/tools/main.cpp': r'compilerlens-native ([\d.]+) LLVM',
+              'llvm/lib/Plugin.cpp': r'"CompilerLensPasses", "([^"]+)"',
+              'llvm/lib/Lineage.cpp': r'"pass_version", "([^"]+)"',
+          }.items():
+              match = re.search(pattern, Path(name).read_text())
+              if not match or match[1] != version:
+                  raise SystemExit(f'{name} version does not match {version}')
           PY
 
       - name: Install LLVM 22 and build tools
@@ -89,11 +100,27 @@ jobs:
           auditwheel show wheelhouse/*.whl
 
       - name: Smoke-test installed wheel
+        env:
+          PYTHONPATH: ""
+          COMPILERLENS_NATIVE: ""
+          OMP_NUM_THREADS: "2"
         run: |
-          python -m venv /tmp/compilerlens-wheel-test
-          /tmp/compilerlens-wheel-test/bin/python -m pip install --no-deps wheelhouse/*.whl
-          cd /tmp
-          /tmp/compilerlens-wheel-test/bin/compilerlens --version
+          CLENS_CHECK_DIR="$(mktemp -d "$RUNNER_TEMP/compilerlens-wheel.XXXXXX")"
+          python -m venv "$CLENS_CHECK_DIR/venv"
+          "$CLENS_CHECK_DIR/venv/bin/python" -m pip install \
+            --index-url https://pypi.org/simple/ \
+            --extra-index-url https://download.pytorch.org/whl/cpu wheelhouse/*.whl
+          export PATH="$CLENS_CHECK_DIR/venv/bin:$PATH"
+          export COMPILERLENS_WORKSPACE="$CLENS_CHECK_DIR/workspace"
+          cd "$CLENS_CHECK_DIR"
+          python -m pip check
+          compilerlens --version
+          compilerlens doctor
+          compilerlens compile --example matmul --out runs/matmul --lineage required
+          compilerlens compile --example tiny_vit --out runs/tiny-vit --lineage required
+          compilerlens compile --example tiny_clip --out runs/tiny-clip --lineage required
+          python "$GITHUB_WORKSPACE/scripts/check_installed.py" \
+            "$CLENS_CHECK_DIR/venv/bin/python" "$CLENS_CHECK_DIR/runs/matmul"
 
       - uses: actions/upload-artifact@v4
         with:

@@ -290,8 +290,9 @@ browser viewer. A repository checkout is not required.
 
 ### Create an environment and install
 
-Version [`0.1.1`](https://pypi.org/project/compilerlens/0.1.1/) is available on **PyPI**
-for Linux x86-64 with glibc 2.35+. Python 3.10 is the validated interpreter.
+This quick start targets **0.2.0** on Linux x86-64 with glibc 2.35+; Python 3.10 is
+the validated interpreter. See the [release checklist](docs/RELEASING.md) for publication
+status. Until 0.2.0 is published, use the source installation below for the new features.
 
 ```bash
 mkdir compilerlens-demo
@@ -304,14 +305,14 @@ python -m pip install --upgrade pip
 python -m pip install \
   --index-url https://pypi.org/simple/ \
   --extra-index-url https://download.pytorch.org/whl/cpu \
-  compilerlens==0.1.1
+  compilerlens==0.2.0
 
 python -m pip check
 compilerlens doctor
 ```
 
 The PyTorch CPU index supplies CPU builds for the supported workflow. CompilerLens itself
-comes from PyPI. See the [release notes](docs/releases/0.1.1.md) for compatibility and
+comes from PyPI. See the [release notes](docs/releases/0.2.0.md) for compatibility and
 the [release checklist](docs/RELEASING.md) for validation details.
 
 ### Compile, inspect, and open the viewer
@@ -382,8 +383,8 @@ it does not open your local browser through SSH.
 See the **[detailed CLI guide](docs/CLI.md)** for selectors, JSON output, offline capture,
 local Python factories, object-address lookup, and build instructions. The
 [release checklist](docs/RELEASING.md) records PyPI validation and publication steps.
-Version `0.1.1` includes the `llvm/` source-directory rename and consistent lineage
-terminology, while preserving the ability to read saved runs from version `0.1.0`.
+Version `0.2.0` adds ViT/CLIP capture and offline vision demos, while retaining the
+existing CLI commands and the ability to read saved runs from versions `0.1.0` and `0.1.1`.
 
 ## Installation from Source
 
@@ -552,7 +553,7 @@ The CLI, Web Explore, Playground, and source scripts share the same model adapte
 Support covers the forward passes shown; tested checkpoints are listed below.
 Compatibility with other checkpoints may vary.
 
-Pretrained models to try with the **unreleased** ViT/CLIP support (source installation):
+Pretrained models to try with ViT/CLIP support (source installation or the 0.2.0 wheel):
 
 - [`google/vit-base-patch16-224`](https://huggingface.co/google/vit-base-patch16-224) — 85.8M-parameter image encoder; tested through Web Explore. Captures patch embeddings and transformer blocks, not the classification head.
 - [`wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M`](https://huggingface.co/wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M) — 23.45M parameters; validated image/text encoders, embeddings, and similarity logits.
@@ -572,9 +573,9 @@ npm run artifact
 ```
 
 Refresh the [source webpage](#running-compilerlens-locally); use fresh output paths if these
-directories exist. These demos are not in PyPI `0.1.1`. Native lineage remains automatic;
+directories exist. These demos require `0.2.0` or the current source checkout. Native lineage remains automatic;
 ViT/CLIP captures on host/generic CPU also compare compiled outputs with PyTorch and save
-`verification.json`. See the [CLI guide](docs/CLI.md#validated-hf-checkpoints-unreleased) for pinned revisions and validation commands.
+`verification.json`. See the [CLI guide](docs/CLI.md#validated-hf-checkpoints) for pinned revisions and validation commands.
 
 ## Repository Compilation Script
 

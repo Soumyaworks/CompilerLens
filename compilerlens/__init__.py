@@ -1,6 +1,6 @@
 """CompilerLens: model-aware compiler inspection and lineage."""
 
-__version__ = "0.1.1"
+__version__ = "0.2.0"
 
 
 def capture(*args, **kwargs):

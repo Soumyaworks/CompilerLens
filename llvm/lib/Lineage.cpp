@@ -88,7 +88,7 @@ json::Object analyze(Module &M) {
       Functions.push_back(json::Object{{"name", F.getName().str()}, {"instructions", FTotal},
         {"located", FLocated}, {"dispatch_name", F.getName().contains("dispatch_")}});
   }
-  return json::Object{{"schema_version", 1}, {"pass_version", "0.1.1"}, {"llvm_version", LLVM_VERSION_STRING},
+  return json::Object{{"schema_version", 1}, {"pass_version", "0.2.0"}, {"llvm_version", LLVM_VERSION_STRING},
     {"module", M.getModuleIdentifier()}, {"instructions", std::move(Instructions)},
     {"functions", std::move(Functions)},
     {"coverage", json::Object{{"instructions", Total}, {"debug_locations", Located}, {"line_zero", LineZero}}}};
