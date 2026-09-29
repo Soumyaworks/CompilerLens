@@ -2,8 +2,12 @@ name: Publish to PyPI
 
 on:
   push:
+    branches:
+      - main
+      - feature/experiments-cli
     tags:
       - "v*"
+  pull_request:
 
 permissions:
   contents: read
@@ -12,6 +16,7 @@ jobs:
   build:
     name: Build and verify Linux wheel
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -28,11 +33,34 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install Python build tools
-        run: python -m pip install --upgrade pip "setuptools>=77" wheel auditwheel twine tomli
+        run: |
+          python -m pip install --upgrade pip "setuptools>=77" wheel twine tomli \
+            "auditwheel==6.8.2" "patchelf==0.19.1.0"
 
-      - name: Check tag matches package version
+      - name: Verify wheel repair tools
+        run: |
+          python - <<'PY'
+          import importlib.metadata
+          import shutil
+          import subprocess
+          import sysconfig
+          from pathlib import Path
+
+          for name, version in [('auditwheel', '6.8.2'), ('patchelf', '0.19.1.0')]:
+              actual = importlib.metadata.version(name)
+              if actual != version:
+                  raise SystemExit(f'{name}: expected {version}, found {actual}')
+          selected = shutil.which('patchelf')
+          expected = Path(sysconfig.get_path('scripts')) / 'patchelf'
+          if selected is None or Path(selected).resolve() != expected.resolve():
+              raise SystemExit(f'Wrong patchelf on PATH: {selected}; expected {expected}')
+          subprocess.run([selected, '--version'], check=True)
+          subprocess.run(['auditwheel', '--version'], check=True)
+          PY
+
+      - name: Check component versions and release tag
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
         run: |
           python - <<'PY'
           import os
@@ -44,9 +72,9 @@ jobs:
               version = tomli.load(source)["project"]["version"]
 
           tag = os.environ["RELEASE_TAG"]
-          if not re.fullmatch(r"v\d+\.\d+\.\d+", tag):
+          if tag and not re.fullmatch(r"v\d+\.\d+\.\d+", tag):
               raise SystemExit(f"Release tag must have the form vX.Y.Z, got {tag!r}")
-          if tag != f"v{version}":
+          if tag and tag != f"v{version}":
               raise SystemExit(f"Tag {tag!r} does not match project version {version!r}")
           for name, pattern in {
               'compilerlens/__init__.py': r'__version__ = "([^"]+)"',
@@ -66,7 +94,7 @@ jobs:
           chmod +x llvm.sh
           sudo ./llvm.sh 22
           sudo apt-get update
-          sudo apt-get install --yes llvm-22-dev libzstd-dev zlib1g-dev patchelf
+          sudo apt-get install --yes llvm-22-dev libzstd-dev zlib1g-dev
           npm ci --prefix frontend
 
       - name: Install project dependencies and run Python tests
@@ -131,6 +159,7 @@ jobs:
 
   publish:
     name: Publish trusted release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     needs: build
     runs-on: ubuntu-22.04
     environment:

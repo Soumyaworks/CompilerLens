@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "compilerlens"
-version = "0.2.0"
+version = "0.2.1"
 description = "Inspect model compilation and trace compiler-recorded lineage into LLVM and assembly"
 readme = "README.md"
 license = "Apache-2.0"
