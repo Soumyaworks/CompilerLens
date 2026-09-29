@@ -215,6 +215,7 @@ function Explorer({
     .map(edge => nodeMap.get(edge.target))
     .filter(Boolean) as ArchitectureNode[];
   const facts = architecture.model;
+  const multimodal = (facts.modalities?.length ?? 0) > 1;
 
   function chooseNode(id: string) {
     setSelectedId(id);
@@ -239,6 +240,8 @@ function Explorer({
           {facts.layer_count != null && <span><small>Layers</small><strong>{facts.layer_count}</strong></span>}
           {facts.hidden_size != null && <span><small>Hidden</small><strong>{facts.hidden_size}</strong></span>}
           {facts.attention_heads != null && <span><small>Heads</small><strong>{facts.attention_heads}</strong></span>}
+          {facts.modalities && <span><small>Modalities</small><strong>{facts.modalities.join(' + ')}</strong></span>}
+          {facts.weights === 'random' && <span><small>Demo weights</small><strong>Random</strong></span>}
           <span className={'architecture-trust map-' + architecture.mapping_status}>
             <i /> {mappingLabel(architecture.mapping_status)}
           </span>
@@ -287,18 +290,26 @@ function Explorer({
               ))}
             </div>
             <div className="architecture-canvas-hint">
-              {visibleRoutes.length > 0 ? `${visibleRoutes.length} observed module route${visibleRoutes.length === 1 ? '' : 's'} · ` : ''}
+              {multimodal ? 'Components, not execution order · ' :
+                visibleRoutes.length > 0 ? `${visibleRoutes.length} observed module route${visibleRoutes.length === 1 ? '' : 's'} · ` : ''}
               Select for details · double-click to step inside
             </div>
           </div>
 
           <div className="architecture-chip-floor">
-            <div className="architecture-input-terminal"><span>Inputs</span><strong>Tokens and attention mask</strong><i /></div>
-            <div className="architecture-flow-line" aria-hidden="true" />
+            <div className="architecture-input-terminal" title={facts.input_profile ?
+              `${facts.input_profile.preprocessing}\n${facts.input_profile.inputs.map(input =>
+                `${input.name}: ${input.shape.join(' × ')} ${input.dtype}`).join('\n')}` : undefined}>
+              <span>{facts.input_profile?.kind === 'synthetic' ? 'Synthetic inputs' : 'Inputs'}</span>
+              <strong>{facts.modalities?.includes('image') ?
+                (facts.modalities.includes('text') ? 'Image + text + mask' : 'Image tensor') :
+                facts.input_profile ? facts.input_profile.inputs.map(input => input.name).join(', ') : 'Model tensors'}</strong><i />
+            </div>
+            {!multimodal && <div className="architecture-flow-line" aria-hidden="true" />}
             <div className={'architecture-card-flow' + (canvasNodes.length > 7 ? ' is-dense' : '')}>
               {canvasNodes.map((node, index) => (
                 <div className="architecture-flow-item" key={node.id}>
-                  {index > 0 && <span className="architecture-flow-connector" aria-hidden="true">›</span>}
+                  {!multimodal && index > 0 && <span className="architecture-flow-connector" aria-hidden="true">›</span>}
                   <ArchitectureCard
                     node={node} selected={selected.id === node.id}
                     onSelect={() => chooseNode(node.id)}
@@ -307,7 +318,10 @@ function Explorer({
                 </div>
               ))}
             </div>
-            <div className="architecture-output-terminal"><i /><span>Output</span><strong>{facts.causal ? 'Token logits' : 'Hidden states'}</strong></div>
+            <div className="architecture-output-terminal" title={facts.output_names?.join(', ')}><i /><span>Output</span>
+              <strong>{facts.task === 'image-text-similarity' ? 'Embeddings + similarity' :
+                facts.output_names?.join(', ') ?? (facts.causal ? 'Token logits' : 'Model tensors')}</strong>
+            </div>
           </div>
 
           <div className="architecture-lowering">

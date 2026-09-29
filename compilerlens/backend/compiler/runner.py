@@ -10,6 +10,7 @@ import json
 import re
 import shutil
 from compilerlens.toolchain import find_tool
+from compilerlens.examples import EXAMPLES
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -195,7 +196,8 @@ class CompilerRunner:
         # One real checkpoint per stage `_dump_named_stages` actually compiles, plus the five
         # other phases below -- a true count of what `run()` does, not a guessed one, so a
         # caller can show honest progress instead of an animated bar with no real meaning.
-        total_steps = 5 + len(self.config.stages)
+        verify = model_info is not None and model_info.get('adapter') in ('vit', 'clip')
+        total_steps = 5 + len(self.config.stages) + int(verify)
         progress = {"done": 0}
 
         def report(label: str) -> None:
@@ -210,6 +212,22 @@ class CompilerRunner:
         self._dump_named_stages(torch_input_path, mlir_dir, manifest, report)
         self._dump_llvm_intermediates(torch_input_path, output_dir, dumps_dir, manifest)
         report("Capturing LLVM intermediates")
+        if verify:
+            from compilerlens.models.verification import verify_forward
+            from compilerlens.storage import atomic_json
+            verification_path = output_dir / 'verification.json'
+            if manifest['errors']:
+                atomic_json(verification_path, {'status': 'skipped', 'reason': 'Compilation failed.'})
+            elif self.config.target_backend != 'llvm-cpu' or self.config.target_cpu not in ('host', 'generic'):
+                atomic_json(verification_path, {'status': 'skipped', 'reason': 'Verification requires host or generic CPU.'})
+            else:
+                try:
+                    verify_forward(output_dir / f'{output_dir.name}_compiled_host.vmfb', module,
+                                   example_input_args, model_info['output_names'], verification_path)
+                except Exception as exc:
+                    manifest['errors'].append({'stage': 'verification', 'stderr': str(exc)})
+            manifest['files']['verification.json'] = str(verification_path)
+            report('Verifying compiled outputs')
         self._dump_full_pass_traces(torch_input_path, mlir_dir, passes_dir, manifest)
         report("Capturing per-pass traces")
         self._summarize_operators(mlir_dir, manifest)
@@ -413,13 +431,6 @@ class CompilerRunner:
         normalized_bodies = [re.sub(r"@\S*dispatch_\d+\S*", "@DISPATCH", body) for body in bodies]
         manifest["total_dispatches"] = len(bodies)
         manifest["unique_dispatches"] = len(set(normalized_bodies))
-
-
-EXAMPLES = {
-    "matmul": "compilerlens.examples.matmul",
-    "linear_relu": "compilerlens.examples.linear_relu",
-    "mini_transformer": "compilerlens.examples.mini_transformer",
-}
 
 
 def _load_example(name: str):

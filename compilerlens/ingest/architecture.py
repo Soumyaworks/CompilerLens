@@ -88,6 +88,8 @@ def _fallback(stages: list, model_info: dict) -> dict:
             "sequence_length": model_info.get("seq_len"), "hidden_size": None,
             "layer_count": None, "attention_heads": None, "intermediate_size": None,
             "vocab_size": model_info.get("vocab_size"),
+            **{key: model_info[key] for key in ('modalities', 'task', 'input_profile', 'output_names', 'weights')
+               if key in model_info},
         },
         "nodes": [root, *children], "edges": edges,
     }

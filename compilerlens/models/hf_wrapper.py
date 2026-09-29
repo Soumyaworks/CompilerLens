@@ -51,7 +51,7 @@ def build_example_inputs(detected: DetectedModel) -> tuple[torch.Tensor, torch.T
     return input_ids, build_attention_mask(detected.seq_len, detected.causal)
 
 
-def wrap(detected: DetectedModel) -> tuple[HFWrapper, tuple, dict]:
+def wrap(detected: DetectedModel, *, max_parameters: int | None = None) -> tuple[torch.nn.Module, tuple, dict]:
     """Load, wrap, and build inputs for a detected model.
 
     Returns (module, example_inputs, model_info) where model_info goes into the manifest and
@@ -60,29 +60,55 @@ def wrap(detected: DetectedModel) -> tuple[HFWrapper, tuple, dict]:
     # Export in float32 even when Hub weights are stored as bfloat16. Turbine currently
     # materializes parameter constants through NumPy, whose PyTorch bridge rejects bf16.
     # Loading directly in f32 avoids that importer failure (at the cost of larger memory use).
+    from .adapters import adapter_for, check_parameter_budget
+    check_parameter_budget(detected, max_parameters)
     hf_model = detected.load_model(dtype=torch.float32)
-    module = HFWrapper(hf_model, detected.output_attr)
-    example_inputs = build_example_inputs(detected)
+    adapter = adapter_for(detected)
+    module, example_inputs = adapter.prepare(detected, hf_model)
     model_info = {
         "model_id": detected.model_id,
         "revision": detected.revision,
         "model_type": detected.model_type,
         "causal": detected.causal,
-        "seq_len": detected.seq_len,
-        "vocab_size": detected.vocab_size,
+        "seq_len": detected.seq_len if detected.adapter != 'vit' else None,
+        "vocab_size": detected.vocab_size or None,
         "param_count": sum(p.numel() for p in hf_model.parameters()),
         "compile_dtype": "float32",
         "detected_via": detected.detected_via,
+        **adapter.metadata(detected, example_inputs),
     }
     return module, example_inputs, model_info
 
 
-def wrapper_source(detected: DetectedModel) -> str:
+def wrapper_source(detected: DetectedModel, seed: int = 0) -> str:
     """The equivalent standalone PyTorch program, for the artifact's source stage.
 
     The frontend shows this as the "PyTorch Source" stage, so it has to be something a
     reader could actually run -- not a description of what we did.
     """
+    if detected.adapter != 'text':
+        from .adapters import adapter_for
+        adapter = adapter_for(detected)
+        wrapper = 'ViTWrapper' if detected.adapter == 'vit' else 'CLIPWrapper'
+        inputs = (f'vision_inputs({detected.input_config!r})' if detected.adapter == 'vit'
+                  else f'clip_inputs({detected.input_config!r}, {detected.seq_len})')
+        return f'''import torch
+import iree.turbine.aot as aot
+from transformers import {adapter.model_class}
+from compilerlens.models.adapters import {wrapper}, vision_inputs, clip_inputs
+
+# {adapter.task}: synthetic tensor inputs; preprocessing is outside this graph.
+# Outputs: {', '.join(adapter.output_names)}. No generation or postprocessing.
+torch.manual_seed({seed})
+model = {adapter.model_class}.from_pretrained(
+    {detected.model_id!r}, revision={detected.revision!r},
+    local_files_only={detected.offline!r}, trust_remote_code=False,
+    dtype=torch.float32, attn_implementation="eager",
+).eval()
+module = {wrapper}(model).eval()
+inputs = {inputs}
+export_output = aot.export(module, *inputs)
+'''
     model_class = "AutoModelForCausalLM" if detected.causal else "AutoModel"
     if detected.causal:
         mask_expr = (
@@ -98,6 +124,7 @@ from transformers import {model_class}
 
 # {detected.model_id} @ {detected.revision[:12]}
 # {detected.model_type}, {"causal decoder" if detected.causal else "bidirectional encoder"}
+torch.manual_seed({seed})
 model = {model_class}.from_pretrained(
     "{detected.model_id}",
     revision="{detected.revision}",

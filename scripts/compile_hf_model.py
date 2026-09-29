@@ -10,7 +10,7 @@ a pinned revision are all worked out from the id (models/detect.py). On success 
 directory contains a model_info.json, which is what makes ingest pick the model up as a
 workload -- so the next step is just `npm run artifact` from frontend/.
 
-Run from the repo root with the venv active.
+Run from the repo root with the source Conda environment active.
 """
 
 from __future__ import annotations
@@ -41,6 +41,7 @@ def main() -> int:
     parser.add_argument("model_id", help="HuggingFace model id, e.g. prajjwal1/bert-tiny")
     parser.add_argument("--revision", default=None, help="pin a specific commit (default: current main sha)")
     parser.add_argument("--seq-len", type=int, default=32, help="sequence length to trace with (default: 32)")
+    parser.add_argument("--seed", type=int, default=0, help="seed for synthetic inputs (default: 0)")
     parser.add_argument("--out-dir", type=Path, default=None, help="destination (default: examples/<slug>)")
     parser.add_argument("--dry-run", action="store_true", help="detect and report, then stop before compiling")
     parser.add_argument(
@@ -59,10 +60,16 @@ def main() -> int:
 
     print(f"{detected.model_id}")
     print(f"  revision    {detected.revision}")
-    print(f"  type        {detected.model_type} ({'causal decoder' if detected.causal else 'bidirectional encoder'})")
-    print(f"  vocab       {detected.vocab_size}")
-    print(f"  seq_len     {detected.seq_len}")
-    print(f"  output      .{detected.output_attr}")
+    from compilerlens.models.adapters import adapter_for
+    adapter = adapter_for(detected)
+    print(f"  type        {detected.model_type} ({adapter.name} adapter)")
+    print(f"  modalities  {', '.join(adapter.modalities)}")
+    if detected.vocab_size:
+        print(f"  vocab       {detected.vocab_size}")
+        print(f"  seq_len     {detected.seq_len}")
+    if detected.input_config:
+        print(f"  profile     {detected.input_config}")
+    print(f"  outputs     {', '.join(adapter.output_names or (detected.output_attr,))}")
     print(f"  detected by {detected.detected_via}")
 
     if args.dry_run:
@@ -73,6 +80,8 @@ def main() -> int:
 
     print("\nloading model...")
     try:
+        import torch
+        torch.manual_seed(args.seed)
         module, example_inputs, model_info = wrap(detected)
     except Exception as exc:
         print(f"error: could not load/wrap '{detected.model_id}': {exc}", file=sys.stderr)
@@ -93,7 +102,7 @@ def main() -> int:
 
     # The source stage the generated spec shows. Written after the run so a failed compile
     # does not leave a directory that looks complete.
-    (out_dir / "source.py").write_text(wrapper_source(detected))
+    (out_dir / "source.py").write_text(wrapper_source(detected, seed=args.seed))
 
     # The untrimmed module the compiler read. Only useful during the run; keeping it would
     # double the directory size for no benefit to the viewer.

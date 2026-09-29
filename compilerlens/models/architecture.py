@@ -153,6 +153,8 @@ def _model_facts(root_module: torch.nn.Module, model_info: dict) -> dict:
         "attention_heads": first("num_attention_heads", "n_head"),
         "intermediate_size": first("intermediate_size", "n_inner", "ffn_dim"),
         "vocab_size": first("vocab_size") or model_info.get("vocab_size"),
+        **{key: model_info[key] for key in ('modalities', 'task', 'input_profile', 'output_names', 'weights')
+           if key in model_info},
     }
 
 

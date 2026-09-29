@@ -1,19 +1,14 @@
-"""Work out how to load and trace a HuggingFace model from nothing but its id.
+"""Resolve a Hub revision and select a supported model-family input contract.
 
-The point of this module is that adding a model costs no code: `compile_hf_model.py
-prajjwal1/bert-tiny` should work without anyone registering anything. What makes that
-awkward is that Hub configs are not uniform -- `prajjwal1/bert-tiny`, one of the models we
-most want to demo, has neither `model_type` nor `architectures` in its config.json, and
-`AutoConfig.from_pretrained` raises ValueError on it. So detection is a chain that falls
-back to sniffing the raw config keys, and fails loudly rather than guessing when it cannot
-tell.
+Text detection retains legacy config-key inference for older BERT/GPT checkpoints.
+Vision and multimodal models require explicit adapters, not guessed text signatures.
 """
 
 from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from huggingface_hub import HfApi, hf_hub_download
@@ -55,6 +50,9 @@ class DetectedModel:
     detected_via: str  # "autoconfig" | "config-keys" -- reported so the user sees which path ran
 
     offline: bool = False
+    adapter: str = 'text'
+    input_config: dict = field(default_factory=dict)
+    model_config: dict = field(default_factory=dict, repr=False)
 
     @property
     def slug(self) -> str:
@@ -73,6 +71,10 @@ class DetectedModel:
         from transformers import AutoConfig, AutoModel, AutoModelForCausalLM
 
         model_class = AutoModelForCausalLM if self.causal else AutoModel
+        if self.adapter != 'text':
+            import transformers
+            from .adapters import adapter_for
+            model_class = getattr(transformers, adapter_for(self).model_class)
         load_kwargs = {"revision": self.revision, "local_files_only": self.offline, "trust_remote_code": False}
         if dtype is not None:
             # Some checkpoints are stored as bfloat16. Turbine's current FX importer lifts
@@ -80,6 +82,9 @@ class DetectedModel:
             # directly in float32 avoids both that bridge failure and a temporary bf16->f32
             # copy of the complete model after loading.
             load_kwargs["dtype"] = dtype
+        if self.adapter != 'text':
+            # Use exportable, explicit attention rather than backend-specific kernels.
+            load_kwargs['attn_implementation'] = 'eager'
 
         if self.detected_via == "autoconfig":
             return model_class.from_pretrained(self.model_id, **load_kwargs).eval()
@@ -193,6 +198,8 @@ def detect(model_id: str, revision: str | None = None, seq_len: int = 32, *, off
     Tries transformers' own AutoConfig first, then falls back to reading config.json
     directly. Raises UnsupportedModelError if neither identifies the model.
     """
+    if seq_len <= 0:
+        raise ValueError('Sequence length must be positive.')
     resolved = _resolve_revision(model_id, revision, offline=offline)
     config = _raw_config(model_id, resolved, offline=offline)
 
@@ -214,11 +221,27 @@ def detect(model_id: str, revision: str | None = None, seq_len: int = 32, *, off
             # Fall through to the raw config -- AutoConfig is a nicety, not a requirement.
             pass
 
+    if model_type in ('vit', 'clip'):
+        profile = _vision_profile(config, model_type, seq_len)
+        return DetectedModel(
+            model_id=model_id, revision=resolved, causal=False,
+            vocab_size=profile.get('vocab_size', 0), seq_len=seq_len,
+            output_attr='last_hidden_state', model_type=model_type,
+            detected_via=detected_via, offline=offline, adapter=model_type,
+            input_config=profile, model_config=config,
+        )
+
+    if any(key in config for key in ('vision_config', 'audio_config', 'text_config')):
+        raise UnsupportedModelError(
+            f"'{model_id}' has a composite configuration without a supported input adapter. "
+            'Only CLIP image-text models are included in the initial multimodal support.')
+
     vocab_size = config.get("vocab_size")
     if not vocab_size:
         raise UnsupportedModelError(
             f"'{model_id}' config.json has no vocab_size, so we cannot build example input "
-            f"ids for it. Only text models taking input_ids are supported."
+            f"ids for it. Supported adapters: text encoders/causal LMs, ViT, and CLIP. "
+            f"Other vision, audio, and multimodal families are not supported yet."
         )
 
     if (model_type or "") in _SEQ2SEQ_MODEL_TYPES or any(
@@ -257,3 +280,41 @@ def detect(model_id: str, revision: str | None = None, seq_len: int = 32, *, off
         detected_via=detected_via,
         offline=offline,
     )
+
+
+def _vision_profile(config: dict, family: str, seq_len: int) -> dict:
+    """Validate static shapes before allocating tensors or downloading weights."""
+    from transformers import CLIPConfig, ViTConfig
+    parsed = CLIPConfig.from_dict(config) if family == 'clip' else ViTConfig.from_dict(config)
+    vision = parsed.vision_config if family == 'clip' else parsed
+    size = vision.image_size
+    size = [size, size] if isinstance(size, int) else size
+    patch = vision.patch_size
+    patch = [patch, patch] if isinstance(patch, int) else patch
+    if (not isinstance(size, (tuple, list)) or not isinstance(patch, (tuple, list))
+            or len(size) != 2 or len(patch) != 2 or any(
+            not isinstance(v, int) or v <= 0 for v in (*size, *patch))
+            or any(s % p for s, p in zip(size, patch))):
+        raise UnsupportedModelError('Image size must be positive and divisible by the patch size.')
+    # Initial bounded profile: no arbitrary-resolution or positional interpolation.
+    if max(size) > 512 or (size[0] // patch[0]) * (size[1] // patch[1]) > 1024:
+        raise UnsupportedModelError('Initial vision profiles allow at most 512 pixels per side and 1024 patches.')
+    channels = vision.num_channels
+    if not isinstance(channels, int) or not 1 <= channels <= 4:
+        raise UnsupportedModelError('Initial vision profiles support 1–4 input channels.')
+    result = {'image_size': size, 'num_channels': channels}
+    if family == 'clip':
+        if not isinstance(vision.image_size, int) or not isinstance(vision.patch_size, int):
+            raise UnsupportedModelError('CLIP requires a square image with scalar image_size and patch_size.')
+        text = parsed.text_config
+        if not 2 <= seq_len <= text.max_position_embeddings:
+            raise UnsupportedModelError(f'CLIP sequence length must be between 2 and {text.max_position_embeddings}.')
+        if text.vocab_size < 3 or any(not isinstance(t, int) or not 0 <= t < text.vocab_size
+                                     for t in (text.bos_token_id, text.eos_token_id)):
+            raise UnsupportedModelError('CLIP requires valid BOS/EOS token IDs within its vocabulary.')
+        pool_token = text.vocab_size - 1 if text.eos_token_id == 2 else text.eos_token_id
+        if text.bos_token_id == pool_token:
+            raise UnsupportedModelError('CLIP synthetic profiles require distinct BOS and pooling token IDs.')
+        result.update(vocab_size=text.vocab_size, bos_token_id=text.bos_token_id,
+                      eos_token_id=text.eos_token_id)
+    return result

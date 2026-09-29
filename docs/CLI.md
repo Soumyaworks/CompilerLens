@@ -39,8 +39,8 @@ LLVM 23 development snapshots; arbitrary future IR compatibility is not promised
 
 | Argument | Default | Meaning |
 |---|---|---|
-| `MODEL_ID` / `--example NAME` / `--python FILE:FACTORY` | Choose one | HF text model, packaged example, or local Python factory |
-| `--seq-len N` | 16, HF only | Static export sequence length |
+| `MODEL_ID` / `--example NAME` / `--python FILE:FACTORY` | Choose one | HF model with a supported adapter, packaged example, or local Python factory |
+| `--seq-len N` | 16, HF only | Static text length (including CLIP); not used by image-only ViT |
 | `--revision REF` | Resolve main | Record a concrete HF commit; offline requires a cached ref or explicit cached SHA |
 | `--offline` | false | Config and model loaders use cached resources only |
 | `--cpu NAME` | host | IREE LLVM CPU target |
@@ -61,7 +61,13 @@ compilerlens import examples/matmul --out runs/imported --lineage required
 
 `build()` returns `(torch.nn.Module, tuple_of_example_tensors)`. The module is put in eval mode.
 This explicitly executes local code. HF-only arguments are rejected for local/examples inputs.
-The packaged examples are `matmul`, `linear_relu`, and `mini_transformer`.
+The published examples are `matmul`, `linear_relu`, and `mini_transformer`.
+This source branch additionally includes **unreleased** `tiny_vit` and `tiny_clip` demos:
+random weights, synthetic tensors, and no model downloads. See the
+[model compatibility section](../README.md#supported-model-architectures) for their exact scope
+and source-webpage commands. ViT/CLIP captures on host/generic CPU write `verification.json`
+with a PyTorch-vs-compiled numerical check; failure prevents a successful capture. This checks
+one input sample, not prediction quality. The existing text-model workflow is unchanged.
 
 A failed capture keeps `run.json` with its error and phase. Successful runs include:
 

@@ -540,15 +540,33 @@ the model.
 
 ## Supported Model Architectures
 
-The automatic wrapper currently supports:
+The CLI, Web Explore, Playground, and source scripts share the same model adapters:
 
-- Encoder-only text models returning `last_hidden_state`
-- Decoder-only text models returning `logits`
-- Inputs shaped as `input_ids` plus a static 4D floating-point attention mask
+| Family | Captured forward pass |
+|---|---|
+| Text encoders (BERT-like) | Token IDs + mask → hidden states |
+| Causal text models (GPT-like) | Token IDs + mask → logits; no generation loop |
+| ViT (experimental) | Image tensor → hidden states; classification head excluded |
+| CLIP (experimental) | Image + text → embeddings and similarity logits |
 
-Vision, audio, multimodal, and encoder-decoder models need additional input wrappers and are
-rejected instead of being compiled with an incorrect signature. Sequence length is fixed at
-compile time; the website uses 16 tokens for a compact first run.
+ViT/CLIP support is **unreleased**, validated on tiny local models—not yet on downloaded
+checkpoints. It uses static, batch-one CPU/float32 workloads with synthetic inputs. Audio,
+other multimodal families, encoder-decoder models, and real-media preprocessing remain future work.
+
+Try the offline demos from the repo root with your source environment active
+(random weights; no downloads or extra dependencies):
+
+```bash
+python -m compilerlens compile --example tiny_vit --out examples/tiny_vit
+python -m compilerlens compile --example tiny_clip --out examples/tiny_clip
+cd frontend
+npm run artifact
+```
+
+Refresh the [source webpage](#running-compilerlens-locally); use fresh output paths if these
+directories exist. These demos are not in PyPI `0.1.1`. Native lineage remains automatic;
+ViT/CLIP captures on host/generic CPU also compare compiled outputs with PyTorch and save
+`verification.json`. See the [CLI guide](docs/CLI.md#capture-parameters) for capture details.
 
 ## Repository Compilation Script
 

@@ -97,7 +97,9 @@ function CompilerPipeline({searching, progress}: {searching: boolean; progress: 
 function workloadLabels(workload: WorkloadSummary): string[] {
   const text = `${workload.title} ${workload.description}`.toLowerCase();
   let family = 'PyTorch';
-  if (text.includes('roberta')) family = 'RoBERTa';
+  if (text.includes('clip')) family = 'CLIP';
+  else if (text.includes('vit')) family = 'ViT';
+  else if (text.includes('roberta')) family = 'RoBERTa';
   else if (text.includes('bert')) family = 'BERT';
   else if (text.includes('pythia')) family = 'Pythia';
   else if (text.includes('gpt')) family = 'GPT-2';
@@ -105,8 +107,10 @@ function workloadLabels(workload: WorkloadSummary): string[] {
   else if (text.includes('linear')) family = 'Linear';
 
   let shape = 'Module';
-  if (text.includes('causal decoder')) shape = 'Decoder';
-  else if (text.includes('bidirectional encoder')) shape = 'Encoder';
+  if (text.includes('image-text-similarity')) shape = 'Image + Text';
+  else if (text.includes('image-encoder')) shape = 'Image';
+  else if (text.includes('causal decoder') || text.includes('causal-lm-forward')) shape = 'Decoder';
+  else if (text.includes('bidirectional encoder') || text.includes('text-encoder')) shape = 'Encoder';
   else if (text.includes('fusion')) shape = 'Fusion';
   else if (text.includes('matmul')) shape = 'Kernel';
 

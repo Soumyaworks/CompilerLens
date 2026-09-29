@@ -512,6 +512,12 @@ def build_artifact(workload: WorkloadSpec, root: Path | None = None, *,
         "LLVM display views add ID comments; original dumps are retained.",
     ]
     notes.extend(stage_notes)
+    verification_path = dump_root / 'verification.json'
+    if verification_path.is_file():
+        verification = json.loads(verification_path.read_text())
+        notes.append(f"Compiled output verification: {verification['status']}. " + (
+            'Compared with PyTorch on one captured input sample; not a model-quality evaluation.'
+            if verification['status'] == 'passed' else verification.get('reason', verification.get('error', ''))))
     if analysis is not None:
         notes.append("Lineage: " + analysis["status"] + ". Native IDs are snapshot-local; assembly links use emitted .file/.loc associations. Source attribution is not instruction identity.")
         notes.extend(analysis["notes"])

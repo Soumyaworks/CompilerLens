@@ -332,7 +332,7 @@ def _friendly_explore_error(exc: Exception, model_id: str, phase: str) -> str:
             'or choose Automatic or Off to compile without requiring native analysis.'
         )
 
-    if isinstance(exc, ExploreModelTooLargeError):
+    if isinstance(exc, ExploreModelTooLargeError) or 'parameter interactive limit' in lower:
         count_match = re.search(r"(\d+) parameters", raw)
         count = int(count_match.group(1)) if count_match else 0
         size = f" ({count / 1_000_000:.0f}M parameters)" if count else ""
@@ -354,8 +354,8 @@ def _friendly_explore_error(exc: Exception, model_id: str, phase: str) -> str:
         return "CompilerLens could not reach Hugging Face. Check the server's network connection and try again."
     if "no vocab_size" in lower:
         return (
-            f"'{model_id}' is not a supported text model. CompilerLens currently expects a model "
-            "that accepts token IDs, such as a BERT-like encoder or GPT-like decoder."
+            f"'{model_id}' has no supported input adapter. Try a text encoder/causal LM, "
+            "ViT image encoder, or CLIP image-text model. Other families are not supported yet."
         )
     if "encoder-decoder" in lower or "decoder_input_ids" in lower:
         return (
@@ -394,7 +394,7 @@ def _run_compile(job_id: str, request: CompileRequest, flags: list) -> None:
         from compilerlens.models.hf_wrapper import wrap
 
         detected = detect(request.model_id, seq_len=request.seq_len)
-        module, example_inputs, model_info = wrap(detected)
+        module, example_inputs, model_info = wrap(detected, max_parameters=_MAX_EXPLORE_PARAMETERS)
         job["model_info"] = model_info
 
         work_dir = REPO_ROOT / "jobs" / job_id
@@ -432,6 +432,15 @@ def _run_compile(job_id: str, request: CompileRequest, flags: list) -> None:
             return
 
         # Only the stages that were asked for -- this is what keeps a flag change ~1s.
+        if model_info.get('adapter') in ('vit', 'clip'):
+            from compilerlens.models.verification import verify_forward
+            # Playground flags can target a different CPU, which is unsafe to execute here.
+            cpu_flag = next((flag.split('=', 1)[1] for flag in flags
+                             if flag.startswith('--iree-llvmcpu-target-cpu=')), 'host')
+            if cpu_flag in ('host', 'generic'):
+                job['verification'] = verify_forward(vmfb, module, example_inputs,
+                    model_info['output_names'], work_dir / 'verification.json')
+
         for stage in request.stages:
             path = work_dir / f"ir_{STAGE_INDEX[stage]}_{stage}.mlir"
             stage_result = subprocess.run(

@@ -98,13 +98,15 @@ def capture(model_id=None, *, example=None, python=None, out=None, seq_len=None,
             from .models.detect import detect
             from .models.hf_wrapper import wrap, wrapper_source
             detected = detect(model_id, revision=revision, seq_len=seq_len or 16, offline=offline)
-            module, inputs, info = wrap(detected)
-            source = wrapper_source(detected)
+            module, inputs, info = wrap(detected, max_parameters=max_parameters)
+            source = wrapper_source(detected, seed=seed)
         elif example:
             if example not in EXAMPLES: raise ValueError(f'Unknown example: {example}. Choose {", ".join(EXAMPLES)}')
             workload = importlib.import_module(EXAMPLES[example])
             module, inputs = workload.build_module(), workload.example_inputs()
             info = {'model_id': example, 'kind': 'example'}
+            if hasattr(workload, 'model_info'):
+                info.update(workload.model_info())
             source = Path(workload.__file__).read_text()
         else:
             filename, separator, factory = python.rpartition(':')
@@ -168,7 +170,7 @@ def import_dump(source, *, out=None, lineage='auto', progress=None) -> Path:
     atomic_json(root / 'run.json', state)
     try:
         # Copy only capture inputs, never arbitrary output or recursive run directories.
-        for name in ('mlir', 'llvm', 'passes', '_full', 'inputs', 'source.py', 'architecture.json', 'model_info.json', 'manifest.json'):
+        for name in ('mlir', 'llvm', 'passes', '_full', 'inputs', 'source.py', 'architecture.json', 'model_info.json', 'manifest.json', 'verification.json'):
             path = source / name
             if path.is_dir(): shutil.copytree(path, root / name)
             elif path.is_file(): shutil.copy2(path, root / name)

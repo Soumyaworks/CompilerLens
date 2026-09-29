@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 from . import __version__
+from .examples import EXAMPLES
 from .storage import load_run
 
 
@@ -34,7 +35,7 @@ def parser():
     compile = sub.add_parser('compile', help='Compile and capture a model into a fresh run')
     compile.add_argument('model_id', nargs='?')
     inputs = compile.add_mutually_exclusive_group()
-    inputs.add_argument('--example', choices=('matmul', 'linear_relu', 'mini_transformer'))
+    inputs.add_argument('--example', choices=tuple(EXAMPLES))
     inputs.add_argument('--python', help='Local file.py:factory returning (module, example_inputs)')
     compile.add_argument('--seq-len', type=positive, help='HF static sequence length (default: 16)')
     compile.add_argument('--revision', help='HF commit or reference; resolved commit is saved')

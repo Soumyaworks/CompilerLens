@@ -123,8 +123,12 @@ def spec_from_dump_dir(dump_root: Path, model_info: dict) -> WorkloadSpec:
     model_id = model_info.get("model_id", dump_root.name)
     params = model_info.get("param_count")
     param_text = f"{params / 1e6:.1f}M parameters" if params else "unknown size"
-    kind = "causal decoder" if model_info.get("causal") else "bidirectional encoder"
-    seq_len = model_info.get("seq_len")
+    task = model_info.get('task')
+    profile_text = f"; {task}" if task else ''
+    if model_info.get('input_profile', {}).get('kind') == 'synthetic':
+        profile_text += '; synthetic inputs'
+    if model_info.get('weights') == 'random':
+        profile_text += '; random weights (compiler demo)'
 
     stages: list[StageSpec] = []
 
@@ -200,7 +204,7 @@ def spec_from_dump_dir(dump_root: Path, model_info: dict) -> WorkloadSpec:
     return WorkloadSpec(
         id=dump_root.name,
         title=model_id,
-        description=f"{model_id} -- {param_text}; captured compiler stages.",
+        description=f"{model_id} -- {param_text}{profile_text}; captured compiler stages.",
         dump_root=str(dump_root),
         source_entry=model_id,
         stages=stages,
