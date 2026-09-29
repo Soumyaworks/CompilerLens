@@ -69,6 +69,44 @@ and source-webpage commands. ViT/CLIP captures on host/generic CPU write `verifi
 with a PyTorch-vs-compiled numerical check; failure prevents a successful capture. This checks
 one input sample, not prediction quality. The existing text-model workflow is unchanged.
 
+### Validated HF checkpoints (unreleased)
+
+| Checkpoint | Pinned revision | Captured task |
+|---|---|---|
+| `WinKawaks/vit-tiny-patch16-224` | `77d1485af66b34d4ed0fe95dbb0c60c7496f950b` | 224×224 image encoder, classification head/pooler excluded |
+| `wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M` | `a2a8c6eaa2549ad66eb7c31b85022bf58273a26c` | 224×224 image + 16 text tokens → embeddings/similarity |
+
+Both pass CLI, Web Explore and Playground capture checks with the pinned toolchain in
+`pyproject.toml`. Full captures include exact module-to-Torch mappings and compiler-recorded
+LLVM/assembly source links. These are pretrained weights with synthetic inputs, not a
+classification/retrieval quality evaluation or a guarantee for every checkpoint in the family.
+
+Reproduce from the checkout (set `HF_HOME` to your preferred cache directory):
+
+```bash
+python scripts/validate_hf_models.py vit-tiny --out build/check-vit --lineage required
+python scripts/validate_hf_models.py tinyclip --mode web --out build/check-clip --lineage required
+# --mode playground checks the separate Playground API; --offline reuses cached weights.
+```
+
+Use fresh output directories. The validator reads [pinned profiles](../scripts/hf_checkpoints.json),
+starts an isolated loopback API when needed, and saves `validation.json` with versions,
+numerical results, coverage, elapsed time, peak child-process RSS and disk usage. For a wheel
+environment, add `--installed --python /path/to/venv/bin/python`; it rejects source-package imports.
+The optional **Pretrained model compatibility** GitHub workflow runs these real-download checks;
+normal PR tests remain offline. A new manual workflow must reach the default branch before
+GitHub exposes its Run workflow button.
+
+Float32 verification uses `rtol=1e-3, atol=1e-4`, rejects non-finite/mismatched outputs, and
+records per-output errors. The relative tolerance was checked against float64 on three ViT
+samples to account for differences in floating-point reductions; the absolute floor stays strict.
+
+The web limit remains **100M parameters**. Local full web captures used approximately 1.2 GiB
+(ViT) and 3.1 GiB (TinyCLIP) peak process RSS, with about 0.5 GiB and 1.6 GiB of output respectively.
+These are compilation measurements, not inference benchmarks or total-memory guarantees.
+Standard `openai/clip-vit-base-patch32` has 151.3M parameters: a 200M cap would admit it, but its
+compilation/resource behavior has not been validated here. The CLI has no web parameter cap.
+
 A failed capture keeps `run.json` with its error and phase. Successful runs include:
 
 ```text

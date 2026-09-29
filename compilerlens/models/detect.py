@@ -13,6 +13,18 @@ from pathlib import Path
 
 from huggingface_hub import HfApi, hf_hub_download
 
+
+def normalize_model_id(value: str) -> str:
+    """Accept an ID or Hub repository URL; explicit revision arguments take precedence."""
+    value = value.strip().rstrip('/')
+    prefix = 'https://huggingface.co/'
+    if value.startswith(prefix):
+        parts = value[len(prefix):].split('/')
+        if len(parts) > 1 and parts[1] not in {'blob', 'commit', 'discussions', 'resolve', 'tree'}:
+            return '/'.join(parts[:2])
+        return parts[0]
+    return value
+
 # Architecture suffixes that mean "generates tokens left to right", which is what decides
 # whether the attention mask we build is causal.
 _CAUSAL_ARCH_SUFFIXES = ("ForCausalLM", "LMHeadModel")
@@ -85,6 +97,10 @@ class DetectedModel:
         if self.adapter != 'text':
             # Use exportable, explicit attention rather than backend-specific kernels.
             load_kwargs['attn_implementation'] = 'eager'
+        if self.adapter == 'vit':
+            # Capture encoder states only. Classification checkpoints do not contain
+            # pooler weights; constructing one would silently add random parameters.
+            load_kwargs['add_pooling_layer'] = False
 
         if self.detected_via == "autoconfig":
             return model_class.from_pretrained(self.model_id, **load_kwargs).eval()
@@ -198,6 +214,7 @@ def detect(model_id: str, revision: str | None = None, seq_len: int = 32, *, off
     Tries transformers' own AutoConfig first, then falls back to reading config.json
     directly. Raises UnsupportedModelError if neither identifies the model.
     """
+    model_id = normalize_model_id(model_id)
     if seq_len <= 0:
         raise ValueError('Sequence length must be positive.')
     resolved = _resolve_revision(model_id, revision, offline=offline)

@@ -546,11 +546,19 @@ The CLI, Web Explore, Playground, and source scripts share the same model adapte
 |---|---|
 | Text encoders (BERT-like) | Token IDs + mask → hidden states |
 | Causal text models (GPT-like) | Token IDs + mask → logits; no generation loop |
-| ViT (experimental) | Image tensor → hidden states; classification head excluded |
-| CLIP (experimental) | Image + text → embeddings and similarity logits |
+| ViT | Image tensor → hidden states; classification head excluded |
+| CLIP | Image + text → embeddings and similarity logits |
 
-ViT/CLIP support is **unreleased**, validated on tiny local models—not yet on downloaded
-checkpoints. It uses static, batch-one CPU/float32 workloads with synthetic inputs. Audio,
+Support covers the forward passes shown; tested checkpoints are listed below.
+Compatibility with other checkpoints may vary.
+
+Pretrained models to try with the **unreleased** ViT/CLIP support (source installation):
+
+- [`google/vit-base-patch16-224`](https://huggingface.co/google/vit-base-patch16-224) — 85.8M-parameter image encoder; tested through Web Explore. Captures patch embeddings and transformer blocks, not the classification head.
+- [`wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M`](https://huggingface.co/wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M) — 23.45M parameters; validated image/text encoders, embeddings, and similarity logits.
+
+Paste either ID into the search bar or pass it to `python -m compilerlens compile MODEL_ID`.
+Validation uses static, batch-one CPU/float32 workloads with synthetic inputs. Audio,
 other multimodal families, encoder-decoder models, and real-media preprocessing remain future work.
 
 Try the offline demos from the repo root with your source environment active
@@ -566,7 +574,7 @@ npm run artifact
 Refresh the [source webpage](#running-compilerlens-locally); use fresh output paths if these
 directories exist. These demos are not in PyPI `0.1.1`. Native lineage remains automatic;
 ViT/CLIP captures on host/generic CPU also compare compiled outputs with PyTorch and save
-`verification.json`. See the [CLI guide](docs/CLI.md#capture-parameters) for capture details.
+`verification.json`. See the [CLI guide](docs/CLI.md#validated-hf-checkpoints-unreleased) for pinned revisions and validation commands.
 
 ## Repository Compilation Script
 

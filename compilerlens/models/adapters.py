@@ -112,7 +112,8 @@ def check_parameter_budget(detected, max_parameters: int | None) -> None:
     config = config_class.from_dict(detected.model_config)
     config._attn_implementation = 'eager'
     with torch.device('meta'):
-        model = getattr(transformers, adapter_for(detected).model_class)(config)
+        kwargs = {'add_pooling_layer': False} if detected.adapter == 'vit' else {}
+        model = getattr(transformers, adapter_for(detected).model_class)(config, **kwargs)
     count = sum(parameter.numel() for parameter in model.parameters())
     if count > max_parameters:
         raise ValueError(f'{count} parameters exceeds the {max_parameters} parameter interactive limit (before weight download)')

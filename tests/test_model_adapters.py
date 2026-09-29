@@ -12,7 +12,7 @@ import torch
 from transformers import CLIPConfig, CLIPModel, ViTConfig, ViTModel
 
 from compilerlens.models.adapters import adapter_for, clip_inputs
-from compilerlens.models.detect import detect, UnsupportedModelError
+from compilerlens.models.detect import detect, normalize_model_id, UnsupportedModelError
 from compilerlens.models.hf_wrapper import wrap
 
 
@@ -32,7 +32,7 @@ def tiny_model(family):
     config._attn_implementation = 'eager'
     with torch.random.fork_rng():
         torch.manual_seed(0)
-        model = model_class(config).eval()
+        model = model_class(config, **({'add_pooling_layer': False} if family == 'vit' else {})).eval()
     return config, model
 
 
@@ -44,6 +44,34 @@ def detect_config(config, seq_len=4):
 
 
 class ModelAdapterTests(unittest.TestCase):
+    def test_hub_urls_normalize_consistently(self):
+        from compilerlens.backend.api.app import _normalize_model_id
+        for value, expected in (
+            (' org/model ', 'org/model'),
+            ('https://huggingface.co/org/model/', 'org/model'),
+            ('https://huggingface.co/org/model/tree/main', 'org/model'),
+            ('https://huggingface.co/gpt2', 'gpt2'),
+        ):
+            self.assertEqual(normalize_model_id(value), expected)
+            self.assertEqual(_normalize_model_id(value), expected)
+
+    def test_vit_classification_checkpoint_loads_without_random_pooler(self):
+        from transformers import ViTForImageClassification
+        config, _ = tiny_model('vit')
+        classifier = ViTForImageClassification(config).eval()
+        detected = detect_config(config)
+        with tempfile.TemporaryDirectory() as directory:
+            classifier.save_pretrained(directory)
+            detected.model_id = directory
+            loaded = detected.load_model(dtype=torch.float32)
+        self.assertIsNone(loaded.pooler)
+        self.assertEqual(sum(p.numel() for p in loaded.parameters()),
+                         sum(p.numel() for p in classifier.vit.parameters()))
+        image = torch.randn(1, 3, 8, 8)
+        with torch.no_grad():
+            torch.testing.assert_close(loaded(image).last_hidden_state,
+                                       classifier.vit(image).last_hidden_state)
+
     def test_existing_text_models_keep_their_adapter(self):
         from transformers import BertConfig, BertModel, GPT2Config, GPT2LMHeadModel
         for config, model_class in (
@@ -123,6 +151,8 @@ class ModelAdapterTests(unittest.TestCase):
             self.assertTrue(load.call_args.kwargs['local_files_only'])
             self.assertFalse(load.call_args.kwargs['trust_remote_code'])
             self.assertEqual(load.call_args.kwargs['attn_implementation'], 'eager')
+            if family == 'vit':
+                self.assertFalse(load.call_args.kwargs['add_pooling_layer'])
 
     def test_native_hf_forward_export_and_compiled_outputs_agree(self):
         import iree.compiler as compiler
@@ -217,6 +247,26 @@ class ModelAdapterTests(unittest.TestCase):
                                (torch.ones(1),), ['value'], root / 'verification.json')
             self.assertEqual(json.loads((root / 'verification.json').read_text())['status'], 'failed')
 
+    def test_float32_tolerance_keeps_absolute_floor_and_rejects_nonfinite(self):
+        from compilerlens.models.verification import verify_forward
+        from types import SimpleNamespace
+        for expected, actual, passes in ((1., 1.0008, True), (0., 0.0002, False),
+                                         (1., float('nan'), False)):
+            with self.subTest(actual=actual), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                (root / 'module.vmfb').touch()
+                result = SimpleNamespace(to_host=lambda: np.array([actual], dtype=np.float32))
+                vm = SimpleNamespace(main=lambda *args: result)
+                with patch('iree.runtime.load_vm_flatbuffer', return_value=vm):
+                    if passes:
+                        report = verify_forward(root / 'module.vmfb', torch.nn.Identity(),
+                            (torch.tensor([expected]),), ['value'], root / 'verification.json')
+                        self.assertEqual(report['status'], 'passed')
+                    else:
+                        with self.assertRaises(RuntimeError):
+                            verify_forward(root / 'module.vmfb', torch.nn.Identity(),
+                                (torch.tensor([expected]),), ['value'], root / 'verification.json')
+
     def test_playground_clip_uses_adapter_and_verifies_outputs(self):
         from fastapi.testclient import TestClient
         from compilerlens.backend.api import app as api
@@ -227,7 +277,8 @@ class ModelAdapterTests(unittest.TestCase):
              patch('compilerlens.models.detect.detect', return_value=detected), \
              patch.object(detected, 'load_model', return_value=model), TestClient(api.app) as client:
             response = client.post('/compile', json={'model_id': 'test/model', 'seq_len': 4,
-                'stages': ['input'], 'options': {'target-cpu': 'generic'}})
+                'stages': ['input'], 'options': {'target-cpu': 'generic'},
+                'revision': 'a' * 40, 'offline': True})
             self.assertEqual(response.status_code, 200)
             job_id = response.json()['job_id']
             job = client.get(f'/compile/{job_id}').json()

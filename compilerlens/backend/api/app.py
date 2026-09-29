@@ -124,7 +124,9 @@ ALLOWED_FLAGS = {
 
 class CompileRequest(BaseModel):
     model_id: str
-    seq_len: int = 32
+    seq_len: int = Field(default=32, ge=1, le=512)
+    revision: str | None = None
+    offline: bool = False
     stages: list = Field(default_factory=lambda: ["executable-targets"])
     options: dict = Field(default_factory=dict)  # e.g. {"target-cpu": "generic"}
     want_asm: bool = False
@@ -136,6 +138,8 @@ class ExploreRequest(BaseModel):
     model_id: str = Field(min_length=1, max_length=200)
     seq_len: int = Field(default=16, ge=1, le=512)
     lineage: Literal['auto', 'required', 'off'] = 'auto'
+    revision: str | None = None
+    offline: bool = False
 
 
 class BenchmarkRequest(BaseModel):
@@ -210,6 +214,7 @@ def compile_model(request: CompileRequest, background: BackgroundTasks):
         "status": "running",
         "model_id": request.model_id,
         "seq_len": request.seq_len,
+        "revision": request.revision, "offline": request.offline,
         "options": request.options,
         "flags": flags,
         "stages": {},
@@ -239,16 +244,19 @@ def explore_model(request: ExploreRequest, background: BackgroundTasks):
     job_id = str(uuid.uuid4())[:8]
     JOBS[job_id] = {
         "status": "running", "model_id": model_id, "seq_len": request.seq_len,
+        "revision": request.revision, "offline": request.offline,
         "lineage": request.lineage,
         "options": {}, "flags": [], "stages": {}, "bench": None,
         "error": None, "compile_seconds": None, "work_dir": None, "artifact_id": None,
         "progress": None,
     }
-    background.add_task(_run_explore, job_id, model_id, request.seq_len, request.lineage)
+    background.add_task(_run_explore, job_id, model_id, request.seq_len, request.lineage,
+                        revision=request.revision, offline=request.offline)
     return {"job_id": job_id, "status": "running"}
 
 
-def _run_explore(job_id: str, model_id: str, seq_len: int, lineage: str = 'auto') -> None:
+def _run_explore(job_id: str, model_id: str, seq_len: int, lineage: str = 'auto', *,
+                 revision: str | None = None, offline: bool = False) -> None:
     """Use the same durable capture and native lineage pipeline as the CLI."""
     from compilerlens.services import capture
     job = JOBS[job_id]
@@ -263,7 +271,7 @@ def _run_explore(job_id: str, model_id: str, seq_len: int, lineage: str = 'auto'
         output_dir = capture(model_id, seq_len=seq_len,
                              out=REPO_ROOT / 'runs' / job_id,
                              max_parameters=_MAX_EXPLORE_PARAMETERS, progress=report,
-                             lineage=lineage)
+                             lineage=lineage, revision=revision, offline=offline)
         info = json.loads((output_dir / 'model_info.json').read_text())
         artifact = json.loads((output_dir / 'artifact.json').read_text())
         artifact_id = artifact['compilation_id']
@@ -288,17 +296,8 @@ def _run_explore(job_id: str, model_id: str, seq_len: int, lineage: str = 'auto'
 
 def _normalize_model_id(value: str) -> str:
     """Accept either a Hub repository ID or a pasted huggingface.co model URL."""
-    model_id = value.strip().rstrip("/")
-    prefix = "https://huggingface.co/"
-    if model_id.startswith(prefix):
-        parts = model_id[len(prefix):].split("/")
-        # Ignore URL suffixes such as /tree/main. Official repositories can have a single
-        # segment; community repositories normally have owner/name.
-        if len(parts) > 1 and parts[1] not in {"blob", "commit", "discussions", "resolve", "tree"}:
-            model_id = "/".join(parts[:2])
-        else:
-            model_id = parts[0] if parts else ""
-    return model_id
+    from compilerlens.models.detect import normalize_model_id
+    return normalize_model_id(value)
 
 
 def _one_line(value: object, limit: int = _PUBLIC_ERROR_LIMIT) -> str:
@@ -340,6 +339,11 @@ def _friendly_explore_error(exc: Exception, model_id: str, phase: str) -> str:
             f"'{model_id}' is too large for interactive full-pipeline capture{size}. "
             "Use a model below 100M parameters; larger models can generate multi-gigabyte IR artifacts."
         )
+    from compilerlens.models.detect import UnsupportedModelError
+    if isinstance(exc, UnsupportedModelError):
+        return raw
+    if 'compiled output verification failed' in lower:
+        return 'Compiled outputs did not pass numerical verification against PyTorch. See verification.json in the run for details.'
     if any(token in lower or token in kind for token in ("repository not found", "not found", "404")):
         return (
             f"We couldn't find a public Hugging Face model named '{model_id}'. "
@@ -372,7 +376,7 @@ def _friendly_explore_error(exc: Exception, model_id: str, phase: str) -> str:
     if phase == "loading the model":
         return (
             f"Hugging Face found '{model_id}', but CompilerLens could not load it with the current "
-            "text-model adapter. See the API terminal for the technical details."
+            "model adapter. See the API terminal for the technical details."
         )
     if phase == "exporting and compiling the model":
         return (
@@ -393,7 +397,8 @@ def _run_compile(job_id: str, request: CompileRequest, flags: list) -> None:
         from compilerlens.models.detect import detect
         from compilerlens.models.hf_wrapper import wrap
 
-        detected = detect(request.model_id, seq_len=request.seq_len)
+        detected = detect(request.model_id, seq_len=request.seq_len,
+                          revision=request.revision, offline=request.offline)
         module, example_inputs, model_info = wrap(detected, max_parameters=_MAX_EXPLORE_PARAMETERS)
         job["model_info"] = model_info
 

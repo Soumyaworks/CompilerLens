@@ -104,6 +104,7 @@ model = {adapter.model_class}.from_pretrained(
     {detected.model_id!r}, revision={detected.revision!r},
     local_files_only={detected.offline!r}, trust_remote_code=False,
     dtype=torch.float32, attn_implementation="eager",
+    {"add_pooling_layer=False," if detected.adapter == 'vit' else ""}
 ).eval()
 module = {wrapper}(model).eval()
 inputs = {inputs}

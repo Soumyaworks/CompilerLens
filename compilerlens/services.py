@@ -75,6 +75,9 @@ def capture(model_id=None, *, example=None, python=None, out=None, seq_len=None,
     if seq_len is not None and seq_len <= 0: raise ValueError('--seq-len must be positive.')
     if capture not in ('standard', 'full') or lineage not in ('auto', 'required', 'off'):
         raise ValueError('Invalid capture or lineage mode.')
+    if model_id:
+        from .models.detect import normalize_model_id
+        model_id = normalize_model_id(model_id)
     if lineage == 'required':
         from .lineage import native_binary
         if not native_binary(): raise RuntimeError('Required native analyzer is unavailable; run compilerlens doctor.')

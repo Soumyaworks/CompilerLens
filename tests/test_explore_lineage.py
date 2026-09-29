@@ -37,12 +37,15 @@ class ExploreLineageTests(unittest.TestCase):
                     body = {'model_id': 'test/model'}
                     if mode is not None:
                         body['lineage'] = mode
+                        body.update(revision='a' * 40, offline=True)
                     response = client.post('/explore', json=body)
                     self.assertEqual(response.status_code, 200, response.text)
                     job_id = response.json()['job_id']
                     job = client.get(f'/compile/{job_id}').json()
                     expected = mode or 'auto'
                     self.assertEqual(capture.call_args.kwargs['lineage'], expected)
+                    self.assertEqual(capture.call_args.kwargs['revision'], body.get('revision'))
+                    self.assertEqual(capture.call_args.kwargs['offline'], body.get('offline', False))
                     self.assertEqual(job['lineage'], expected)
                     self.assertEqual(job['status'], 'done')
                     self.assertEqual(progress_updates, [
