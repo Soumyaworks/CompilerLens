@@ -19,7 +19,6 @@ jobs:
         mode: [cli, web, playground]
     env:
       HF_HUB_DISABLE_IMPLICIT_TOKEN: "1"
-      HF_HOME: ${{ runner.temp }}/huggingface
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -38,6 +37,8 @@ jobs:
               '--extra-index-url', 'https://download.pytorch.org/whl/cpu', *dependencies])
           PY
       - name: Validate pinned checkpoint
+        env:
+          HF_HOME: ${{ runner.temp }}/huggingface
         run: >-
           python scripts/validate_hf_models.py ${{ matrix.checkpoint }}
           --mode ${{ matrix.mode }} --out build/model-validation --timeout 900
