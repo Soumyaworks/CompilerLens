@@ -292,7 +292,7 @@ browser viewer. A repository checkout is not required.
 
 This quick start targets **0.2.1** on Linux x86-64 with glibc 2.35+; Python 3.10 is
 the validated interpreter. See the [release checklist](docs/RELEASING.md) for publication
-status. Until 0.2.1 is published, use the source installation below for the new features.
+status. Version 0.2.1 is published on PyPI and includes the CLI, native analyzer and webpage.
 
 ```bash
 mkdir compilerlens-demo
@@ -413,7 +413,7 @@ If a Python venv is currently active, run `deactivate` before activating Conda.
 
 ### 2. Create the development environment
 
-From your updated CompilerLens checkout (`feature/experiments-cli` until merged):
+From the root of your updated CompilerLens checkout:
 
 ```bash
 CONDARC="$PWD/.condarc" conda env create -f environment.yml
@@ -426,7 +426,8 @@ The project-local `.condarc` selects conda-forge without changing global Conda s
 The environment excludes unrelated user-site Python packages. Do not create another venv
 or install CompilerLens from PyPI inside this environment.
 If you do not have the checkout or Git yet, use GitHub's **Code → Download ZIP** on the
-development branch and extract it first; the environment also installs Git for later use.
+branch or release tag you want to use and extract it first; the environment also installs
+Git for later use.
 
 ### 3. Build the pass and prepare the webpage
 

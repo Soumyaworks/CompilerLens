@@ -41,6 +41,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
 
     def test_branch_builds_cannot_publish(self):
         trigger = self.workflow['on']
+        self.assertIn('main', trigger['push']['branches'])
         self.assertIn('feature/experiments-cli', trigger['push']['branches'])
         self.assertIn('pull_request', trigger)
         self.assertEqual(trigger['push']['tags'], ['v*'])

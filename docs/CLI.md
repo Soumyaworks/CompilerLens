@@ -3,14 +3,14 @@
 [Project overview](../README.md) · [LLVM component](../llvm/README.md) ·
 [Release checklist](RELEASING.md)
 
-The `feature/experiments-cli` branch provides a complete Python package, the existing viewer,
+CompilerLens provides a complete Python package, the existing viewer,
 a standalone LLVM analyzer and a loadable LLVM New Pass Manager plugin. The packaged analyzer
 runs on actual IREE output. Source attribution and LLVM def-use edges are separate relationships.
 
 ## Install from PyPI
 
 For a fresh virtual environment, follow the [CLI quick start](../README.md#cli-quick-start).
-Inside that environment, install 0.2.1 once published (see [release status](RELEASING.md)):
+Inside that environment, install the published 0.2.1 release:
 
 ```bash
 python -m pip install compilerlens==0.2.1 --index-url https://pypi.org/simple/ \
@@ -21,7 +21,7 @@ compilerlens inspect runs/matmul
 compilerlens view runs/matmul
 ```
 
-This guide targets version 0.2.1; the last confirmed published version is 0.1.1.
+This guide targets the published version 0.2.1.
 See the [release checklist](RELEASING.md) for validation results and local wheel builds.
 The release target is `compilerlens-0.2.1-py3-none-manylinux_2_35_x86_64.whl`.
 It bundles the existing React app,
@@ -29,7 +29,7 @@ Monaco workers, private native executable, LLVM license, zlib and zstd libraries
 End users do not need Node, CMake, `opt` or an LLVM SDK. Dependencies include the validated
 PyTorch, Transformers, IREE compiler/runtime and Turbine versions in `pyproject.toml`.
 
-The first wheel targets Linux x86-64 and was built/tested on glibc 2.35 with Python 3.10.
+The release wheel targets Linux x86-64 and was built/tested on glibc 2.35 with Python 3.10.
 The build first produces a `linux_x86_64` wheel; auditwheel repair produces the tested
 `manylinux_2_35_x86_64` wheel. macOS, Windows, ARM and older glibc
 are not release targets. An LLVM 22 analyzer successfully parses the tested IREE 3.11.0
