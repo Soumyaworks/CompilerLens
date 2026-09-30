@@ -44,6 +44,9 @@ stages in one navigable interface.
 - Compiler-recorded operation lineage from framework-level operations through LLVM IR and assembly
 - Focused lineage IR: show every matching section, expand surrounding lines above/below,
   or switch to the full IR; the workload pipeline keeps its complete stage views
+- Interactive lineage Graph view: a compact source → track → phase tree with collapsible
+  phase groups, optional pass snapshots, and clickable IR inspection. Branches group associated
+  compiler views; arrows within a track show checkpoint order, not tensor dependencies
 - A landing-page search flow that compiles a Hugging Face model and adds it as a workload
 - A Compiler Playground for changing selected compiler options and benchmarking the result
 - An installable CLI for capturing, inspecting, tracing, comparing, and benchmarking saved runs

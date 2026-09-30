@@ -5,6 +5,7 @@ import {LineageOperationList} from './components/LineageOperationList';
 import {LineageTimeline} from './components/LineageTimeline';
 import {IRViewer} from './components/IRViewer';
 import {FocusedIRViewer} from './components/FocusedIRViewer';
+import {LineageGraph} from './components/LineageGraph';
 import './styles/lineage.css';
 
 /**
@@ -35,6 +36,7 @@ export function LineageExplorerPage({artifact, onBack, initialSourceLine}: Linea
   const stageMap = useMemo(() => new Map(artifact.stages.map(s => [s.id, s])), [artifact]);
 
   const [selectedStageId, setSelectedStageId] = useState(anchorStage.id);
+  const [view, setView] = useState<'ir' | 'graph'>('ir');
   const validInitialLine = initialSourceLine && artifact.lineage?.lines[initialSourceLine]
     ? initialSourceLine
     : null;
@@ -53,6 +55,7 @@ export function LineageExplorerPage({artifact, onBack, initialSourceLine}: Linea
   }
 
   function backToOperations() {
+    setView('ir');
     setSelectedLine(null);
     setSelectedStageId(anchorStage.id);
     setJumpHighlightLines(undefined);
@@ -72,10 +75,19 @@ export function LineageExplorerPage({artifact, onBack, initialSourceLine}: Linea
         <h1>
           Operation Lineage <span className="muted">· {artifact.compilation_id}</span>
         </h1>
+        <div className="lineage-view-toggle" role="group" aria-label="Lineage view">
+          <button type="button" aria-pressed={view === 'ir'} onClick={() => setView('ir')}>IR view</button>
+          <button type="button" aria-pressed={view === 'graph'} disabled={!lineageEntry}
+            title={lineageEntry ? 'Explore source associations across compiler checkpoints' : 'Select an operation first'}
+            onClick={() => setView('graph')}>Graph view</button>
+        </div>
         <span className="lineage-explorer-stage-label">{selectedStage.title}</span>
       </header>
 
-      <div className="lineage-explorer-panes">
+      {view === 'graph' && selectedLine && lineageEntry ? (
+        <LineageGraph key={selectedLine} stages={artifact.stages} entry={lineageEntry}
+          sourceLine={selectedLine} selectedStage={selectedStage} onSelect={jumpToStage} onBack={backToOperations} />
+      ) : <div className="lineage-explorer-panes">
         <section className="lineage-explorer-ir">
           <h3>{selectedStage.title}</h3>
           <div className="lineage-explorer-editor">
@@ -109,7 +121,7 @@ export function LineageExplorerPage({artifact, onBack, initialSourceLine}: Linea
             <LineageOperationList artifact={artifact} anchorStage={anchorStage} onSelect={selectOperation} />
           )}
         </section>
-      </div>
+      </div>}
     </div>
   );
 }
