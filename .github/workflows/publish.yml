@@ -1,0 +1,179 @@
+name: Publish to PyPI
+
+on:
+  push:
+    branches:
+      - main
+      - feature/experiments-cli
+    tags:
+      - "v*"
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and verify Linux wheel
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Python build tools
+        run: |
+          python -m pip install --upgrade pip "setuptools>=77" wheel twine tomli \
+            "auditwheel==6.8.2" "patchelf==0.19.1.0"
+
+      - name: Verify wheel repair tools
+        run: |
+          python - <<'PY'
+          import importlib.metadata
+          import shutil
+          import subprocess
+          import sysconfig
+          from pathlib import Path
+
+          for name, version in [('auditwheel', '6.8.2'), ('patchelf', '0.19.1.0')]:
+              actual = importlib.metadata.version(name)
+              if actual != version:
+                  raise SystemExit(f'{name}: expected {version}, found {actual}')
+          selected = shutil.which('patchelf')
+          expected = Path(sysconfig.get_path('scripts')) / 'patchelf'
+          if selected is None or Path(selected).resolve() != expected.resolve():
+              raise SystemExit(f'Wrong patchelf on PATH: {selected}; expected {expected}')
+          subprocess.run([selected, '--version'], check=True)
+          subprocess.run(['auditwheel', '--version'], check=True)
+          PY
+
+      - name: Check component versions and release tag
+        env:
+          RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          import tomli
+          from pathlib import Path
+
+          with open("pyproject.toml", "rb") as source:
+              version = tomli.load(source)["project"]["version"]
+
+          tag = os.environ["RELEASE_TAG"]
+          if tag and not re.fullmatch(r"v\d+\.\d+\.\d+", tag):
+              raise SystemExit(f"Release tag must have the form vX.Y.Z, got {tag!r}")
+          if tag and tag != f"v{version}":
+              raise SystemExit(f"Tag {tag!r} does not match project version {version!r}")
+          for name, pattern in {
+              'compilerlens/__init__.py': r'__version__ = "([^"]+)"',
+              'llvm/CMakeLists.txt': r'project\(CompilerLensLLVM VERSION (\S+)',
+              'llvm/tools/main.cpp': r'compilerlens-native ([\d.]+) LLVM',
+              'llvm/lib/Plugin.cpp': r'"CompilerLensPasses", "([^"]+)"',
+              'llvm/lib/Lineage.cpp': r'"pass_version", "([^"]+)"',
+          }.items():
+              match = re.search(pattern, Path(name).read_text())
+              if not match or match[1] != version:
+                  raise SystemExit(f'{name} version does not match {version}')
+          PY
+
+      - name: Install LLVM 22 and build tools
+        run: |
+          wget --quiet https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 22
+          sudo apt-get update
+          sudo apt-get install --yes llvm-22-dev libzstd-dev zlib1g-dev
+          npm ci --prefix frontend
+
+      - name: Install project dependencies and run Python tests
+        run: |
+          python - <<'PY'
+          import subprocess
+          import sys
+          import tomli
+
+          with open("pyproject.toml", "rb") as source:
+              dependencies = tomli.load(source)["project"]["dependencies"]
+
+          subprocess.check_call([
+              sys.executable,
+              "-m",
+              "pip",
+              "install",
+              "--extra-index-url",
+              "https://download.pytorch.org/whl/cpu",
+              *dependencies,
+          ])
+          PY
+          python -m unittest discover -s tests -v
+
+      - name: Build and test release wheel
+        run: |
+          python scripts/build_release.py --llvm-dir /usr/lib/llvm-22/lib/cmake/llvm
+          python -m unittest discover -s tests -p test_source_artifacts.py -v
+          auditwheel repair dist/compilerlens-*.whl --wheel-dir wheelhouse
+          python -m twine check wheelhouse/*.whl
+          auditwheel show wheelhouse/*.whl
+
+      - name: Smoke-test installed wheel
+        env:
+          PYTHONPATH: ""
+          COMPILERLENS_NATIVE: ""
+          OMP_NUM_THREADS: "2"
+        run: |
+          CLENS_CHECK_DIR="$(mktemp -d "$RUNNER_TEMP/compilerlens-wheel.XXXXXX")"
+          python -m venv "$CLENS_CHECK_DIR/venv"
+          "$CLENS_CHECK_DIR/venv/bin/python" -m pip install \
+            --index-url https://pypi.org/simple/ \
+            --extra-index-url https://download.pytorch.org/whl/cpu wheelhouse/*.whl
+          export PATH="$CLENS_CHECK_DIR/venv/bin:$PATH"
+          export COMPILERLENS_WORKSPACE="$CLENS_CHECK_DIR/workspace"
+          cd "$CLENS_CHECK_DIR"
+          python -m pip check
+          compilerlens --version
+          compilerlens doctor
+          compilerlens compile --example matmul --out runs/matmul --lineage required
+          compilerlens compile --example tiny_vit --out runs/tiny-vit --lineage required
+          compilerlens compile --example tiny_clip --out runs/tiny-clip --lineage required
+          python "$GITHUB_WORKSPACE/scripts/check_installed.py" \
+            "$CLENS_CHECK_DIR/venv/bin/python" "$CLENS_CHECK_DIR/runs/matmul"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pypi-wheel
+          path: wheelhouse/*.whl
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Publish trusted release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-22.04
+    environment:
+      name: pypi
+      url: https://pypi.org/project/compilerlens/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: pypi-wheel
+          path: wheelhouse
+
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: wheelhouse/

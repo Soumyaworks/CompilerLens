@@ -1,10 +1,13 @@
 # Build output
 node_modules/
 dist/
+wheelhouse/
 *.tsbuildinfo
 
 # Generated artifacts -- rebuild with `npm run artifact` (see README)
 frontend/public/artifacts/
+examples/*/native/
+examples/*/lineage.json
 
 # Verification output, regenerable via `npm run verify`
 frontend/screenshots/
@@ -24,3 +27,12 @@ __pycache__/
 .DS_Store
 .idea/
 .vscode/
+
+# CompilerLens release products and local runs
+build/
+*.egg-info/
+compilerlens/_bin/
+compilerlens/_web/
+compilerlens-runs/
+runs/
+jobs/

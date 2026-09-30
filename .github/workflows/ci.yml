@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - feature/experiments-cli
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Python 3.10 tests
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install project dependencies
+        run: |
+          python -m pip install --upgrade pip tomli
+          python - <<'PY'
+          import subprocess
+          import sys
+          import tomli
+
+          with open("pyproject.toml", "rb") as source:
+              dependencies = tomli.load(source)["project"]["dependencies"]
+
+          subprocess.check_call([
+              sys.executable,
+              "-m",
+              "pip",
+              "install",
+              "--extra-index-url",
+              "https://download.pytorch.org/whl/cpu",
+              *dependencies,
+          ])
+          PY
+
+      - name: Run Python tests
+        run: python -m unittest discover -s tests -v
+
+  frontend:
+    name: Frontend build
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Type-check and build frontend
+        run: npm run build

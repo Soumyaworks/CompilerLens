@@ -1,0 +1,21 @@
+name: compilerlens-dev
+variables:
+  # Keep unrelated packages from ~/.local out of this development environment.
+  PYTHONNOUSERSITE: "1"
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.10
+  - pip
+  - git
+  - nodejs=22
+  - cmake=3.31
+  - ninja=1.12
+  - c-compiler
+  - cxx-compiler
+  - llvmdev=22.1.8
+  - llvm-tools=22.1.8
+  - zlib
+  - zstd
+  - libxml2-devel

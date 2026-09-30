@@ -1,0 +1,20 @@
+{
+  "vit-tiny": {
+    "model_id": "WinKawaks/vit-tiny-patch16-224",
+    "revision": "77d1485af66b34d4ed0fe95dbb0c60c7496f950b",
+    "adapter": "vit",
+    "seq_len": 16,
+    "image_size": 224,
+    "task": "image-encoder",
+    "parameters": 5524416
+  },
+  "tinyclip": {
+    "model_id": "wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M",
+    "revision": "a2a8c6eaa2549ad66eb7c31b85022bf58273a26c",
+    "adapter": "clip",
+    "seq_len": 16,
+    "image_size": 224,
+    "task": "image-text-similarity",
+    "parameters": 23446017
+  }
+}

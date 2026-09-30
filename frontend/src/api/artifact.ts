@@ -181,6 +181,16 @@ export interface ArchitectureEdge {
 }
 
 export interface ArchitectureModelFacts {
+  modalities?: string[];
+  task?: string;
+  weights?: string;
+  input_profile?: {
+    kind: string;
+    batch_size: number;
+    preprocessing: string;
+    inputs: {name: string; shape: number[]; dtype: string}[];
+  };
+  output_names?: string[];
   model_id?: string;
   model_type?: string | null;
   causal?: boolean;

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import unittest
 
-from ingest.llvm_parser import parse_llvm_ir
-from ingest.mlir_loc import source_locations_by_line
+from compilerlens.ingest.llvm_parser import parse_llvm_ir
+from compilerlens.ingest.mlir_loc import source_locations_by_line
 
 
 class MlirLineSourceMapTests(unittest.TestCase):
