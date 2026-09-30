@@ -94,8 +94,8 @@ starts an isolated loopback API when needed, and saves `validation.json` with ve
 numerical results, coverage, elapsed time, peak child-process RSS and disk usage. For a wheel
 environment, add `--installed --python /path/to/venv/bin/python`; it rejects source-package imports.
 The optional **Pretrained model compatibility** GitHub workflow runs these real-download checks;
-normal PR tests remain offline. A new manual workflow must reach the default branch before
-GitHub exposes its Run workflow button.
+normal PR tests remain offline. Start it from **Actions → Pretrained model compatibility →
+Run workflow**, selecting `main`.
 
 Float32 verification uses `rtol=1e-3, atol=1e-4`, rejects non-finite/mismatched outputs, and
 records per-output errors. The relative tolerance was checked against float64 on three ViT

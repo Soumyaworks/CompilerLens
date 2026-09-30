@@ -41,13 +41,19 @@ class ReleaseWorkflowTests(unittest.TestCase):
 
     def test_branch_builds_cannot_publish(self):
         trigger = self.workflow['on']
-        self.assertIn('main', trigger['push']['branches'])
-        self.assertIn('feature/experiments-cli', trigger['push']['branches'])
+        self.assertEqual(trigger['push']['branches'], ['main'])
         self.assertIn('pull_request', trigger)
         self.assertEqual(trigger['push']['tags'], ['v*'])
         self.assertEqual(self.workflow['jobs']['publish']['if'],
                          "github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')")
         self.assertEqual(self.workflow['jobs']['publish']['needs'], 'build')
+
+    def test_ci_runs_on_main_pull_requests_and_manual_dispatch(self):
+        workflow = yaml.load(WORKFLOW.with_name('ci.yml').read_text(), Loader=yaml.BaseLoader)
+        trigger = workflow['on']
+        self.assertEqual(trigger['push']['branches'], ['main'])
+        self.assertIn('pull_request', trigger)
+        self.assertIn('workflow_dispatch', trigger)
 
 
 if __name__ == '__main__':

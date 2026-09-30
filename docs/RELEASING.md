@@ -113,12 +113,12 @@ compiler workspace and Monaco. Source-browser success alone does not validate a 
 3. Confirm your selected version is not already published and its `vX.Y.Z` tag does not
    already exist locally or remotely. Check PyPI, `git tag --list` and `git ls-remote --tags origin`.
    Do not move published tags or reuse uploaded versions.
-4. Review and commit the explicit release files, push the branch, and wait for both ordinary
-   CI and **Publish to PyPI → Build and verify Linux wheel** to pass. On branches/PRs,
-   that workflow builds/tests only; its publish job is skipped.
-   Both `main` and `feature/experiments-cli` currently receive push builds; any other branch
-   should use a PR to get the full checks. Prefer releasing the tested `main` commit after
-   merge. If releasing before merge, tag the exact tested feature-branch commit instead.
+4. Review and commit the explicit release files, push your working branch and open a PR
+   into `main`. Wait for both ordinary CI and **Publish to PyPI → Build and verify Linux
+   wheel** to pass. Both workflows run on PRs and pushes to `main`; a push to another branch
+   without a PR does not automatically run them. On PRs and `main` pushes, the publish job
+   is skipped. After merging, wait for both workflows on the resulting `main` commit and
+   tag that exact tested commit.
 
 ```bash
 git diff --check
@@ -161,9 +161,9 @@ only when required environment reviewers are configured. Do not also upload manu
    release notes, separately from local-wheel results. The default-branch README updates
    only when merged; PyPI's description is embedded in the uploaded wheel.
 
-The separate **Pretrained model compatibility** workflow is manual and must exist on the
-default branch before GitHub exposes **Run workflow**. Its tests can be run locally
-while the merge is deferred; it does not publish anything.
+The separate **Pretrained model compatibility** workflow is manual: open **Actions →
+Pretrained model compatibility → Run workflow**, select `main` and start the run.
+These real-download tests can also be run locally; they do not publish anything.
 
 ## Verify the actual PyPI download
 

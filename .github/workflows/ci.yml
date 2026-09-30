@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - feature/experiments-cli
   pull_request:
   workflow_dispatch:
 
