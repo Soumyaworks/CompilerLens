@@ -63,10 +63,14 @@ function locSpans(line: string): Array<[number, number]> {
   }
 }
 
-export function stripLocations(text: string): string {
+/** Preserve removed metadata-only lines as blanks when original source coordinates matter. */
+export function stripLocations(text: string, preserveLineNumbers = false): string {
   const out: string[] = [];
   for (const raw of text.split('\n')) {
-    if (ALIAS_DEF.test(raw.trim())) continue;
+    if (ALIAS_DEF.test(raw.trim())) {
+      if (preserveLineNumbers) out.push('');
+      continue;
+    }
     let line = raw;
     const spans = locSpans(line);
     if (spans.length > 0) {
@@ -76,7 +80,10 @@ export function stripLocations(text: string): string {
       }
       line = line.replace(/\s+$/, '');
       // A line that held nothing but a location is dropped entirely.
-      if (line.trim() === '') continue;
+      if (line.trim() === '') {
+        if (preserveLineNumbers) out.push('');
+        continue;
+      }
     }
     out.push(line);
   }

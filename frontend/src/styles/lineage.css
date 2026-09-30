@@ -363,6 +363,30 @@
   min-height: 220px;
 }
 
+.focused-ir-viewer { height: 100%; display: flex; flex-direction: column; min-width: 0; }
+.focused-ir-toolbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  padding: 8px; border-bottom: 1px solid var(--border); background: var(--surface-1);
+  font-size: 11px;
+}
+.focused-ir-toolbar > span { flex: 1 1 150px; color: var(--text-muted); }
+.focused-ir-toolbar button, .focused-ir-gap button {
+  background: var(--surface-2); color: var(--text-primary); border: 1px solid var(--border);
+  border-radius: 4px; padding: 4px 7px; font: inherit; font-size: 11px; cursor: pointer;
+}
+.focused-ir-toolbar button:hover:not(:disabled), .focused-ir-gap button:hover { background: var(--surface-3); }
+.focused-ir-toolbar button:disabled { opacity: 0.45; cursor: default; }
+.focused-ir-toolbar button:focus-visible, .focused-ir-gap button:focus-visible {
+  outline: 2px solid var(--phase-frontend); outline-offset: 1px;
+}
+.focused-ir-hint { padding: 5px 8px; color: var(--text-muted); font-size: 10px; }
+.focused-ir-editor { flex: 1; min-height: 0; }
+.focused-ir-gap {
+  display: flex; align-items: center; gap: 6px; padding-left: 8px;
+  background: var(--surface-1); border-bottom: 1px dashed var(--border); box-sizing: border-box;
+  z-index: 5; /* Keep interactive zones above Monaco's transparent text hit-testing layer. */
+}
+
 /* Left (code) pane is a little bigger than the operation-list/timeline pane for readability --
    was the reverse (description pane dominant) when this page only ever showed the plain
    operation list; now that the list is filtered down, code readability matters more. */
