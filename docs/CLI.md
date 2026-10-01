@@ -10,10 +10,10 @@ runs on actual IREE output. Source attribution and LLVM def-use edges are separa
 ## Install from PyPI
 
 For a fresh virtual environment, follow the [CLI quick start](../README.md#cli-quick-start).
-Inside that environment, install the published 0.2.1 release:
+Inside that environment, install 0.2.2 after publication (use 0.2.1 while it is pending):
 
 ```bash
-python -m pip install compilerlens==0.2.1 --index-url https://pypi.org/simple/ \
+python -m pip install compilerlens==0.2.2 --index-url https://pypi.org/simple/ \
   --extra-index-url https://download.pytorch.org/whl/cpu
 compilerlens doctor
 compilerlens compile --example matmul --out runs/matmul --lineage required
@@ -21,9 +21,9 @@ compilerlens inspect runs/matmul
 compilerlens view runs/matmul
 ```
 
-This guide targets the published version 0.2.1.
+This guide targets version 0.2.2; publication is pending until the tag workflow succeeds.
 See the [release checklist](RELEASING.md) for validation results and local wheel builds.
-The release target is `compilerlens-0.2.1-py3-none-manylinux_2_35_x86_64.whl`.
+The release target is `compilerlens-0.2.2-py3-none-manylinux_2_35_x86_64.whl`.
 It bundles the existing React app,
 Monaco workers, private native executable, LLVM license, zlib and zstd libraries/licenses.
 End users do not need Node, CMake, `opt` or an LLVM SDK. Dependencies include the validated
@@ -62,7 +62,7 @@ compilerlens import examples/matmul --out runs/imported --lineage required
 `build()` returns `(torch.nn.Module, tuple_of_example_tensors)`. The module is put in eval mode.
 This explicitly executes local code. HF-only arguments are rejected for local/examples inputs.
 The examples are `matmul`, `linear_relu`, and `mini_transformer`.
-Version 0.2.1 additionally includes `tiny_vit` and `tiny_clip` demos:
+Versions 0.2.1 and later additionally include `tiny_vit` and `tiny_clip` demos:
 random weights, synthetic tensors, and no model downloads. See the
 [model compatibility section](../README.md#supported-model-architectures) for their exact scope
 and source-webpage commands. ViT/CLIP captures on host/generic CPU write `verification.json`
@@ -247,7 +247,7 @@ After configuring the native build:
 ```bash
 python scripts/build_release.py
 python -m unittest discover -s tests -v
-python -m pip install dist/compilerlens-0.2.1-py3-none-linux_x86_64.whl
+python -m pip install dist/compilerlens-0.2.2-py3-none-linux_x86_64.whl
 python scripts/check_installed.py /path/to/installed/env/bin/python /path/to/run --browser
 ```
 

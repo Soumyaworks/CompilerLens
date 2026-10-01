@@ -1,8 +1,14 @@
 # Releasing CompilerLens
 
-[Project overview](../README.md) · [CLI guide](CLI.md) · [0.2.1 notes](releases/0.2.1.md)
+[Project overview](../README.md) · [CLI guide](CLI.md) · [0.2.2 notes](releases/0.2.2.md)
 
 ## Release status
+
+**0.2.2 is prepared for release; publication is pending.** It adds focused operation-lineage
+IR with compact context-expansion controls. See [0.2.2 notes](releases/0.2.2.md) for scope
+and validation. Do not mark it published until the tag workflow and PyPI upload succeed.
+
+### Previous release: 0.2.1
 
 **0.2.1 is published on [PyPI](https://pypi.org/project/compilerlens/0.2.1/), and its
 [GitHub Release](https://github.com/Soumyaworks/CompilerLens/releases/tag/v0.2.1) is complete**,
@@ -48,6 +54,8 @@ to the local wheel, not necessarily GitHub's independently rebuilt wheel.
 
 ## Prepare a future release
 
+For this release, use **0.2.2** and tag **v0.2.2** after the release-preparation commit on
+`main` passes CI and the full wheel build. Both Python and native versions must match.
 The procedure below is reusable; **do not recreate `v0.2.1` or upload 0.2.1 again**.
 Merging an already released branch into `main` does not require a version bump or a tag.
 Branch/PR builds test the wheel; only a version-tag push can publish it.
@@ -168,7 +176,7 @@ These real-download tests can also be run locally; they do not publish anything.
 ## Verify the actual PyPI download
 
 Use a fresh directory outside the checkout after publication. Enter the exact published
-version when prompted (for example, `0.2.1` to verify the current release):
+version when prompted (`0.2.2` after its publication):
 
 ```bash
 python3.10 -m venv .venv
