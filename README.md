@@ -42,6 +42,8 @@ stages in one navigable interface.
 - Side-by-side textual and semantic diffs
 - Compiler evidence linked directly to the IR that produced it
 - Compiler-recorded operation lineage from framework-level operations through LLVM IR and assembly
+- Focused lineage IR: show every matching section, expand surrounding lines above/below,
+  or switch to the full IR; the workload pipeline keeps its complete stage views
 - A landing-page search flow that compiles a Hugging Face model and adds it as a workload
 - A Compiler Playground for changing selected compiler options and benchmarking the result
 - An installable CLI for capturing, inspecting, tracing, comparing, and benchmarking saved runs
@@ -633,6 +635,7 @@ python -m py_compile compilerlens/backend/api/app.py compilerlens/backend/api/ru
 python -m unittest discover -s tests -v
 
 cd frontend
+npm test
 npm run build
 ```
 
@@ -642,6 +645,7 @@ For browser-level checks, leave `npm run dev` running and execute:
 cd frontend
 npx playwright install chromium   # first run only
 npm run verify
+npm run verify:lineage   # isolated fixtures; no model downloads or saved workloads required
 ```
 
 ## Troubleshooting

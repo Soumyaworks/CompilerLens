@@ -4,6 +4,7 @@ import type {Artifact} from './api/artifact';
 import {LineageOperationList} from './components/LineageOperationList';
 import {LineageTimeline} from './components/LineageTimeline';
 import {IRViewer} from './components/IRViewer';
+import {FocusedIRViewer} from './components/FocusedIRViewer';
 import './styles/lineage.css';
 
 /**
@@ -16,8 +17,8 @@ import './styles/lineage.css';
  *
  * `torch-input` never shows the old glyph-highlight-everything decoration (no `lineage`/
  * `onLineageClick` props reach IRViewer here) -- but picking an operation from the list does
- * scroll to and highlight that one line, and jumping through a hop does the same on whichever
- * stage it lands on. Both go through the same `jumpHighlightLines`/`revealLine` state.
+ * focus on that line. Stage jumps show every matching section with expandable context;
+ * the operation-list screen and full pipeline editors still show the whole document.
  */
 
 interface LineageExplorerPageProps {
@@ -78,12 +79,15 @@ export function LineageExplorerPage({artifact, onBack, initialSourceLine}: Linea
         <section className="lineage-explorer-ir">
           <h3>{selectedStage.title}</h3>
           <div className="lineage-explorer-editor">
-            <IRViewer
-              stage={selectedStage}
-              showLocations={false}
-              highlightLines={jumpHighlightLines}
-              revealLine={jumpHighlightLines?.[0]}
-            />
+            {selectedLine ? (
+              <FocusedIRViewer
+                key={`${selectedStage.id}:${selectedLine}`}
+                stage={selectedStage}
+                highlightLines={jumpHighlightLines ?? []}
+              />
+            ) : (
+              <IRViewer stage={selectedStage} showLocations={false} />
+            )}
           </div>
         </section>
 

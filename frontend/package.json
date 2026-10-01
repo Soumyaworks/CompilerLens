@@ -8,6 +8,8 @@
   },
   "description": "CompilerLens frontend -- interactive AI compiler pipeline explorer",
   "scripts": {
+    "test": "node scripts/focused-ir.test.mjs",
+    "verify:lineage": "node scripts/verify-lineage.mjs",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
