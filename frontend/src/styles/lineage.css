@@ -387,6 +387,13 @@
   z-index: 5; /* Keep interactive zones above Monaco's transparent text hit-testing layer. */
 }
 
+.focused-ir-gap button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 3px;
+  min-width: 28px; height: 26px; padding: 0 6px; border-radius: 13px;
+  color: var(--phase-frontend); font-size: 18px; line-height: 1;
+}
+.focused-ir-expand-direction { font-size: 12px; color: var(--text-muted); }
+
 /* Left (code) pane is a little bigger than the operation-list/timeline pane for readability --
    was the reverse (description pane dominant) when this page only ever showed the plain
    operation list; now that the list is filtered down, code readability matters more. */

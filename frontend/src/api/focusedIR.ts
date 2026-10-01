@@ -1,6 +1,8 @@
 /** Inclusive, original (1-based) source lines. Never infer extra lineage matches. */
 export interface LineRange {start: number; end: number}
 
+export const CONTEXT_LINES = 20;
+
 export function mergeRanges(ranges: LineRange[], lineCount: number): LineRange[] {
   const sorted = ranges
     .filter(r => Number.isInteger(r.start) && Number.isInteger(r.end))
@@ -72,7 +74,7 @@ export function projectIR(lines: string[], visible: LineRange[], comment = '//')
 /** Reveal from either neighbouring section without losing any already-visible lines. */
 export function expandGap(
   visible: LineRange[], gap: LineRange, edge: 'start' | 'end' | 'all', lineCount: number,
-  amount = 20,
+  amount = CONTEXT_LINES,
 ): LineRange[] {
   const range = edge === 'start' ? {start: gap.start, end: Math.min(gap.end, gap.start + amount - 1)}
     : edge === 'end' ? {start: Math.max(gap.start, gap.end - amount + 1), end: gap.end}

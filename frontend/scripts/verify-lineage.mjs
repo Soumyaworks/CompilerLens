@@ -24,14 +24,10 @@ anchor.ops = [40, 65].map(line => ({id: `op${line}`, stage_id: anchor.id, line,
   dialect: 'torch', results: [], operands: [], types: [], source_loc: null, lineage_key: null}));
 const stages = [anchor, stage('llvm-codegen', 'llvm', 'llvm', 160, [5, 80, 150]),
   stage('assembly', 'asm', 'binary', 80, [1, 80])];
-stages[1].track = stages[2].track = 'llvm:test';
-const pass = {...stage('llvm-pass', 'llvm', 'llvm', 160, [5, 80, 150]),
-  kind: 'pass', index: 1.5, track: 'llvm:test', parent_stage: 'llvm-codegen'};
-stages.push(pass);
 function entry(line) {
-  const hits = {'torch-input': [line], 'llvm-codegen': [5, 80, 150], 'llvm-pass': [5, 80, 150], assembly: line === 65 ? [] : [1, 80]};
+  const hits = {'torch-input': [line], 'llvm-codegen': [5, 80, 150], assembly: line === 65 ? [] : [1, 80]};
   return {total_ops: 6, stage_count: 3, op_names: {'torch.aten.mm': 1}, stages: hits,
-    hops: stages.filter(s => s.kind !== 'pass').map((s, i) => ({stage_id: s.id, from_stage: i ? stages[i - 1].id : null,
+    hops: stages.map((s, i) => ({stage_id: s.id, from_stage: i ? stages[i - 1].id : null,
       kind: 'transition', change: i ? 'changed' : 'created', confidence: 'structural',
       from_count: 1, to_count: hits[s.id].length, op_names: {test: hits[s.id].length},
       detail: 'Synthetic navigation fixture', pass_count: 0}))};
@@ -56,22 +52,28 @@ try {
   await page.getByRole('button', {name: 'Open pipeline', exact: true}).click();
   await page.locator('.golden-layout-container .monaco-editor .view-line').first().waitFor();
   await page.getByRole('button', {name: 'Operation Lineage', exact: true}).click();
-  assert.ok(await page.getByRole('button', {name: 'Graph view', exact: true}).isDisabled());
+  assert.equal(await page.getByRole('button', {name: 'Graph view', exact: true}).count(), 0);
+  assert.equal(await page.locator('.lineage-view-toggle').count(), 0);
   await page.locator('.lineage-op-row').first().click();
   const panel = page.locator('.focused-ir-viewer');
   async function status(value) {
     await page.waitForFunction(value => document.querySelector('.focused-ir-toolbar [role="status"]')?.textContent === value, value);
   }
   await status('1 matching lines · 1 / 120 shown');
+  assert.equal(await page.getByRole('button', {name: 'Graph view', exact: true}).count(), 0);
   await panel.locator('.focused-ir-gap').first().waitFor();
   assert.match(await panel.locator('.view-lines').innerText(), /%v40/);
   assert.ok((await panel.locator('.line-numbers').allTextContents()).includes('40'));
-  await panel.getByRole('button', {name: '↑ 20 above', exact: true}).focus();
+  assert.equal(await panel.getByRole('button', {name: 'Show gap', exact: true}).count(), 0);
+  for (const text of await panel.locator('.focused-ir-gap button').allTextContents()) {
+    assert.match(text, /^\+[↑↓]?$/);
+  }
+  await panel.getByRole('button', {name: 'Expand above', exact: true}).focus();
   await page.keyboard.press('Enter');
   await status('1 matching lines · 21 / 120 shown');
   await panel.getByRole('button', {name: 'Focus matches', exact: true}).click();
   await status('1 matching lines · 1 / 120 shown');
-  await panel.getByRole('button', {name: '↓ 20 below', exact: true}).click();
+  await panel.getByRole('button', {name: 'Expand below', exact: true}).click();
   await status('1 matching lines · 21 / 120 shown');
   await page.locator('.lineage-stage-button', {hasText: 'llvm-codegen'}).click();
   await status('3 matching lines · 3 / 160 shown');
@@ -87,10 +89,10 @@ try {
   assert.equal(await panel.locator('.lineage-jump-highlight').count(), 3);
   // Middle gap: reveal from the previous block and then from the next block.
   await panel.getByRole('group', {name: 'Hidden lines 6 to 79', exact: true})
-    .getByRole('button', {name: '↓ 20 below', exact: true}).click();
+    .getByRole('button', {name: 'Expand below', exact: true}).click();
   await status('3 matching lines · 23 / 160 shown');
   await panel.getByRole('group', {name: 'Hidden lines 26 to 79', exact: true})
-    .getByRole('button', {name: '↑ 20 above', exact: true}).click();
+    .getByRole('button', {name: 'Expand above', exact: true}).click();
   await status('3 matching lines · 43 / 160 shown');
   await panel.getByRole('button', {name: 'Show full IR', exact: true}).click();
   await status('3 matching lines · 160 / 160 shown');
@@ -100,71 +102,27 @@ try {
   await page.locator('.lineage-stage-button', {hasText: 'assembly'}).click();
   await status('2 matching lines · 2 / 80 shown');
   await page.waitForFunction(() => document.querySelectorAll('.focused-ir-gap').length === 1);
-  await panel.getByRole('button', {name: 'Show gap', exact: true}).click();
+  for (const shown of [22, 42, 62]) {
+    await panel.getByRole('button', {name: 'Expand below', exact: true}).click();
+    await status(`2 matching lines · ${shown} / 80 shown`);
+  }
+  // A short gap has just one + and reveals only its remaining lines.
+  assert.equal(await panel.locator('.focused-ir-gap button').count(), 1);
+  // Expanding keeps the current code anchored; scroll to the remaining gap below it.
+  await panel.locator('.view-lines').click();
+  await page.keyboard.press('Control+End');
+  const remaining = panel.getByRole('button', {name: 'Reveal remaining lines', exact: true});
+  assert.equal(await remaining.innerText(), '+');
+  assert.equal(await remaining.getAttribute('title'), 'Reveal 18 remaining lines');
+  await remaining.click();
   await status('2 matching lines · 80 / 80 shown');
+  assert.equal(await panel.locator('.focused-ir-gap').count(), 0);
   await page.getByRole('button', {name: 'All operations'}).click();
   assert.equal(await panel.count(), 0);
   await page.locator('.lineage-op-row').nth(1).click();
   await status('1 matching lines · 1 / 120 shown');
   await page.waitForFunction(() => document.querySelector('.focused-ir-viewer .view-lines')?.textContent.includes('%v65'));
   await page.screenshot({path: '/tmp/compilerlens-focused-lineage.png'});
-  await page.getByRole('button', {name: 'Graph view', exact: true}).click();
-  assert.equal(await page.locator('.lowering-node').count(), 0, 'Snapshots start inside collapsed phase groups');
-  assert.equal(await page.locator('.lowering-branch').count(), 2);
-  assert.equal(await page.locator('.lowering-root').count(), 1);
-  assert.equal(await page.locator('.lowering-phase-toggle').count(), 3);
-  assert.equal(await page.locator('.checkpoint-edge').count(), 1);
-  await page.screenshot({path: '/tmp/compilerlens-lowering-tree.png'});
-  await page.getByRole('button', {name: 'LLVM: 1 snapshots', exact: true}).click();
-  assert.equal(await page.locator('.lowering-node').count(), 1);
-  await page.locator('.lowering-node[data-stage-id="llvm-codegen"]').focus();
-  await page.keyboard.press('Enter');
-  await status('3 matching lines · 3 / 160 shown');
-  assert.ok(await page.locator('.lowering-inspector').isVisible());
-  await page.getByRole('button', {name: 'Close IR inspector', exact: true}).click();
-  await page.getByRole('checkbox', {name: 'Pass snapshots (1)', exact: true}).check();
-  assert.equal(await page.locator('.lowering-node').count(), 2);
-  assert.equal(await page.locator('.checkpoint-edge').count(), 1, 'Passes stay inside their phase');
-  await page.getByRole('button', {name: 'Collapse phases', exact: true}).click();
-  assert.equal(await page.locator('.lowering-node').count(), 0);
-  await page.getByRole('button', {name: 'LLVM: 2 snapshots', exact: true}).click();
-  await page.getByRole('button', {name: 'Binary: 1 snapshots', exact: true}).click();
-  assert.equal(await page.locator('.lowering-node.is-unlinked').count(), 1);
-  const trackButton = page.locator('.lowering-branch[aria-label="Track llvm:test"] .lowering-track');
-  await trackButton.click();
-  assert.equal(await page.locator('.lowering-node').count(), 0);
-  await trackButton.click();
-  assert.equal(await page.locator('.lowering-node').count(), 3, 'Track collapse preserves phase expansion state');
-  await page.getByRole('button', {name: 'Reset zoom', exact: true}).click();
-  await page.getByRole('button', {name: 'Zoom out', exact: true}).click();
-  assert.match(await page.getByRole('button', {name: 'Reset zoom', exact: true}).innerText(), /83%/);
-  for (let i = 0; i < 5; i++) await page.getByRole('button', {name: 'Zoom in', exact: true}).click();
-  const graphViewport = page.locator('.lowering-viewport');
-  await graphViewport.evaluate(async el => {
-    // Let zoom/ResizeObserver settle before placing the pointer on the blank top margin.
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    el.scrollTo({left: 0, top: 0, behavior: 'instant'});
-    await new Promise(resolve => requestAnimationFrame(resolve));
-  });
-  const graphBox = await graphViewport.boundingBox();
-  await page.mouse.move(graphBox.x + 15, graphBox.y + 150);
-  await page.mouse.down();
-  await page.mouse.move(graphBox.x + 15, graphBox.y + 50, {steps: 5});
-  await page.mouse.up();
-  assert.ok(await graphViewport.evaluate(el => el.scrollTop > 50), 'Dragging the background pans the graph');
-  await page.getByRole('button', {name: 'Fit graph', exact: true}).click();
-  await page.screenshot({path: '/tmp/compilerlens-lowering-graph.png'});
-  await page.locator('.lowering-node[data-stage-id="assembly"]').click();
-  await status('No matching lines available · showing full IR');
-  await page.setViewportSize({width: 390, height: 844});
-  const mapBox = await page.locator('.lowering-map').boundingBox();
-  const inspectorBox = await page.locator('.lowering-inspector').boundingBox();
-  assert.ok(mapBox.x >= 0 && mapBox.x + mapBox.width <= 390);
-  assert.ok(inspectorBox.x >= 0 && inspectorBox.x + inspectorBox.width <= 390);
-  await page.screenshot({path: '/tmp/compilerlens-lowering-mobile.png'});
-  await page.setViewportSize({width: 1440, height: 1000});
-  await page.getByRole('button', {name: 'IR view', exact: true}).click();
-  await status('No matching lines available · showing full IR');
   await page.locator('.lineage-stage-button', {hasText: 'assembly'}).click();
   await status('No matching lines available · showing full IR');
   assert.ok(await panel.getByRole('button', {name: 'Focus matches', exact: true}).isDisabled());
@@ -173,7 +131,7 @@ try {
   assert.equal(await panel.count(), 0);
   await page.locator('.golden-layout-container .monaco-editor .view-line').first().waitFor();
   assert.deepEqual(errors, []);
-  console.log('Lineage browser checks passed: compact tree, phase/track expansion, optional passes, focused IR, keyboard, pan/zoom, mobile.');
+  console.log('Lineage browser checks passed: IR-only view, all matches, context expansion, keyboard, full IR, stage navigation, no-match fallback.');
 } catch (error) {
   await page.screenshot({path: '/tmp/compilerlens-focused-lineage-failure.png'});
   console.error('Browser errors:', errors);

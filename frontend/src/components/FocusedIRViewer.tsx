@@ -3,7 +3,7 @@ import type {editor as MonacoEditor} from 'monaco-editor';
 import {useEffect, useMemo, useRef, useState} from 'react';
 
 import type {Stage} from '../api/artifact';
-import {expandGap, focusRanges, projectIR} from '../api/focusedIR';
+import {CONTEXT_LINES, expandGap, focusRanges, projectIR} from '../api/focusedIR';
 import type {LineRange, ProjectedGap} from '../api/focusedIR';
 import {stripLocations} from '../api/locations';
 import {monacoLanguage, THEME_NAME} from '../monaco/setup';
@@ -46,7 +46,7 @@ export function FocusedIRViewer({stage, highlightLines}: {stage: Stage; highligh
     }));
     const zoneIds: string[] = [];
 
-    function reveal(gap: ProjectedGap, edge: 'start' | 'end' | 'all') {
+    function reveal(gap: ProjectedGap, edge: 'start' | 'end') {
       // Retain the first visible source line's screen position when expanding above it.
       const first = editor!.getVisibleRanges()[0]?.startLineNumber ?? 1;
       const at = projection.originalLines.findIndex((line, i) => i >= first - 1 && line !== null);
@@ -65,18 +65,34 @@ export function FocusedIRViewer({stage, highlightLines}: {stage: Stage; highligh
         node.className = 'focused-ir-gap';
         node.setAttribute('role', 'group');
         node.setAttribute('aria-label', `Hidden lines ${gap.start} to ${gap.end}`);
-        const count = Math.min(20, gap.end - gap.start + 1);
-        function button(label: string, title: string, edge: 'start' | 'end' | 'all') {
+        const remaining = gap.end - gap.start + 1;
+        const count = Math.min(CONTEXT_LINES, remaining);
+        const shortGap = remaining <= CONTEXT_LINES;
+        const betweenSections = gap.start > 1 && gap.end < lines.length;
+        function button(edge: 'start' | 'end') {
           const control = document.createElement('button');
           control.type = 'button';
-          control.textContent = label;
-          control.title = title;
+          control.textContent = '+';
+          const direction = edge === 'start' ? 'below' : 'above';
+          const label = shortGap ? 'Reveal remaining lines' : `Expand ${direction}`;
+          control.setAttribute('aria-label', label);
+          control.title = shortGap ? `Reveal ${count} remaining ${count === 1 ? 'line' : 'lines'}`
+            : `Expand ${count} lines ${direction} the ${edge === 'start' ? 'preceding' : 'following'} section`;
+          if (betweenSections && !shortGap) {
+            const arrow = document.createElement('span');
+            arrow.className = 'focused-ir-expand-direction';
+            arrow.setAttribute('aria-hidden', 'true');
+            arrow.textContent = edge === 'start' ? '↓' : '↑';
+            control.append(arrow);
+          }
           control.onclick = () => reveal(gap, edge);
           node.append(control);
         }
-        if (gap.start > 1) button(`↓ ${count} below`, 'Expand below the preceding section', 'start');
-        if (gap.end < lines.length) button(`↑ ${count} above`, 'Expand above the following section', 'end');
-        button('Show gap', `Show all ${gap.end - gap.start + 1} hidden lines in this gap`, 'all');
+        if (shortGap) button(gap.start > 1 ? 'start' : 'end');
+        else {
+          if (gap.start > 1) button('start');
+          if (gap.end < lines.length) button('end');
+        }
         zoneIds.push(accessor.addZone({
           afterLineNumber: gap.displayLine, heightInPx: 34, domNode: node,
           suppressMouseDown: false,
@@ -117,7 +133,7 @@ export function FocusedIRViewer({stage, highlightLines}: {stage: Stage; highligh
         <button type="button" disabled={projection.gaps.length === 0}
           onClick={() => setVisible([{start: 1, end: lines.length}])}>Show full IR</button>
       </div>
-      <div className="focused-ir-hint">Original line numbers · Expand context at each gap · Find searches shown text</div>
+      <div className="focused-ir-hint">Original line numbers · + reveals more context · Find searches shown text</div>
       <div className="focused-ir-editor">
         <Editor
           height="100%"
